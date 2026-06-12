@@ -5,14 +5,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-OonaDB}
-      POSTGRES_USER: ${POSTGRES_USER:-oona_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-password}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - oona_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oona_user} -d ${POSTGRES_DB:-OonaDB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-OonaDB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,8 +33,8 @@ services:
         condition: service_healthy
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-OonaDB}
-      DB_USERNAME: ${POSTGRES_USER:-oona_user}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-password}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-900000}
       SPRING_JPA_DDL_AUTO: ${SPRING_JPA_DDL_AUTO:-update}
