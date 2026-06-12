@@ -38,7 +38,7 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.username").value("authuser"))
                 .andExpect(jsonPath("$.roles[0]").value("USER"));
 
-        String token = mockMvc.perform(post("/api/v1/auth/login")
+        String responseContent = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -49,15 +49,102 @@ class AuthFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("Bearer"))
                 .andExpect(jsonPath("$.token", not("")))
+                .andExpect(jsonPath("$.refreshToken", not("")))
                 .andReturn()
                 .getResponse()
-                .getContentAsString()
-                .replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+                .getContentAsString();
+
+        String token = responseContent.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
 
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("authuser@example.com"));
+    }
+
+    @Test
+    void refreshTokenAndLogoutFlow() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "refreshuser",
+                                  "email": "refreshuser@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "refreshuser@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token", not("")))
+                .andExpect(jsonPath("$.refreshToken", not("")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = loginResponse.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        String refreshToken = loginResponse.replaceAll(".*\\\"refreshToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        String refreshResponse = mockMvc.perform(post("/api/v1/auth/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken", not("")))
+                .andExpect(jsonPath("$.refreshToken").value(refreshToken))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String newAccessToken = refreshResponse.replaceAll(".*\\\"accessToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + newAccessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("refreshuser@example.com"));
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/auth/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void registerDuplicateUserReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "dupuser",
+                                  "email": "dupuser@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "dupuser",
+                                  "email": "dupuser2@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El nombre de usuario ya esta en uso."));
     }
 
     @Test

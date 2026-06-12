@@ -3,6 +3,8 @@ package com.hean.consigueventas.oonabe.auth.controller;
 import com.hean.consigueventas.oonabe.auth.dto.JwtResponse;
 import com.hean.consigueventas.oonabe.auth.dto.LoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.RegisterRequest;
+import com.hean.consigueventas.oonabe.auth.dto.TokenRefreshRequest;
+import com.hean.consigueventas.oonabe.auth.dto.TokenRefreshResponse;
 import com.hean.consigueventas.oonabe.auth.service.AuthService;
 import com.hean.consigueventas.oonabe.user.dto.UserDTO;
 import jakarta.validation.Valid;
@@ -32,5 +34,16 @@ public class AuthController {
     @PostMapping("/login")
     public JwtResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh-token")
+    public TokenRefreshResponse refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        return authService.refreshToken(request);
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody TokenRefreshRequest request) {
+        authService.logout(request);
     }
 }
