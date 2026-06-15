@@ -42,4 +42,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDetails> handleBadCredentials(BadCredentialsException ex, WebRequest request) {
         return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), "Credenciales invalidas.", request.getDescription(false)), HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorDetails> handleUserAlreadyExists(UserAlreadyExistsException ex, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), ex.getMessage(), request.getDescription(false)), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ErrorDetails> handleTokenRefresh(TokenRefreshException ex, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), ex.getMessage(), request.getDescription(false)), HttpStatus.FORBIDDEN);
+    }
 }
