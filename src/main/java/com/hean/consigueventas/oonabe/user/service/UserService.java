@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.user.service;
 
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
+import com.hean.consigueventas.oonabe.common.exception.UserAlreadyExistsException;
 import com.hean.consigueventas.oonabe.user.dto.UserDTO;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -33,10 +34,10 @@ public class UserService {
     @Transactional
     public User registerUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new BusinessLogicException("El nombre de usuario ya esta en uso.");
+            throw new UserAlreadyExistsException("El nombre de usuario ya esta en uso.");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new BusinessLogicException("El email ya esta en uso.");
+            throw new UserAlreadyExistsException("El email ya esta en uso.");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
