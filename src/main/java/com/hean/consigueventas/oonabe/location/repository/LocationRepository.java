@@ -10,5 +10,7 @@ public interface LocationRepository extends JpaRepository<Location, Long>
 {
     List<Location> findAllByOrderByNameAsc();
 
+    List<Location> findByIsActiveTrueOrderByNameAsc();
+
     Optional<Location> findByName(String name);
 }

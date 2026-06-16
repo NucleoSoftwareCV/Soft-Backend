@@ -4,19 +4,36 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.location.entity.Location;
 import com.hean.consigueventas.oonabe.location.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.user.entity.Role;
+import com.hean.consigueventas.oonabe.user.entity.User;
+import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Configuration
+@Profile({"dev", "test"})
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner seedBaseData(UserService userService, CategoryRepository categoryRepository, LocationRepository locationRepository) {
+    CommandLineRunner seedBaseData(
+            UserService userService,
+            CategoryRepository categoryRepository,
+            UserRepository userRepository,
+            LocationRepository locationRepository) {
         return args -> {
-            userService.getOrCreateRole("ROLE_USER", "Usuario final");
-            userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
+            Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
+            Role roleAdmin = userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
+
+            seedUser(userRepository, "user1", "user1@oona.es", "$2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2", Set.of(roleUser));
+            seedUser(userRepository, "user2", "user2@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleUser));
+            seedUser(userRepository, "admin_main1", "admin1@oona.es", "$2a$10$Mdap8zU9ZNG6oqsRUm6U7eh6Kr6oGpG.ZSRS.E8YI3bPJJC419mG2", Set.of(roleAdmin));
+            seedUser(userRepository, "admin_main2", "admin2@oona.es", "$2a$10$Y3wc8XrAr4xxFCkll4Ao9er1XWddL39zVRwLBjUPhrcMUmB6SF9DC", Set.of(roleAdmin));
 
             seedCategory(categoryRepository, "Yoga", "Practicas de yoga y bienestar corporal.");
             seedCategory(categoryRepository, "Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
@@ -30,11 +47,22 @@ public class DataInitializer {
             seedCategory(categoryRepository, "Psicologia", "Acompanamiento psicologico y bienestar emocional.");
             seedCategory(categoryRepository, "Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
 
-            seedLocation(locationRepository, "Centro Holístico Miraflores", "Av. Larco 123", "LINK", false, "https://meet.google.com/");
-            seedLocation(locationRepository,"Casa Bienestar San Isidro","Av. Javier Prado 456","LINK",false,"https://meet.google.com/");
-            seedLocation(locationRepository,"Cada de vista","hola","Acceso",true,"https://meet.google.com/");
-
+            seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", false);
+            seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", false);
+            seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
         };
+    }
+
+    private void seedUser(UserRepository userRepository, String username, String email, String encodedPassword, Set<Role> roles) {
+        if (!userRepository.existsByUsername(username)) {
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(encodedPassword);
+            user.setRoles(new HashSet<>(roles));
+            user.setActive(true);
+            userRepository.save(user);
+        }
     }
 
     private void seedCategory(CategoryRepository categoryRepository, String name, String description) {
@@ -52,8 +80,7 @@ public class DataInitializer {
             String name,
             String address,
             String reference,
-            boolean isActive,
-            String locationLink) {
+            boolean isActive) {
 
         locationRepository.findByName(name).orElseGet(() -> {
             Location location = new Location();
@@ -61,11 +88,7 @@ public class DataInitializer {
             location.setAddress(address);
             location.setReference(reference);
             location.setIsActive(isActive);
-            location.setLocationLink(locationLink);
-
             return locationRepository.save(location);
         });
     }
-
-
 }
