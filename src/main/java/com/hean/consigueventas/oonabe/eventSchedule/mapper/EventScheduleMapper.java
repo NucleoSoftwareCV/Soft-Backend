@@ -1,14 +1,15 @@
 package com.hean.consigueventas.oonabe.eventSchedule.mapper;
 
-import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleDTO;
+import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleAdminDTO;
+import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleUsuarioDTO;
 import com.hean.consigueventas.oonabe.eventSchedule.entity.EventSchedule;
 import org.springframework.stereotype.Component;
 
 @Component
 public class EventScheduleMapper {
 
-    public EventScheduleDTO toDto(EventSchedule eventSchedule) {
-        return new EventScheduleDTO(
+    public EventScheduleAdminDTO toAdminDto(EventSchedule eventSchedule) {
+        return new EventScheduleAdminDTO(
                 eventSchedule.getId(),
                 eventSchedule.getDate(),
                 eventSchedule.getStartTime(),
@@ -19,25 +20,36 @@ public class EventScheduleMapper {
         );
     }
 
-    public EventSchedule toEntity(EventScheduleDTO eventScheduleDTO) {
+    public EventScheduleUsuarioDTO toUsuarioDto(EventSchedule eventSchedule) {
+        return new EventScheduleUsuarioDTO(
+                eventSchedule.getDate(),
+                eventSchedule.getStartTime(),
+                eventSchedule.getEndTime(),
+                eventSchedule.isBooked(),
+                eventSchedule.getMaxCapacity(),
+                eventSchedule.getAvailableSpots()
+        );
+    }
+
+    public EventSchedule toEntity(EventScheduleAdminDTO eventScheduleAdminDTO) {
         EventSchedule eventSchedule = new EventSchedule();
 
-        eventSchedule.setDate(eventScheduleDTO.date());
-        eventSchedule.setStartTime(eventScheduleDTO.startTime());
-        eventSchedule.setEndTime(eventScheduleDTO.endTime());
-        eventSchedule.setBooked(eventScheduleDTO.booked());
-        eventSchedule.setMaxCapacity(eventScheduleDTO.maxCapacity());
-        eventSchedule.setAvailableSpots(eventScheduleDTO.availableSpots());
+        eventSchedule.setDate(eventScheduleAdminDTO.date());
+        eventSchedule.setStartTime(eventScheduleAdminDTO.startTime());
+        eventSchedule.setEndTime(eventScheduleAdminDTO.endTime());
+        eventSchedule.setBooked(eventScheduleAdminDTO.booked());
+        eventSchedule.setMaxCapacity(eventScheduleAdminDTO.maxCapacity());
+        eventSchedule.setAvailableSpots(eventScheduleAdminDTO.availableSpots());
 
         return eventSchedule;
     }
 
-    public void updateEntityFromDto(EventScheduleDTO eventScheduleDTO, EventSchedule eventSchedule) {
-        eventSchedule.setDate(eventScheduleDTO.date());
-        eventSchedule.setStartTime(eventScheduleDTO.startTime());
-        eventSchedule.setEndTime(eventScheduleDTO.endTime());
-        eventSchedule.setBooked(eventScheduleDTO.booked());
-        eventSchedule.setMaxCapacity(eventScheduleDTO.maxCapacity());
-        eventSchedule.setAvailableSpots(eventScheduleDTO.availableSpots());
+    public void updateEntityFromDto(EventScheduleAdminDTO eventScheduleAdminDTO, EventSchedule eventSchedule) {
+        eventSchedule.setDate(eventScheduleAdminDTO.date());
+        eventSchedule.setStartTime(eventScheduleAdminDTO.startTime());
+        eventSchedule.setEndTime(eventScheduleAdminDTO.endTime());
+        eventSchedule.setBooked(eventScheduleAdminDTO.booked());
+        eventSchedule.setMaxCapacity(eventScheduleAdminDTO.maxCapacity());
+        eventSchedule.setAvailableSpots(eventScheduleAdminDTO.availableSpots());
     }
 }

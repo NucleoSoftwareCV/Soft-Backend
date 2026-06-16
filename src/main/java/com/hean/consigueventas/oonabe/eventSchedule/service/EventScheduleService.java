@@ -1,6 +1,8 @@
+
 package com.hean.consigueventas.oonabe.eventSchedule.service;
 
-import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleDTO;
+import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleAdminDTO;
+import com.hean.consigueventas.oonabe.eventSchedule.dto.EventScheduleUsuarioDTO;
 import com.hean.consigueventas.oonabe.eventSchedule.mapper.EventScheduleMapper;
 import com.hean.consigueventas.oonabe.eventSchedule.repository.EventScheduleRepository;
 import org.springframework.stereotype.Service;
@@ -29,35 +31,56 @@ public class EventScheduleService {
         this.eventScheduleMapper = eventScheduleMapper;
     }
 
-    public List<EventScheduleDTO> getAllSchedules() {
+    public List<EventScheduleAdminDTO> getAllSchedules() {
         return eventScheduleRepository.findAll()
                 .stream()
-                .map(eventScheduleMapper::toDto)
+                .map(eventScheduleMapper::toAdminDto)
                 .toList();
     }
 
-    public EventScheduleDTO getScheduleById(Long id) {
+    public List<EventScheduleUsuarioDTO> getPublicSchedules() {
+        return eventScheduleRepository.findAll()
+                .stream()
+                .map(eventScheduleMapper::toUsuarioDto)
+                .toList();
+    }
+
+    public List<EventScheduleUsuarioDTO> getPublicSchedulesByDate(LocalDate date) {
+        return eventScheduleRepository.findByDateOrderByStartTimeAsc(date)
+                .stream()
+                .map(eventScheduleMapper::toUsuarioDto)
+                .toList();
+    }
+
+    public List<EventScheduleUsuarioDTO> getPublicSchedulesByDateRange(LocalDate startDate, LocalDate endDate) {
+        return eventScheduleRepository.findByDateBetweenOrderByDateAscStartTimeAsc(startDate, endDate)
+                .stream()
+                .map(eventScheduleMapper::toUsuarioDto)
+                .toList();
+    }
+
+    public EventScheduleAdminDTO getScheduleById(Long id) {
         return eventScheduleRepository.findById(id)
-                .map(eventScheduleMapper::toDto)
+                .map(eventScheduleMapper::toAdminDto)
                 .orElseThrow(() -> new RuntimeException("Horario de evento no encontrado con ID: " + id));
     }
 
-    public EventScheduleDTO createSchedule(EventScheduleDTO eventScheduleDTO) {
-        var eventSchedule = eventScheduleMapper.toEntity(eventScheduleDTO);
+    public EventScheduleAdminDTO createSchedule(EventScheduleAdminDTO eventScheduleAdminDTO) {
+        var eventSchedule = eventScheduleMapper.toEntity(eventScheduleAdminDTO);
         var savedEventSchedule = eventScheduleRepository.save(eventSchedule);
 
-        return eventScheduleMapper.toDto(savedEventSchedule);
+        return eventScheduleMapper.toAdminDto(savedEventSchedule);
     }
 
-    public EventScheduleDTO updateSchedule(Long id, EventScheduleDTO eventScheduleDTO) {
+    public EventScheduleAdminDTO updateSchedule(Long id, EventScheduleAdminDTO eventScheduleAdminDTO) {
         var existingEventSchedule = eventScheduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Horario de evento no encontrado con ID: " + id));
 
-        eventScheduleMapper.updateEntityFromDto(eventScheduleDTO, existingEventSchedule);
+        eventScheduleMapper.updateEntityFromDto(eventScheduleAdminDTO, existingEventSchedule);
 
         var updatedEventSchedule = eventScheduleRepository.save(existingEventSchedule);
 
-        return eventScheduleMapper.toDto(updatedEventSchedule);
+        return eventScheduleMapper.toAdminDto(updatedEventSchedule);
     }
 
     public void deleteSchedule(Long id) {
@@ -67,7 +90,7 @@ public class EventScheduleService {
         eventScheduleRepository.delete(existingEventSchedule);
     }
 
-    public List<EventScheduleDTO> filterSchedules(
+    public List<EventScheduleAdminDTO> filterSchedules(
             String dateFilter,
             String timeFilter,
             LocalDate selectedDate
@@ -139,7 +162,7 @@ public class EventScheduleService {
             return eventScheduleRepository
                     .findByDateBetweenOrderByDateAscStartTimeAsc(startDate, endDate)
                     .stream()
-                    .map(eventScheduleMapper::toDto)
+                    .map(eventScheduleMapper::toAdminDto)
                     .toList();
         }
 
@@ -180,7 +203,7 @@ public class EventScheduleService {
                         endTime
                 )
                 .stream()
-                .map(eventScheduleMapper::toDto)
+                .map(eventScheduleMapper::toAdminDto)
                 .toList();
     }
 

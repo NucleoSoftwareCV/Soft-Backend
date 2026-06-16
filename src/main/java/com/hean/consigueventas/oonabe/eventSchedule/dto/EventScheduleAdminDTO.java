@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 
-public record EventScheduleDTO
+public record EventScheduleAdminDTO
         (Long id,
          LocalDate date,
          LocalTime startTime,
