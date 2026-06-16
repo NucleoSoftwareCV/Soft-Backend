@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Configuration
-@Profile({"dev", "test"})
+@Profile({"default", "dev", "local", "test"})
 public class DataInitializer {
 
     @Bean

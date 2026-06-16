@@ -49,7 +49,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/event-occurrences/public", "/api/v1/event-occurrences/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/category/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ubicaciones/**").permitAll()
