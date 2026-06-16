@@ -4,6 +4,9 @@ import com.hean.consigueventas.oonabe.category.dto.CategoryCreateDTO;
 import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
+import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.entity.City;
+import com.hean.consigueventas.oonabe.catalog.mapper.CityMapper;
 import com.hean.consigueventas.oonabe.common.enums.UserStatus;
 import com.hean.consigueventas.oonabe.location.dto.LocationDTO;
 import com.hean.consigueventas.oonabe.location.entity.Location;
@@ -24,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MapStructMapperContractTest {
 
     private final CategoryMapper categoryMapper = Mappers.getMapper(CategoryMapper.class);
+    private final CityMapper cityMapper = Mappers.getMapper(CityMapper.class);
     private final LocationMapper locationMapper = Mappers.getMapper(LocationMapper.class);
     private final UserMapper userMapper = Mappers.getMapper(UserMapper.class);
 
@@ -55,6 +59,20 @@ class MapStructMapperContractTest {
         LocationDTO dto = locationMapper.toDto(location);
 
         assertThat(dto).isEqualTo(new LocationDTO(9L, "Sede Centro", "Av. Principal 123", "Segundo piso", true));
+    }
+
+    @Test
+    void mapsCityEntity() {
+        City city = new City();
+        city.setId(4L);
+        city.setName("Lima");
+        city.setProvince("Lima");
+        city.setCountryCode("PE");
+        city.setIsActive(true);
+
+        CityDTO dto = cityMapper.toDto(city);
+
+        assertThat(dto).isEqualTo(new CityDTO(4L, "Lima", "Lima", "PE", true));
     }
 
     @Test

@@ -28,6 +28,6 @@ public class City {
     @Column(name = "pais_codigo", nullable = false, length = 2)
     private String countryCode = "ES";
 
-    @Column(name = "is_active")
+    @Column(name = "activo", nullable = false)
     private Boolean isActive = true;
 }
