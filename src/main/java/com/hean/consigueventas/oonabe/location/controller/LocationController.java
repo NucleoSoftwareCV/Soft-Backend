@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/ubicaciones")
+@RequestMapping("/api/v1/location")
 @Tag(name = "Ubicaciones", description = "Ubicaciones fisicas activas para eventos y sesiones.")
 public class LocationController {
     private final LocationService locationService;

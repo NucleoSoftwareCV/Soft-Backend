@@ -1,0 +1,33 @@
+package com.hean.consigueventas.oonabe.city.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "ciudades")
+@Getter
+@Setter
+public class City {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "El nombre de la ciudad es obligatorio")
+    @Column(nullable = false, unique = true)
+    private String name;
+
+    @NotBlank(message = "El nombre de la provincia es obligatorio")
+    @Column(nullable = false)
+    private String province;
+
+    @Size(max = 2, message = "El código de país debe tener máximo 2 caracteres")
+    @Column(nullable = false)
+    private Integer countryCode;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+}
