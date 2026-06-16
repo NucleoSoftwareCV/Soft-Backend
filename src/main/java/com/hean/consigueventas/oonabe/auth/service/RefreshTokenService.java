@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,7 +31,11 @@ public class RefreshTokenService {
     }
 
     public Optional<RefreshToken> findByToken(String token) {
-        return refreshTokenRepository.findByToken(token);
+        return refreshTokenRepository.findByTokenHash(hashToken(token))
+                .map(refreshToken -> {
+                    refreshToken.setToken(token);
+                    return refreshToken;
+                });
     }
 
     @Transactional
@@ -38,19 +46,23 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteByUser(user);
         refreshTokenRepository.flush();
 
+        String rawToken = UUID.randomUUID().toString();
+
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
-        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setTokenHash(hashToken(rawToken));
 
-        return refreshTokenRepository.save(refreshToken);
+        RefreshToken saved = refreshTokenRepository.save(refreshToken);
+        saved.setToken(rawToken);
+        return saved;
     }
 
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new TokenRefreshException(token.getToken(), "Refresh token has expired. Please make a new signin request");
+            throw new TokenRefreshException("Refresh token has expired. Please make a new signin request");
         }
         return token;
     }
@@ -64,6 +76,15 @@ public class RefreshTokenService {
 
     @Transactional
     public void deleteByToken(String token) {
-        refreshTokenRepository.deleteByToken(token);
+        refreshTokenRepository.deleteByTokenHash(hashToken(token));
+    }
+
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 }

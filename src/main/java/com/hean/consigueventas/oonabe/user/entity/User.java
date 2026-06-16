@@ -1,6 +1,10 @@
 package com.hean.consigueventas.oonabe.user.entity;
 
+import com.hean.consigueventas.oonabe.common.enums.UserStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Email;
@@ -38,24 +43,35 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(max = 20)
+    @Column(name = "username", length = 20, unique = true)
     private String username;
 
-    @NotBlank(message = "La contrasena es obligatoria")
-    @Size(max = 120)
+    @Size(max = 255)
+    @Column(name = "password_hash", length = 255)
     private String password;
 
     @NotBlank(message = "El email es obligatorio")
-    @Size(max = 50)
+    @Size(max = 150)
     @Email(message = "El formato del email no es valido")
+    @Column(name = "email", nullable = false, length = 150, unique = true)
     private String email;
 
-    private boolean active = true;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 20)
+    private UserStatus status = UserStatus.ACTIVO;
 
+    @Column(name = "ultimo_acceso_at")
+    private LocalDateTime lastLoginAt;
+
+    @Column(name = "deleted_at")
     private LocalDateTime disabledAt;
 
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -67,8 +83,38 @@ public class User {
 
     @PrePersist
     void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = now;
         }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return status == UserStatus.ACTIVO && disabledAt == null;
+    }
+
+    public void setActive(boolean active) {
+        this.status = active ? UserStatus.ACTIVO : UserStatus.DESACTIVADO;
+        if (active) {
+            this.disabledAt = null;
+        } else if (this.disabledAt == null) {
+            this.disabledAt = LocalDateTime.now();
+        }
+    }
+
+    public String getPasswordHash() {
+        return password;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.password = passwordHash;
     }
 }

@@ -10,15 +10,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "refresh_tokens")
 @Getter
-@Setter
 public class RefreshToken {
 
     @Id
@@ -30,8 +29,39 @@ public class RefreshToken {
     private User user;
 
     @Column(nullable = false, unique = true)
+    private String tokenHash;
+
+    @Transient
     private String token;
 
     @Column(nullable = false)
     private Instant expiryDate;
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getToken() {
+        return token != null ? token : tokenHash;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
+    }
+
+    public void setExpiryDate(Instant expiryDate) {
+        this.expiryDate = expiryDate;
+    }
 }

@@ -190,8 +190,56 @@ class AuthFlowIntegrationTest {
                                   "name": "Nueva",
                                   "description": "No debe actualizarse desde esta entrega"
                                 }
-                                """))
+                        """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void authenticatedUserCannotManageCategories() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "categoryuser",
+                                  "email": "categoryuser@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "categoryuser@example.com",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = loginResponse.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Solo Admin",
+                                  "description": "No debe crearse con rol USER"
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void publicLocationsOnlyReturnActiveEntries() throws Exception {
+        mockMvc.perform(get("/api/v1/ubicaciones"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Cada de vista"));
     }
 
     @Test

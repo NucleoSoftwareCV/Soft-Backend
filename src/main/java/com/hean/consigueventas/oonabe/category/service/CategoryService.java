@@ -5,6 +5,8 @@ import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
+import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
+import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,7 @@ public class CategoryService {
     public CategoryDTO create(CategoryCreateDTO dto) {
 
         if(categoryRepository.existsByNameIgnoreCase(dto.name())) {
-            throw new RuntimeException("Category already exists");
+            throw new BusinessLogicException("La categoria ya existe.");
         }
 
         Category category = categoryMapper.toEntity(dto);
@@ -43,10 +45,10 @@ public class CategoryService {
     public CategoryDTO update(Long id, CategoryCreateDTO dto) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Category not found"));
+                        new ResourceNotFoundException("Categoria no encontrada con ID: " + id));
 
         if(categoryRepository.existsByNameIgnoreCaseAndIdNot(dto.name(), id)) {
-            throw new RuntimeException("Category already exists");
+            throw new BusinessLogicException("La categoria ya existe.");
         }
 
         category.setName(dto.name());
@@ -60,7 +62,7 @@ public class CategoryService {
     @Transactional
     public CategoryDTO toggleStatus(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada con ID: " + id));
         category.setActive(!category.isActive());
 
         Category updated = categoryRepository.save(category);

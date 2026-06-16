@@ -20,7 +20,7 @@ public class LocationService {
 
     @Transactional(readOnly = true)
     public List<LocationDTO> findActive() {
-        return locationRepository.findAllByOrderByNameAsc().stream().map(locationMapper::toDto).toList();
+        return locationRepository.findByIsActiveTrueOrderByNameAsc().stream().map(locationMapper::toDto).toList();
     }
 
 
