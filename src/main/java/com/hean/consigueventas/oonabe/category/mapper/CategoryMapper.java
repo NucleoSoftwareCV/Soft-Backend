@@ -3,21 +3,17 @@ package com.hean.consigueventas.oonabe.category.mapper;
 import com.hean.consigueventas.oonabe.category.dto.CategoryCreateDTO;
 import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
 import com.hean.consigueventas.oonabe.category.entity.Category;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class CategoryMapper {
-    public CategoryDTO toDto(Category category) {
-        return new CategoryDTO(category.getId(), category.getName(), category.getDescription(), category.isActive());
-    }
+@Mapper(componentModel = "spring")
+public interface CategoryMapper {
 
-    public Category toEntity(CategoryCreateDTO dto) {
-        Category category = new Category();
+    CategoryDTO toDto(Category category);
 
-        category.setName(dto.name());
-        category.setDescription(dto.description());
-
-        return category;
-    }
-
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    Category toEntity(CategoryCreateDTO dto);
 }
