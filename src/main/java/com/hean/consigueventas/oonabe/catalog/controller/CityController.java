@@ -1,8 +1,7 @@
-package com.hean.consigueventas.oonabe.city.controller;
+package com.hean.consigueventas.oonabe.catalog.controller;
 
-import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
-import com.hean.consigueventas.oonabe.city.dto.CityDTO;
-import com.hean.consigueventas.oonabe.city.service.CityService;
+import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.service.CityService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

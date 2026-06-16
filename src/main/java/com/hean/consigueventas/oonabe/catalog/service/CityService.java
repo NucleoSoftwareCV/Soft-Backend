@@ -1,9 +1,8 @@
-package com.hean.consigueventas.oonabe.city.service;
+package com.hean.consigueventas.oonabe.catalog.service;
 
-import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
-import com.hean.consigueventas.oonabe.city.dto.CityDTO;
-import com.hean.consigueventas.oonabe.city.mapper.CityMapper;
-import com.hean.consigueventas.oonabe.city.repository.CityRepository;
+import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.mapper.CityMapper;
+import com.hean.consigueventas.oonabe.catalog.repository.CityRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

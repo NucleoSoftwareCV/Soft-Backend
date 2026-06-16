@@ -1,7 +1,7 @@
-package com.hean.consigueventas.oonabe.city.mapper;
+package com.hean.consigueventas.oonabe.catalog.mapper;
 
-import com.hean.consigueventas.oonabe.city.dto.CityDTO;
-import com.hean.consigueventas.oonabe.city.entity.City;
+import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.entity.City;
 import org.springframework.stereotype.Component;
 
 @Component

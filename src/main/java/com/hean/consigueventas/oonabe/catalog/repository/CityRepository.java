@@ -1,6 +1,6 @@
-package com.hean.consigueventas.oonabe.city.repository;
+package com.hean.consigueventas.oonabe.catalog.repository;
 
-import com.hean.consigueventas.oonabe.city.entity.City;
+import com.hean.consigueventas.oonabe.catalog.entity.City;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
