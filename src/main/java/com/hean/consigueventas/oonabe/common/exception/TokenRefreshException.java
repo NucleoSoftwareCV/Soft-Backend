@@ -2,6 +2,10 @@ package com.hean.consigueventas.oonabe.common.exception;
 
 public class TokenRefreshException extends RuntimeException {
     public TokenRefreshException(String token, String message) {
-        super(String.format("Failed for [%s]: %s", token, message));
+        this(message);
+    }
+
+    public TokenRefreshException(String message) {
+        super(message);
     }
 }

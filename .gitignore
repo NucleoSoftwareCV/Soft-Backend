@@ -35,3 +35,24 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Codex / agent local artifacts
+.cache/
+outputs/
+.agents/skills/
+
+# Local generated documents
+*.xlsx
+*.xls
+*.inspect.ndjson
+
+# Local DB backups
+outputs/**/*.sql
+*.dump
+*.backup
+
+# Keep Flyway migrations versioned
+!src/main/resources/db/
+!src/main/resources/db/**
+!src/main/resources/db/migration/
+!src/main/resources/db/migration/*.sql

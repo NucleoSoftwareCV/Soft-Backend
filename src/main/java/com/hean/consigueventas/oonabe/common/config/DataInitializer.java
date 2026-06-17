@@ -11,24 +11,24 @@ import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Configuration
+@Profile({"default", "dev", "local", "test"})
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner seedBaseData(UserService userService, CategoryRepository categoryRepository, UserRepository userRepository, LocationRepository locationRepository) {
+    CommandLineRunner seedBaseData(
+            UserService userService,
+            CategoryRepository categoryRepository,
+            UserRepository userRepository,
+            LocationRepository locationRepository) {
         return args -> {
             Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
             Role roleAdmin = userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
-
-            // Passwords encriptadas generadas (raw -> encriptada):
-            // User1?  -> $2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2
-            // User2!  -> $2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G
-            // Admin1@ -> $2a$10$Mdap8zU9ZNG6oqsRUm6U7eh6Kr6oGpG.ZSRS.E8YI3bPJJC419mG2
-            // Admin2# -> $2a$10$Y3wc8XrAr4xxFCkll4Ao9er1XWddL39zVRwLBjUPhrcMUmB6SF9DC
 
             seedUser(userRepository, "user1", "user1@oona.es", "$2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2", Set.of(roleUser));
             seedUser(userRepository, "user2", "user2@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleUser));
@@ -47,10 +47,9 @@ public class DataInitializer {
             seedCategory(categoryRepository, "Psicologia", "Acompanamiento psicologico y bienestar emocional.");
             seedCategory(categoryRepository, "Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
 
-            seedLocation(locationRepository, "Centro Holístico Miraflores", "Av. Larco 123", "LINK", false, "https://meet.google.com/");
-            seedLocation(locationRepository,"Casa Bienestar San Isidro","Av. Javier Prado 456","LINK",false,"https://meet.google.com/");
-            seedLocation(locationRepository,"Cada de vista","hola","Acceso",true,"https://meet.google.com/");
-
+            seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", false);
+            seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", false);
+            seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
         };
     }
 
@@ -81,8 +80,7 @@ public class DataInitializer {
             String name,
             String address,
             String reference,
-            boolean isActive,
-            String locationLink) {
+            boolean isActive) {
 
         locationRepository.findByName(name).orElseGet(() -> {
             Location location = new Location();
@@ -90,11 +88,7 @@ public class DataInitializer {
             location.setAddress(address);
             location.setReference(reference);
             location.setIsActive(isActive);
-            location.setLocationLink(locationLink);
-
             return locationRepository.save(location);
         });
     }
-
-
 }
