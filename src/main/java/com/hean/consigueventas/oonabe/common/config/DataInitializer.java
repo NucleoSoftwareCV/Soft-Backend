@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.common.config;
 
+import com.hean.consigueventas.oonabe.catalog.entity.City;
+import com.hean.consigueventas.oonabe.catalog.repository.CityRepository;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.location.entity.Location;
@@ -25,7 +27,9 @@ public class DataInitializer {
             UserService userService,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
-            LocationRepository locationRepository) {
+            LocationRepository locationRepository,
+            CityRepository cityRepository
+            ) {
         return args -> {
             Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
             Role roleAdmin = userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
@@ -50,6 +54,17 @@ public class DataInitializer {
             seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", false);
             seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", false);
             seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
+
+            seedCity(cityRepository, "Madrid", "Madrid", "ES", true);
+            seedCity(cityRepository, "Barcelona", "Barcelona", "ES", true);
+            seedCity(cityRepository, "Valencia", "Valencia", "ES", true);
+            seedCity(cityRepository, "Sevilla", "Sevilla", "ES", true);
+            seedCity(cityRepository, "Málaga", "Málaga", "ES", true);
+            seedCity(cityRepository, "Bilbao", "Vizcaya", "ES", true);
+            seedCity(cityRepository, "Zaragoza", "Zaragoza", "ES", true);
+            seedCity(cityRepository, "Palma", "Islas Baleares", "ES", true);
+            seedCity(cityRepository, "Alicante", "Alicante", "ES", true);
+            seedCity(cityRepository, "Granada", "Granada", "ES", true);
         };
     }
 
@@ -91,4 +106,23 @@ public class DataInitializer {
             return locationRepository.save(location);
         });
     }
+
+    private void seedCity(
+            CityRepository cityRepository,
+            String name,
+            String province,
+            String countryCode,
+            boolean active) {
+
+        cityRepository.findByNameAndProvince(name, province).orElseGet(() -> {
+            City city = new City();
+            city.setName(name);
+            city.setProvince(province);
+            city.setCountryCode(countryCode);
+            city.setIsActive(active);
+            return cityRepository.save(city);
+        });
+    }
+
+
 }
