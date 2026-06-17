@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.auth.controller;
 
+import com.hean.consigueventas.oonabe.auth.dto.GoogleLoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.JwtResponse;
 import com.hean.consigueventas.oonabe.auth.dto.LoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.RegisterRequest;
@@ -56,6 +57,11 @@ public class AuthController {
     })
     public JwtResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/google")
+    public JwtResponse loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        return authService.loginWithGoogle(request);
     }
 
     @PostMapping("/refresh-token")
