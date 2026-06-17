@@ -36,7 +36,11 @@ public class OpenApiConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("public")
-                .pathsToMatch("/api/v1/auth/**", "/api/v1/categories/**", "/api/v1/ubicaciones/**")
+                .pathsToMatch("/api/v1/auth/**",
+                        "/api/v1/categories/**",
+                        "/api/v1/locations/**",
+                        "/api/v1/citys/**"
+                        )
                 .build();
     }
 
@@ -45,7 +49,7 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("protected")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/v1/auth/**", "/api/v1/categories/**", "/api/v1/ubicaciones/**")
+                .pathsToExclude("/api/v1/auth/**", "/api/v1/categories/**", "/api/v1/locations/**")
                 .build();
     }
 }
