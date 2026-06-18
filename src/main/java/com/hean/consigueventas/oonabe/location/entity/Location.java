@@ -7,34 +7,35 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "ubicaciones")
+@Table(name = "locations")
 @Getter
 @Setter
 public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "nombre", nullable = false, length = 150)
+    @Column(name = "name", nullable = false, length = 150)
     private String name;
 
-    @Column(name = "direccion", nullable = false)
+    @Column(name = "address", nullable = false)
     private String address;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ciudad_id")
+    @JoinColumn(name = "city_id")
     private City city;
 
-    @Column(name = "latitud", precision = 9, scale = 6)
+    @Column(name = "latitude", precision = 9, scale = 6)
     private java.math.BigDecimal latitude;
 
-    @Column(name = "longitud", precision = 9, scale = 6)
+    @Column(name = "longitude", precision = 9, scale = 6)
     private java.math.BigDecimal longitude;
 
-    @Column(name = "indicaciones", columnDefinition = "TEXT")
+    @Column(name = "reference", columnDefinition = "TEXT")
     private String reference;
 
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private Boolean isActive =  false;
 
 }

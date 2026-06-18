@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.event.mapper;
 
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrenceAdminDTO;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrencePublicDTO;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrencePublicResponse;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,14 +15,14 @@ public interface EventOccurrenceMapper {
     @Mapping(target = "locationName", source = "location.name")
     @Mapping(target = "availableSpots", expression = "java(availableSpots(occurrence))")
     @Mapping(target = "soldOut", expression = "java(isSoldOut(occurrence))")
-    EventOccurrenceAdminDTO toAdminDto(EventOccurrence occurrence);
+    EventOccurrenceAdminResponse toAdminDto(EventOccurrence occurrence);
 
     @Mapping(target = "eventId", source = "event.id")
     @Mapping(target = "eventTitle", source = "event.title")
     @Mapping(target = "locationName", source = "location.name")
     @Mapping(target = "availableSpots", expression = "java(availableSpots(occurrence))")
     @Mapping(target = "soldOut", expression = "java(isSoldOut(occurrence))")
-    EventOccurrencePublicDTO toPublicDto(EventOccurrence occurrence);
+    EventOccurrencePublicResponse toPublicDto(EventOccurrence occurrence);
 
     default Integer availableSpots(EventOccurrence occurrence) {
         return occurrence.getCapacity() - occurrence.getReservedSpots();

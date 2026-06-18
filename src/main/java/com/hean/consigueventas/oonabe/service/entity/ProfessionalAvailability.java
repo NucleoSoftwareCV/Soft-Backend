@@ -18,38 +18,39 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "disponibilidad_profesional")
+@Table(name = "professional_availability")
 @Getter
 @Setter
 public class ProfessionalAvailability {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profesional_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialist;
 
-    @Column(name = "dia_semana", nullable = false)
+    @Column(name = "day_of_week", nullable = false)
     private Short dayOfWeek;
 
-    @Column(name = "hora_inicio", nullable = false)
+    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-    @Column(name = "hora_fin", nullable = false)
+    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "location_id")
     private Location location;
 
-    @Column(name = "vigente_desde", nullable = false)
+    @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;
 
-    @Column(name = "vigente_hasta")
+    @Column(name = "valid_until")
     private LocalDate validUntil;
 
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 }

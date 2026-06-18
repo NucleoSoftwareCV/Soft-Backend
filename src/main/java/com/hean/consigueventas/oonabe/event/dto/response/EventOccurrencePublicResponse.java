@@ -1,10 +1,9 @@
-package com.hean.consigueventas.oonabe.event.dto;
-
+package com.hean.consigueventas.oonabe.event.dto.response;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 
 import java.time.Instant;
 
-public record EventOccurrencePublicDTO(
+public record EventOccurrencePublicResponse(
         Long id,
         Long eventId,
         String eventTitle,

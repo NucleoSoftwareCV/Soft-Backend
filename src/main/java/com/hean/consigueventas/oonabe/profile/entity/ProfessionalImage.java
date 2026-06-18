@@ -16,35 +16,36 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "imagenes_profesional")
+@Table(name = "professional_images")
 @Getter
 @Setter
 public class ProfessionalImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profesional_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialist;
 
     @Column(name = "url", nullable = false, columnDefinition = "TEXT")
     private String url;
 
-    @Column(name = "texto_alternativo", length = 180)
+    @Column(name = "alternative_text", length = 180)
     private String alternativeText;
 
-    @Column(name = "es_portada", nullable = false)
+    @Column(name = "cover", nullable = false)
     private boolean cover;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "formato", length = 10)
+    @Column(name = "format", length = 10)
     private ImageFormat format;
 
-    @Column(name = "peso_bytes")
+    @Column(name = "size_bytes")
     private Integer sizeBytes;
 
-    @Column(name = "orden", nullable = false)
+    @Column(name = "sort_order", nullable = false)
     private Short sortOrder = 0;
 }

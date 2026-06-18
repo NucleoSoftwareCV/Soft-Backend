@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.auth;
 
 import com.hean.consigueventas.oonabe.auth.repository.RefreshTokenRepository;
-import com.hean.consigueventas.oonabe.auth.service.RefreshTokenService;
+import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RefreshTokenServiceTest {
 
     @Autowired
-    private RefreshTokenService refreshTokenService;
+    private IRefreshTokenService refreshTokenService;
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;

@@ -9,7 +9,7 @@ import com.hean.consigueventas.oonabe.location.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
-import com.hean.consigueventas.oonabe.user.service.UserService;
+import com.hean.consigueventas.oonabe.user.service.IUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +24,7 @@ public class DataInitializer {
 
     @Bean
     CommandLineRunner seedBaseData(
-            UserService userService,
+            IUserService userService,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             LocationRepository locationRepository,
@@ -43,7 +43,7 @@ public class DataInitializer {
             seedCategory(categoryRepository, "Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
             seedCategory(categoryRepository, "Arte y Creatividad", "Actividades creativas para expresion y bienestar.");
             seedCategory(categoryRepository, "Movimiento", "Experiencias de movimiento consciente.");
-            seedCategory(categoryRepository, "Deporte", "Actividades fisicas orientadas al bienestar.");
+            seedCategory(categoryRepository, "Deporte", "Actividades físicas orientadas al bienestar.");
             seedCategory(categoryRepository, "Meditacion y Mindfulness", "Practicas de atencion plena y meditacion.");
             seedCategory(categoryRepository, "Sonido y Vibracion", "Experiencias de sonido, vibracion y relajacion.");
             seedCategory(categoryRepository, "Espiritualidad y Energia", "Practicas energeticas y espirituales.");
@@ -59,7 +59,7 @@ public class DataInitializer {
             seedCity(cityRepository, "Barcelona", "Barcelona", "ES", true);
             seedCity(cityRepository, "Valencia", "Valencia", "ES", true);
             seedCity(cityRepository, "Sevilla", "Sevilla", "ES", true);
-            seedCity(cityRepository, "Málaga", "Málaga", "ES", true);
+            seedCity(cityRepository, "MÃ¡laga", "MÃ¡laga", "ES", true);
             seedCity(cityRepository, "Bilbao", "Vizcaya", "ES", true);
             seedCity(cityRepository, "Zaragoza", "Zaragoza", "ES", true);
             seedCity(cityRepository, "Palma", "Islas Baleares", "ES", true);

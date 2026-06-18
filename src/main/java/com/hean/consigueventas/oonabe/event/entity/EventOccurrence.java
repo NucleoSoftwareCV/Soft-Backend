@@ -21,42 +21,43 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "ocurrencias_evento")
+@Table(name = "event_occurrences")
 @Getter
 @Setter
 public class EventOccurrence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "evento_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @Column(name = "inicio_at", nullable = false)
+    @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
-    @Column(name = "fin_at", nullable = false)
+    @Column(name = "ends_at", nullable = false)
     private Instant endsAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "location_id")
     private Location location;
 
-    @Column(name = "capacidad", nullable = false)
+    @Column(name = "capacity", nullable = false)
     @Min(0)
     private Integer capacity;
 
-    @Column(name = "cupos_reservados", nullable = false)
+    @Column(name = "reserved_spots", nullable = false)
     @Min(0)
     private Integer reservedSpots = 0;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private EventOccurrenceStatus status = EventOccurrenceStatus.PROGRAMADA;
 
-    @Column(name = "url_virtual", columnDefinition = "TEXT")
+    @Column(name = "virtual_url", columnDefinition = "TEXT")
     private String virtualUrl;
 
     @Version

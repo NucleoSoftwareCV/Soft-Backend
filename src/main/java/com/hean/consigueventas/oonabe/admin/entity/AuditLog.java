@@ -17,32 +17,33 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "auditoria")
+@Table(name = "audit_logs")
 @Getter
 @Setter
 public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "accion", nullable = false, length = 40)
+    @Column(name = "action", nullable = false, length = 40)
     private String action;
 
-    @Column(name = "entidad", nullable = false, length = 80)
+    @Column(name = "entity_name", nullable = false, length = 80)
     private String entity;
 
-    @Column(name = "entidad_id")
+    @Column(name = "entity_id")
     private Long entityId;
 
-    @Column(name = "datos_anteriores", columnDefinition = "TEXT")
+    @Column(name = "previous_data", columnDefinition = "TEXT")
     private String previousData;
 
-    @Column(name = "datos_nuevos", columnDefinition = "TEXT")
+    @Column(name = "new_data", columnDefinition = "TEXT")
     private String newData;
 
     @Column(name = "ip", length = 45)

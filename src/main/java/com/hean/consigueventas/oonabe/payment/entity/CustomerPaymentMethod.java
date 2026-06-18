@@ -19,27 +19,28 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "metodos_pago_cliente")
+@Table(name = "customer_payment_methods")
 @Getter
 @Setter
 public class CustomerPaymentMethod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
-    @Column(name = "proveedor", nullable = false, length = 50)
+    @Column(name = "provider", nullable = false, length = 50)
     private String provider;
 
     @Convert(converter = SensitiveStringCryptoConverter.class)
-    @Column(name = "token_encriptado", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "encrypted_token", nullable = false, columnDefinition = "TEXT")
     private String token;
 
-    @Column(name = "marca", length = 40)
+    @Column(name = "brand", length = 40)
     private String brand;
 
     @Column(name = "last4", length = 4)
@@ -51,7 +52,7 @@ public class CustomerPaymentMethod {
     @Column(name = "exp_year")
     private Short expirationYear;
 
-    @Column(name = "predeterminado", nullable = false)
+    @Column(name = "default_method", nullable = false)
     private boolean defaultMethod;
 
     @Column(name = "created_at", nullable = false)

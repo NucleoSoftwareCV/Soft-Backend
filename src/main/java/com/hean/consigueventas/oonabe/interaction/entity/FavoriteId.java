@@ -16,13 +16,13 @@ import java.io.Serializable;
 @Setter
 @EqualsAndHashCode
 public class FavoriteId implements Serializable {
-    @Column(name = "cliente_id")
+    @Column(name = "customer_id")
     private Long customerId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_entidad", length = 15)
+    @Column(name = "entity_type", length = 15)
     private FavoriteEntityType entityType;
 
-    @Column(name = "entidad_id")
+    @Column(name = "entity_id")
     private Long entityId;
 }

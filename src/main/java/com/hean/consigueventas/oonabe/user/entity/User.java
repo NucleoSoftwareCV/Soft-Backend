@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "usuarios", uniqueConstraints = {
+@Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "username"),
         @UniqueConstraint(columnNames = "email")
 })
@@ -41,6 +41,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Size(max = 20)
@@ -58,10 +59,10 @@ public class User {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVO;
 
-    @Column(name = "ultimo_acceso_at")
+    @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
     @Column(name = "deleted_at")
@@ -75,9 +76,9 @@ public class User {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "usuario_roles",
-            joinColumns = @JoinColumn(name = "usuario_id"),
-            inverseJoinColumns = @JoinColumn(name = "rol_id")
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
 

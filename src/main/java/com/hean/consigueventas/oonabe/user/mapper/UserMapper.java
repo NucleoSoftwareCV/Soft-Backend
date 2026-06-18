@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.user.mapper;
 
-import com.hean.consigueventas.oonabe.user.dto.UserDTO;
+import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import org.mapstruct.Mapper;
@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    UserDTO toDto(User user);
+    UserResponse toDto(User user);
 
-    List<UserDTO> toDtoList(List<User> users);
+    List<UserResponse> toDtoList(List<User> users);
 
     default Set<String> mapRoles(Set<Role> roles) {
         return roles.stream()

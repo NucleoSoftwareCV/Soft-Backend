@@ -1,11 +1,13 @@
-package com.hean.consigueventas.oonabe.event.service;
+package com.hean.consigueventas.oonabe.event.service.impl;
+
+import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
 
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrenceAdminDTO;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrencePublicDTO;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrenceUpsertDTO;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrencePublicResponse;
+import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceUpsertRequest;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.mapper.EventOccurrenceMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
@@ -25,7 +27,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 @Service
-public class EventOccurrenceService {
+public class EventOccurrenceServiceImpl implements IEventOccurrenceService {
 
     private static final ZoneId ZONE_ID = ZoneId.of("America/Lima");
 
@@ -34,7 +36,7 @@ public class EventOccurrenceService {
     private final LocationRepository locationRepository;
     private final EventOccurrenceMapper mapper;
 
-    public EventOccurrenceService(
+    public EventOccurrenceServiceImpl(
             EventOccurrenceRepository occurrenceRepository,
             EventRepository eventRepository,
             LocationRepository locationRepository,
@@ -47,7 +49,8 @@ public class EventOccurrenceService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrenceAdminDTO> getAllOccurrences() {
+    @Override
+    public List<EventOccurrenceAdminResponse> getAllOccurrences() {
         return occurrenceRepository.findAll()
                 .stream()
                 .map(mapper::toAdminDto)
@@ -55,7 +58,8 @@ public class EventOccurrenceService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrencePublicDTO> getPublicOccurrences() {
+    @Override
+    public List<EventOccurrencePublicResponse> getPublicOccurrences() {
         return occurrenceRepository.findAll()
                 .stream()
                 .map(mapper::toPublicDto)
@@ -63,12 +67,14 @@ public class EventOccurrenceService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrencePublicDTO> getPublicOccurrencesByDate(LocalDate date) {
+    @Override
+    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDate(LocalDate date) {
         return getPublicOccurrencesByDateRange(date, date);
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrencePublicDTO> getPublicOccurrencesByDateRange(LocalDate startDate, LocalDate endDate) {
+    @Override
+    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDateRange(LocalDate startDate, LocalDate endDate) {
         if (endDate.isBefore(startDate)) {
             throw new BusinessLogicException("La fecha final no puede ser anterior a la fecha inicial");
         }
@@ -84,7 +90,8 @@ public class EventOccurrenceService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrenceAdminDTO> getOccurrencesByEvent(Long eventId) {
+    @Override
+    public List<EventOccurrenceAdminResponse> getOccurrencesByEvent(Long eventId) {
         return occurrenceRepository.findByEventIdOrderByStartsAtAsc(eventId)
                 .stream()
                 .map(mapper::toAdminDto)
@@ -92,14 +99,15 @@ public class EventOccurrenceService {
     }
 
     @Transactional(readOnly = true)
-    public EventOccurrenceAdminDTO getOccurrenceById(Long id) {
+    @Override
+    public EventOccurrenceAdminResponse getOccurrenceById(Long id) {
         return occurrenceRepository.findById(id)
                 .map(mapper::toAdminDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Ocurrencia de evento no encontrada con ID: " + id));
     }
 
     @Transactional(readOnly = true)
-    public List<EventOccurrenceAdminDTO> filterOccurrences(
+    public List<EventOccurrenceAdminResponse> filterOccurrences(
             String dateFilter,
             String timeFilter,
             LocalDate selectedDate
@@ -118,14 +126,16 @@ public class EventOccurrenceService {
     }
 
     @Transactional
-    public EventOccurrenceAdminDTO createOccurrence(EventOccurrenceUpsertDTO dto) {
+    @Override
+    public EventOccurrenceAdminResponse createOccurrence(EventOccurrenceUpsertRequest dto) {
         EventOccurrence occurrence = new EventOccurrence();
         applyUpsertDto(dto, occurrence);
         return mapper.toAdminDto(occurrenceRepository.save(occurrence));
     }
 
     @Transactional
-    public EventOccurrenceAdminDTO updateOccurrence(Long id, EventOccurrenceUpsertDTO dto) {
+    @Override
+    public EventOccurrenceAdminResponse updateOccurrence(Long id, EventOccurrenceUpsertRequest dto) {
         EventOccurrence occurrence = occurrenceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ocurrencia de evento no encontrada con ID: " + id));
         applyUpsertDto(dto, occurrence);
@@ -133,13 +143,14 @@ public class EventOccurrenceService {
     }
 
     @Transactional
+    @Override
     public void deleteOccurrence(Long id) {
         EventOccurrence occurrence = occurrenceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ocurrencia de evento no encontrada con ID: " + id));
         occurrenceRepository.delete(occurrence);
     }
 
-    private void applyUpsertDto(EventOccurrenceUpsertDTO dto, EventOccurrence occurrence) {
+    private void applyUpsertDto(EventOccurrenceUpsertRequest dto, EventOccurrence occurrence) {
         if (!dto.endsAt().isAfter(dto.startsAt())) {
             throw new BusinessLogicException("La fecha de fin debe ser posterior a la fecha de inicio");
         }
@@ -165,7 +176,7 @@ public class EventOccurrenceService {
             return null;
         }
         return locationRepository.findById(locationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ubicacion no encontrada con ID: " + locationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Ubicación no encontrada con ID: " + locationId));
     }
 
     private DateRange resolveDateRange(String dateFilter, LocalDate selectedDate) {

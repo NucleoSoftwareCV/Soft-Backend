@@ -1,7 +1,9 @@
-package com.hean.consigueventas.oonabe.category.service;
+package com.hean.consigueventas.oonabe.category.service.impl;
 
-import com.hean.consigueventas.oonabe.category.dto.CategoryCreateDTO;
-import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
+import com.hean.consigueventas.oonabe.category.service.ICategoryService;
+
+import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
+import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
@@ -13,25 +15,27 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class CategoryService {
+public class CategoryServiceImpl implements ICategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryDTO> findActive() {
+    @Override
+    public List<CategoryResponse> findActive() {
         return categoryRepository.findByActiveTrueOrderByNameAsc().stream().map(categoryMapper::toDto).toList();
     }
 
     @Transactional
-    public CategoryDTO create(CategoryCreateDTO dto) {
+    @Override
+    public CategoryResponse create(CategoryUpsertRequest dto) {
 
         if(categoryRepository.existsByNameIgnoreCase(dto.name())) {
-            throw new BusinessLogicException("La categoria ya existe.");
+            throw new BusinessLogicException("La categoría ya existe.");
         }
 
         Category category = categoryMapper.toEntity(dto);
@@ -42,13 +46,14 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryDTO update(Long id, CategoryCreateDTO dto) {
+    @Override
+    public CategoryResponse update(Long id, CategoryUpsertRequest dto) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Categoria no encontrada con ID: " + id));
+                        new ResourceNotFoundException("Categoría no encontrada con ID: " + id));
 
         if(categoryRepository.existsByNameIgnoreCaseAndIdNot(dto.name(), id)) {
-            throw new BusinessLogicException("La categoria ya existe.");
+            throw new BusinessLogicException("La categoría ya existe.");
         }
 
         category.setName(dto.name());
@@ -60,9 +65,10 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryDTO toggleStatus(Long id) {
+    @Override
+    public CategoryResponse toggleStatus(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con ID: " + id));
         category.setActive(!category.isActive());
 
         Category updated = categoryRepository.save(category);

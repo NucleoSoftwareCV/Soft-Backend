@@ -26,7 +26,10 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
                 .andExpect(jsonPath("$.paths['/api/v1/auth/login'].post.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/google'].post.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/categories'].get.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/event-occurrences'].get.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/cities'].get.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/users/me'].get.security[0].bearerAuth").exists());
     }
 }

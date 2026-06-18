@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "profesional_especialidades")
+@Table(name = "professional_specialties")
 @Getter
 @Setter
 public class ProfessionalSpecialty {
@@ -22,11 +22,11 @@ public class ProfessionalSpecialty {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("specialistId")
-    @JoinColumn(name = "profesional_id")
+    @JoinColumn(name = "specialist_id")
     private SpecialistProfile specialist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("specialtyId")
-    @JoinColumn(name = "especialidad_id")
+    @JoinColumn(name = "specialty_id")
     private Specialty specialty;
 }

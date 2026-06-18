@@ -16,26 +16,27 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "redes_profesional")
+@Table(name = "professional_social_links")
 @Getter
 @Setter
 public class ProfessionalSocialLink {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profesional_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialist;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false, length = 30)
+    @Column(name = "type", nullable = false, length = 30)
     private SocialLinkType type;
 
     @Column(name = "url", nullable = false, columnDefinition = "TEXT")
     private String url;
 
-    @Column(name = "orden", nullable = false)
+    @Column(name = "sort_order", nullable = false)
     private Short sortOrder = 0;
 }

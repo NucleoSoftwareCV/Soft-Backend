@@ -19,36 +19,37 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "asistentes_evento")
+@Table(name = "event_attendees")
 @Getter
 @Setter
 public class EventAttendee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reserva_evento_id", nullable = false)
+    @JoinColumn(name = "event_booking_id", nullable = false)
     private EventBooking eventBooking;
 
-    @Column(name = "nombre_asistente", length = 150)
+    @Column(name = "attendee_name", length = 150)
     private String attendeeName;
 
-    @Column(name = "email_asistente", length = 150)
+    @Column(name = "attendee_email", length = 150)
     private String attendeeEmail;
 
-    @Column(name = "telefono_asistente", length = 25)
+    @Column(name = "attendee_phone", length = 25)
     private String attendeePhone;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_asistencia", nullable = false, length = 20)
+    @Column(name = "attendance_status", nullable = false, length = 20)
     private AttendanceStatus attendanceStatus = AttendanceStatus.PENDIENTE;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "registrado_por")
+    @JoinColumn(name = "registered_by")
     private User registeredBy;
 
-    @Column(name = "registrado_at")
+    @Column(name = "registered_at")
     private Instant registeredAt;
 }

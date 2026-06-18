@@ -1,12 +1,11 @@
-package com.hean.consigueventas.oonabe.category.dto;
-
+package com.hean.consigueventas.oonabe.category.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-@Schema(description = "Datos para crear o actualizar una categoria.")
-public record CategoryCreateDTO(
-        @Schema(description = "Nombre publico de la categoria.", example = "Yoga")
+@Schema(description = "Datos para crear o actualizar una categoría.")
+public record CategoryUpsertRequest(
+        @Schema(description = "Nombre público de la categoría.", example = "Yoga")
         @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 100)
         String name,

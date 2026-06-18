@@ -1,14 +1,15 @@
 package com.hean.consigueventas.oonabe.event;
 
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrenceAdminDTO;
-import com.hean.consigueventas.oonabe.event.dto.EventOccurrencePublicDTO;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrencePublicResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.mapper.EventOccurrenceMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
-import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
+import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
+import com.hean.consigueventas.oonabe.event.service.impl.EventOccurrenceServiceImpl;
 import com.hean.consigueventas.oonabe.location.repository.LocationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ class EventOccurrenceServiceTest {
     private final EventRepository eventRepository = mock(EventRepository.class);
     private final LocationRepository locationRepository = mock(LocationRepository.class);
     private final EventOccurrenceMapper mapper = Mappers.getMapper(EventOccurrenceMapper.class);
-    private final EventOccurrenceService service = new EventOccurrenceService(
+    private final IEventOccurrenceService service = new EventOccurrenceServiceImpl(
             occurrenceRepository,
             eventRepository,
             locationRepository,
@@ -53,7 +54,7 @@ class EventOccurrenceServiceTest {
                 at(date.plusDays(1), LocalTime.MIN)
         )).thenReturn(List.of(occurrence, afternoonOccurrence));
 
-        List<EventOccurrenceAdminDTO> result = service.filterOccurrences(
+        List<EventOccurrenceAdminResponse> result = service.filterOccurrences(
                 "ELEGIR_FECHA",
                 "MANANA",
                 date
@@ -81,7 +82,7 @@ class EventOccurrenceServiceTest {
         occurrence.setCapacity(30);
         occurrence.setReservedSpots(12);
 
-        EventOccurrenceAdminDTO dto = mapper.toAdminDto(occurrence);
+        EventOccurrenceAdminResponse dto = mapper.toAdminDto(occurrence);
 
         assertThat(dto.capacity()).isEqualTo(30);
         assertThat(dto.reservedSpots()).isEqualTo(12);
@@ -99,7 +100,7 @@ class EventOccurrenceServiceTest {
                 at(endDate.plusDays(1), LocalTime.MIN)
         )).thenReturn(List.of(occurrence));
 
-        List<EventOccurrencePublicDTO> result = service.getPublicOccurrencesByDateRange(startDate, endDate);
+        List<EventOccurrencePublicResponse> result = service.getPublicOccurrencesByDateRange(startDate, endDate);
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().eventTitle()).isEqualTo("Taller");

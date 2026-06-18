@@ -24,53 +24,54 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "servicios_1a1")
+@Table(name = "one_to_one_services")
 @Getter
 @Setter
 public class OneToOneService extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profesional_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialist;
 
     @Column(name = "slug", nullable = false, unique = true, length = 180)
     private String slug;
 
-    @Column(name = "titulo", nullable = false, length = 180)
+    @Column(name = "title", nullable = false, length = 180)
     private String title;
 
-    @Column(name = "descripcion", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "duracion_minutos", nullable = false)
+    @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "modalidad", nullable = false, length = 15)
+    @Column(name = "modality", nullable = false, length = 15)
     private SessionModality modality;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "location_id")
     private Location location;
 
-    @Column(name = "precio", nullable = false, precision = 10, scale = 2)
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "moneda", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency = "EUR";
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private PublicationStatus status = PublicationStatus.BORRADOR;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "aprobado_por")
+    @JoinColumn(name = "approved_by")
     private User approvedBy;
 
-    @Column(name = "aprobado_at")
+    @Column(name = "approved_at")
     private Instant approvedAt;
 }

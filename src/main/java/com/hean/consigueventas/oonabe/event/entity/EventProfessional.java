@@ -16,7 +16,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "evento_profesionales")
+@Table(name = "event_professionals")
 @Getter
 @Setter
 public class EventProfessional {
@@ -26,16 +26,16 @@ public class EventProfessional {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("eventId")
-    @JoinColumn(name = "evento_id")
+    @JoinColumn(name = "event_id")
     private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("specialistId")
-    @JoinColumn(name = "profesional_id")
+    @JoinColumn(name = "specialist_id")
     private SpecialistProfile specialist;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "rol_en_evento", nullable = false, length = 30)
+    @Column(name = "role", nullable = false, length = 30)
     private EventProfessionalRole role;
 
     @Column(name = "principal", nullable = false)

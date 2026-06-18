@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "evento_categorias")
+@Table(name = "event_categories")
 @Getter
 @Setter
 public class EventCategoryLink {
@@ -22,11 +22,11 @@ public class EventCategoryLink {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("eventId")
-    @JoinColumn(name = "evento_id")
+    @JoinColumn(name = "event_id")
     private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("categoryId")
-    @JoinColumn(name = "categoria_id")
+    @JoinColumn(name = "category_id")
     private Category category;
 }

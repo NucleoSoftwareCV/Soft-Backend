@@ -1,17 +1,17 @@
 package com.hean.consigueventas.oonabe.mapper;
 
-import com.hean.consigueventas.oonabe.category.dto.CategoryCreateDTO;
-import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
+import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
+import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
-import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
 import com.hean.consigueventas.oonabe.catalog.entity.City;
 import com.hean.consigueventas.oonabe.catalog.mapper.CityMapper;
 import com.hean.consigueventas.oonabe.common.enums.UserStatus;
-import com.hean.consigueventas.oonabe.location.dto.LocationDTO;
+import com.hean.consigueventas.oonabe.location.dto.response.LocationResponse;
 import com.hean.consigueventas.oonabe.location.entity.Location;
 import com.hean.consigueventas.oonabe.location.mapper.LocationMapper;
-import com.hean.consigueventas.oonabe.user.dto.UserDTO;
+import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.mapper.UserMapper;
@@ -39,10 +39,10 @@ class MapStructMapperContractTest {
         category.setDescription("Bienestar corporal");
         category.setActive(true);
 
-        CategoryDTO dto = categoryMapper.toDto(category);
-        Category entity = categoryMapper.toEntity(new CategoryCreateDTO("Pilates", "Control corporal"));
+        CategoryResponse dto = categoryMapper.toDto(category);
+        Category entity = categoryMapper.toEntity(new CategoryUpsertRequest("Pilates", "Control corporal"));
 
-        assertThat(dto).isEqualTo(new CategoryDTO(5L, "Yoga", "Bienestar corporal", true));
+        assertThat(dto).isEqualTo(new CategoryResponse(5L, "Yoga", "Bienestar corporal", true));
         assertThat(entity.getName()).isEqualTo("Pilates");
         assertThat(entity.getDescription()).isEqualTo("Control corporal");
     }
@@ -56,9 +56,9 @@ class MapStructMapperContractTest {
         location.setReference("Segundo piso");
         location.setIsActive(true);
 
-        LocationDTO dto = locationMapper.toDto(location);
+        LocationResponse dto = locationMapper.toDto(location);
 
-        assertThat(dto).isEqualTo(new LocationDTO(9L, "Sede Centro", "Av. Principal 123", "Segundo piso", true));
+        assertThat(dto).isEqualTo(new LocationResponse(9L, "Sede Centro", "Av. Principal 123", "Segundo piso", true));
     }
 
     @Test
@@ -70,9 +70,9 @@ class MapStructMapperContractTest {
         city.setCountryCode("PE");
         city.setIsActive(true);
 
-        CityDTO dto = cityMapper.toDto(city);
+        CityResponse dto = cityMapper.toDto(city);
 
-        assertThat(dto).isEqualTo(new CityDTO(4L, "Lima", "Lima", "PE", true));
+        assertThat(dto).isEqualTo(new CityResponse(4L, "Lima", "Lima", "PE", true));
     }
 
     @Test
@@ -88,8 +88,8 @@ class MapStructMapperContractTest {
                 Role.builder().name("ROLE_USER").build()
         ));
 
-        UserDTO dto = userMapper.toDto(user);
-        List<UserDTO> list = userMapper.toDtoList(List.of(user));
+        UserResponse dto = userMapper.toDto(user);
+        List<UserResponse> list = userMapper.toDtoList(List.of(user));
 
         assertThat(dto.id()).isEqualTo(3L);
         assertThat(dto.active()).isTrue();

@@ -21,45 +21,46 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "ordenes_compra")
+@Table(name = "purchase_orders")
 @Getter
 @Setter
 public class PurchaseOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "codigo", nullable = false, unique = true, length = 40)
+    @Column(name = "code", nullable = false, unique = true, length = 40)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal = BigDecimal.ZERO;
 
-    @Column(name = "descuento_total", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_discount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalDiscount = BigDecimal.ZERO;
 
-    @Column(name = "importe_total", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "moneda", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency = "EUR";
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private PurchaseOrderStatus status = PurchaseOrderStatus.ABIERTA;
 
-    @Column(name = "expira_at")
+    @Column(name = "expires_at")
     private Instant expiresAt;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "pagada_at")
+    @Column(name = "paid_at")
     private Instant paidAt;
 
     @PrePersist

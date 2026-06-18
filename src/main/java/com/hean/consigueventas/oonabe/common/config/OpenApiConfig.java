@@ -21,7 +21,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Oona API")
                         .version("1.0.0")
-                        .description("API REST para autenticacion, catalogos, ubicaciones, eventos, reservas y pagos de Oona.")
+                        .description("API REST para autenticación, catálogos, ubicaciones y ocurrencias de eventos de Oona.")
                         .contact(new Contact().name("Oona Backend Team")))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new Components()
@@ -39,7 +39,7 @@ public class OpenApiConfig {
                 .pathsToMatch("/api/v1/auth/**",
                         "/api/v1/categories/**",
                         "/api/v1/locations/**",
-                        "/api/v1/citys/**"
+                        "/api/v1/cities/**"
                         )
                 .build();
     }

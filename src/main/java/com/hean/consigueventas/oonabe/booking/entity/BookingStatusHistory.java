@@ -20,33 +20,34 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "historial_estados_reserva")
+@Table(name = "booking_status_history")
 @Getter
 @Setter
 public class BookingStatusHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_reserva", nullable = false, length = 10)
+    @Column(name = "reservation_type", nullable = false, length = 10)
     private PurchaseItemType bookingType;
 
-    @Column(name = "reserva_id", nullable = false)
+    @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
-    @Column(name = "estado_anterior", length = 20)
+    @Column(name = "previous_status", length = 20)
     private String previousStatus;
 
-    @Column(name = "estado_nuevo", nullable = false, length = 20)
+    @Column(name = "new_status", nullable = false, length = 20)
     private String newStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cambiado_por")
+    @JoinColumn(name = "changed_by")
     private User changedBy;
 
-    @Column(name = "motivo")
+    @Column(name = "reason")
     private String reason;
 
     @Column(name = "created_at", nullable = false)

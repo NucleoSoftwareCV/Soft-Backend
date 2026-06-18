@@ -24,63 +24,64 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "eventos")
+@Table(name = "events")
 @Getter
 @Setter
 public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "slug", nullable = false, unique = true, length = 180)
     private String slug;
 
-    @Column(name = "titulo", nullable = false, length = 180)
+    @Column(name = "title", nullable = false, length = 180)
     private String title;
 
-    @Column(name = "resumen", length = 300)
+    @Column(name = "summary", length = 300)
     private String summary;
 
-    @Column(name = "descripcion", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "modalidad", nullable = false, length = 15)
+    @Column(name = "modality", nullable = false, length = 15)
     private EventModality modality;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_reserva", nullable = false, length = 20)
+    @Column(name = "reservation_type", nullable = false, length = 20)
     private EventReservationType reservationType;
 
-    @Column(name = "url_reserva_externa", columnDefinition = "TEXT")
+    @Column(name = "external_reservation_url", columnDefinition = "TEXT")
     private String externalReservationUrl;
 
-    @Column(name = "precio_desde", precision = 10, scale = 2)
+    @Column(name = "starting_price", precision = 10, scale = 2)
     private BigDecimal priceFrom;
 
-    @Column(name = "moneda", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency = "EUR";
 
-    @Column(name = "edad_minima")
+    @Column(name = "minimum_age")
     private Short minimumAge;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private EventStatus status = EventStatus.BORRADOR;
 
-    @Column(name = "destacado", nullable = false)
+    @Column(name = "featured", nullable = false)
     private boolean featured;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creado_por", nullable = false)
+    @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "aprobado_por")
+    @JoinColumn(name = "approved_by")
     private User approvedBy;
 
-    @Column(name = "aprobado_at")
+    @Column(name = "approved_at")
     private Instant approvedAt;
 
     @Column(name = "created_at", nullable = false)

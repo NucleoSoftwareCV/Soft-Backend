@@ -23,53 +23,54 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "reservas_evento")
+@Table(name = "event_bookings")
 @Getter
 @Setter
 public class EventBooking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "codigo", nullable = false, unique = true, length = 30)
+    @Column(name = "code", nullable = false, unique = true, length = 30)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "orden_item_id")
+    @JoinColumn(name = "order_item_id")
     private PurchaseOrderItem orderItem;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ocurrencia_id", nullable = false)
+    @JoinColumn(name = "occurrence_id", nullable = false)
     private EventOccurrence occurrence;
 
-    @Column(name = "cantidad", nullable = false)
+    @Column(name = "quantity", nullable = false)
     private Short quantity = 1;
 
-    @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
+    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "importe_total", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "moneda", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private BookingStatus status = BookingStatus.PENDIENTE;
 
-    @Column(name = "expira_at")
+    @Column(name = "expires_at")
     private Instant expiresAt;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "cancelada_at")
+    @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
     @PrePersist

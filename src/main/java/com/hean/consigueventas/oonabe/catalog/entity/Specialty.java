@@ -10,24 +10,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "especialidades")
+@Table(name = "specialties")
 @Getter
 @Setter
 public class Specialty {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "nombre", nullable = false, unique = true, length = 100)
+    @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
     @Column(name = "slug", nullable = false, unique = true, length = 120)
     private String slug;
 
-    @Column(name = "descripcion", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 }

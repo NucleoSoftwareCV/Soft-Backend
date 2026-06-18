@@ -1,5 +1,4 @@
-package com.hean.consigueventas.oonabe.auth.dto;
-
+package com.hean.consigueventas.oonabe.auth.dto.request;
 import jakarta.validation.constraints.NotBlank;
 
 public record GoogleLoginRequest(

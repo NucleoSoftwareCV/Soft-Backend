@@ -1,10 +1,9 @@
-package com.hean.consigueventas.oonabe.auth.dto;
-
+package com.hean.consigueventas.oonabe.auth.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Set;
 
-@Schema(description = "Respuesta de autenticacion con tokens y datos basicos del usuario.")
+@Schema(description = "Respuesta de autenticación con tokens y datos básicos del usuario.")
 public record JwtResponse(
         @Schema(description = "Access token JWT.", accessMode = Schema.AccessMode.READ_ONLY)
         String token,

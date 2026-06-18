@@ -1,13 +1,13 @@
 package com.hean.consigueventas.oonabe.auth.controller;
 
-import com.hean.consigueventas.oonabe.auth.dto.GoogleLoginRequest;
-import com.hean.consigueventas.oonabe.auth.dto.JwtResponse;
-import com.hean.consigueventas.oonabe.auth.dto.LoginRequest;
-import com.hean.consigueventas.oonabe.auth.dto.RegisterRequest;
-import com.hean.consigueventas.oonabe.auth.dto.TokenRefreshRequest;
-import com.hean.consigueventas.oonabe.auth.dto.TokenRefreshResponse;
-import com.hean.consigueventas.oonabe.auth.service.AuthService;
-import com.hean.consigueventas.oonabe.user.dto.UserDTO;
+import com.hean.consigueventas.oonabe.auth.dto.request.GoogleLoginRequest;
+import com.hean.consigueventas.oonabe.auth.dto.response.JwtResponse;
+import com.hean.consigueventas.oonabe.auth.dto.request.LoginRequest;
+import com.hean.consigueventas.oonabe.auth.dto.request.RegisterRequest;
+import com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest;
+import com.hean.consigueventas.oonabe.auth.dto.response.TokenRefreshResponse;
+import com.hean.consigueventas.oonabe.auth.service.IAuthService;
+import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
-@Tag(name = "Autenticacion", description = "Registro, login, refresh token y cierre de sesion.")
+@Tag(name = "Autenticación", description = "Registro, login, refresh token y cierre de sesión.")
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(IAuthService authService) {
         this.authService = authService;
     }
 
@@ -39,18 +39,18 @@ public class AuthController {
     @Operation(summary = "Registrar usuario", description = "Crea un usuario final con rol USER.", security = {})
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuario registrado",
-                    content = @Content(schema = @Schema(implementation = UserDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos o usuario duplicado",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o usuario duplicado",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public UserDTO register(@Valid @RequestBody RegisterRequest request) {
+    public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Iniciar sesion", description = "Autentica con username o email y devuelve access token y refresh token.", security = {})
+    @Operation(summary = "Iniciar sesión", description = "Autentica con username o email y devuelve access token y refresh token.", security = {})
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Sesion iniciada",
+            @ApiResponse(responseCode = "200", description = "Sesión iniciada",
                     content = @Content(schema = @Schema(implementation = JwtResponse.class))),
             @ApiResponse(responseCode = "401", description = "Credenciales invalidas",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
@@ -60,6 +60,13 @@ public class AuthController {
     }
 
     @PostMapping("/google")
+    @Operation(summary = "Iniciar sesión con Google", description = "Valida el token de Google y devuelve los tokens de acceso.", security = {})
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sesión iniciada",
+                    content = @Content(schema = @Schema(implementation = JwtResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token de Google inválido",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
     public JwtResponse loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
         return authService.loginWithGoogle(request);
     }
@@ -69,7 +76,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Token renovado",
                     content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Refresh token invalido o expirado",
+            @ApiResponse(responseCode = "403", description = "Refresh token inválido o expirado",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public TokenRefreshResponse refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
@@ -78,10 +85,10 @@ public class AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Cerrar sesion", description = "Revoca el refresh token recibido.", security = {})
+    @Operation(summary = "Cerrar sesión", description = "Revoca el refresh token recibido.", security = {})
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Sesion cerrada"),
-            @ApiResponse(responseCode = "400", description = "Solicitud invalida",
+            @ApiResponse(responseCode = "204", description = "Sesión cerrada"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public void logout(@Valid @RequestBody TokenRefreshRequest request) {

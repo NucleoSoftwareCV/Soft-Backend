@@ -20,23 +20,23 @@ class JpaModelMappingTest {
 
     @Test
     void coreDomainEntitiesUseExpectedPostgreSqlTableNames() {
-        assertEntityTable(City.class, "ciudades");
-        assertEntityTable(CustomerProfile.class, "perfil_clientes");
-        assertEntityTable(Event.class, "eventos");
-        assertEntityTable(OneToOneService.class, "servicios_1a1");
-        assertEntityTable(EventBooking.class, "reservas_evento");
-        assertEntityTable(Payment.class, "pagos");
-        assertEntityTable(HomeSection.class, "secciones_inicio");
-        assertEntityTable(Favorite.class, "favoritos");
-        assertEntityTable(AuditLog.class, "auditoria");
+        assertEntityTable(City.class, "cities");
+        assertEntityTable(CustomerProfile.class, "customer_profiles");
+        assertEntityTable(Event.class, "events");
+        assertEntityTable(OneToOneService.class, "one_to_one_services");
+        assertEntityTable(EventBooking.class, "event_bookings");
+        assertEntityTable(Payment.class, "payments");
+        assertEntityTable(HomeSection.class, "home_sections");
+        assertEntityTable(Favorite.class, "favorites");
+        assertEntityTable(AuditLog.class, "audit_logs");
     }
 
     @Test
-    void cityActiveFieldUsesExistingActivoColumn() throws NoSuchFieldException {
+    void cityActiveFieldUsesEnglishColumnName() throws NoSuchFieldException {
         Column activeColumn = City.class.getDeclaredField("isActive").getAnnotation(Column.class);
 
         assertThat(activeColumn).isNotNull();
-        assertThat(activeColumn.name()).isEqualTo("activo");
+        assertThat(activeColumn.name()).isEqualTo("active");
         assertThat(activeColumn.nullable()).isFalse();
     }
 

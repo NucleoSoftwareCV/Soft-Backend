@@ -14,34 +14,35 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "secciones_inicio")
+@Table(name = "home_sections")
 @Getter
 @Setter
 public class HomeSection {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "clave", nullable = false, unique = true, length = 80)
+    @Column(name = "section_key", nullable = false, unique = true, length = 80)
     private String key;
 
-    @Column(name = "titulo", length = 180)
+    @Column(name = "title", length = 180)
     private String title;
 
-    @Column(name = "subtitulo", columnDefinition = "TEXT")
+    @Column(name = "subtitle", columnDefinition = "TEXT")
     private String subtitle;
 
-    @Column(name = "imagen_url", columnDefinition = "TEXT")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "boton_texto", length = 80)
+    @Column(name = "button_text", length = 80)
     private String buttonText;
 
-    @Column(name = "boton_url", columnDefinition = "TEXT")
+    @Column(name = "button_url", columnDefinition = "TEXT")
     private String buttonUrl;
 
-    @Column(name = "orden", nullable = false)
+    @Column(name = "sort_order", nullable = false)
     private Short sortOrder = 0;
 
     @Column(name = "visible", nullable = false)

@@ -50,7 +50,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             response.setStatus(429);
             response.setContentType("application/problem+json");
             response.getWriter().write("""
-                    {"type":"https://api.oona.local/errors/rate-limit","title":"Demasiadas solicitudes","status":429,"detail":"Demasiados intentos de autenticacion. Intenta nuevamente mas tarde.","message":"Demasiados intentos de autenticacion. Intenta nuevamente mas tarde."}
+                    {"type":"https://api.oona.local/errors/rate-limit","title":"Demasiadas solicitudes","status":429,"detail":"Demasiados intentos de autenticación. Intenta nuevamente mas tarde.","message":"Demasiados intentos de autenticación. Intenta nuevamente mas tarde."}
                     """);
             return;
         }

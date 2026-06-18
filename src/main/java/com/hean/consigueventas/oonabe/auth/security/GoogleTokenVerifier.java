@@ -21,7 +21,7 @@ public class GoogleTokenVerifier {
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
             if (response == null || !"true".equals(String.valueOf(response.get("email_verified")))) {
-                throw new BadCredentialsException("Token de Google invalido o correo no verificado.");
+                throw new BadCredentialsException("Token de Google inválido o correo no verificado.");
             }
             return response;
         } catch (Exception e) {

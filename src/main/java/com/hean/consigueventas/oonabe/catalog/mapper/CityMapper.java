@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.catalog.mapper;
 
-import com.hean.consigueventas.oonabe.catalog.dto.CityDTO;
+import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
 import com.hean.consigueventas.oonabe.catalog.entity.City;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,5 +9,5 @@ import org.mapstruct.Mapping;
 public interface CityMapper {
 
     @Mapping(target = "active", source = "isActive")
-    CityDTO toDto(City city);
+    CityResponse toDto(City city);
 }

@@ -12,28 +12,29 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "categorias_evento")
+@Table(name = "categories")
 @Getter
 @Setter
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Column(name = "nombre", nullable = false, unique = true, length = 100)
+    @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
     @Column(name = "slug", nullable = false, unique = true, length = 120)
     private String slug;
 
-    @Column(name = "descripcion", columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "imagen_url", columnDefinition = "TEXT")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 
     @PrePersist

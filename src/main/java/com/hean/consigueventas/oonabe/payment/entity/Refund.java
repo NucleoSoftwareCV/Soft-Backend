@@ -20,30 +20,31 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "reembolsos")
+@Table(name = "refunds")
 @Getter
 @Setter
 public class Refund {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pago_id", nullable = false)
+    @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
 
-    @Column(name = "importe", nullable = false, precision = 10, scale = 2)
+    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "motivo")
+    @Column(name = "reason")
     private String reason;
 
-    @Column(name = "referencia_externa", length = 150)
+    @Column(name = "external_reference", length = 150)
     private String externalReference;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private RefundStatus status = RefundStatus.PENDIENTE;
 
     @Column(name = "created_at", nullable = false)

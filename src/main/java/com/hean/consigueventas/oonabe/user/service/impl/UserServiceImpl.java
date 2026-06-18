@@ -1,9 +1,11 @@
-package com.hean.consigueventas.oonabe.user.service;
+package com.hean.consigueventas.oonabe.user.service.impl;
+
+import com.hean.consigueventas.oonabe.user.service.IUserService;
 
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.common.exception.UserAlreadyExistsException;
-import com.hean.consigueventas.oonabe.user.dto.UserDTO;
+import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.mapper.UserMapper;
@@ -17,14 +19,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-public class UserService {
+public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
@@ -32,12 +34,13 @@ public class UserService {
     }
 
     @Transactional
+    @Override
     public User registerUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new UserAlreadyExistsException("El nombre de usuario ya esta en uso.");
+            throw new UserAlreadyExistsException("El nombre de usuario ya está en uso.");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new UserAlreadyExistsException("El email ya esta en uso.");
+            throw new UserAlreadyExistsException("El email ya está en uso.");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -47,17 +50,20 @@ public class UserService {
     }
 
     @Transactional
+    @Override
     public Role getOrCreateRole(String name, String description) {
         return roleRepository.findByName(name)
                 .orElseGet(() -> roleRepository.save(Role.builder().name(name).description(description).active(true).build()));
     }
 
     @Transactional(readOnly = true)
-    public UserDTO findById(Long id) {
+    @Override
+    public UserResponse findById(Long id) {
         return userMapper.toDto(findEntityById(id));
     }
 
     @Transactional(readOnly = true)
+    @Override
     public User findEntityById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));

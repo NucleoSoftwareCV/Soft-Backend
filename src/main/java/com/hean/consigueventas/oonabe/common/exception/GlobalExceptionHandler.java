@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
         ProblemDetail detail = problem(
                 HttpStatus.BAD_REQUEST,
-                "Solicitud invalida",
+                "Solicitud inválida",
                 "Uno o mas campos no cumplen las reglas de validacion.",
                 "validation-error",
                 request);
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenRefreshException.class)
     public ProblemDetail handleTokenRefresh(TokenRefreshException ex, WebRequest request) {
-        return problem(HttpStatus.FORBIDDEN, "Refresh token invalido", ex.getMessage(), "refresh-token-invalid", request);
+        return problem(HttpStatus.FORBIDDEN, "Refresh token inválido", ex.getMessage(), "refresh-token-invalid", request);
     }
 
     private ProblemDetail problem(

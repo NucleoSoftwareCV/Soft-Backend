@@ -25,20 +25,21 @@ import lombok.Setter;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "codigo", unique = true, nullable = false, length = 40)
+    @Column(name = "name", unique = true, nullable = false, length = 40)
     private String name;
 
-    @Column(name = "nombre", nullable = false, length = 80)
+    @Column(name = "display_name", nullable = false, length = 80)
     private String displayName;
 
-    @Column(name = "descripcion")
+    @Column(name = "description")
     @Size(max = 255)
     private String description;
 
     @Builder.Default
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 
     public String getCodigo() {
@@ -49,12 +50,12 @@ public class Role {
         this.name = codigo;
     }
 
-    public String getNombre() {
+    public String getDisplayName() {
         return displayName;
     }
 
-    public void setNombre(String nombre) {
-        this.displayName = nombre;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @PrePersist

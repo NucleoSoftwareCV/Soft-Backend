@@ -20,36 +20,37 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "orden_items")
+@Table(name = "purchase_order_items")
 @Getter
 @Setter
 public class PurchaseOrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "orden_id", nullable = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private PurchaseOrder order;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_item", nullable = false, length = 10)
+    @Column(name = "item_type", nullable = false, length = 10)
     private PurchaseItemType itemType;
 
-    @Column(name = "referencia_id", nullable = false)
+    @Column(name = "reference_id", nullable = false)
     private Long referenceId;
 
-    @Column(name = "descripcion", nullable = false)
+    @Column(name = "description", nullable = false)
     private String description;
 
-    @Column(name = "cantidad", nullable = false)
+    @Column(name = "quantity", nullable = false)
     private Short quantity = 1;
 
-    @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
+    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "importe_total", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
     @Column(name = "created_at", nullable = false)

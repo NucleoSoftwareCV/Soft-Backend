@@ -16,7 +16,7 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "favoritos")
+@Table(name = "favorites")
 @Getter
 @Setter
 public class Favorite {
@@ -26,7 +26,7 @@ public class Favorite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("customerId")
-    @JoinColumn(name = "cliente_id")
+    @JoinColumn(name = "customer_id")
     private CustomerProfile customer;
 
     @Column(name = "created_at", nullable = false)

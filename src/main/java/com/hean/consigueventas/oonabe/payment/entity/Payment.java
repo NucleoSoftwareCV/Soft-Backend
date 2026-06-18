@@ -20,43 +20,44 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "pagos")
+@Table(name = "payments")
 @Getter
 @Setter
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "orden_id", nullable = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private PurchaseOrder order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "metodo_pago_cliente_id")
+    @JoinColumn(name = "customer_payment_method_id")
     private CustomerPaymentMethod customerPaymentMethod;
 
-    @Column(name = "proveedor", nullable = false, length = 50)
+    @Column(name = "provider", nullable = false, length = 50)
     private String provider;
 
-    @Column(name = "referencia_externa", unique = true, length = 150)
+    @Column(name = "external_reference", unique = true, length = 150)
     private String externalReference;
 
-    @Column(name = "importe", nullable = false, precision = 10, scale = 2)
+    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "moneda", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status = PaymentStatus.PENDIENTE;
 
-    @Column(name = "mensaje_error", columnDefinition = "TEXT")
+    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
-    @Column(name = "procesado_at")
+    @Column(name = "processed_at")
     private Instant processedAt;
 
     @Column(name = "created_at", nullable = false)

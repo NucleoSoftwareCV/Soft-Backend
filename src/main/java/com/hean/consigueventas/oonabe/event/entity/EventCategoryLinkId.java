@@ -13,9 +13,9 @@ import java.io.Serializable;
 @Setter
 @EqualsAndHashCode
 public class EventCategoryLinkId implements Serializable {
-    @Column(name = "evento_id")
+    @Column(name = "event_id")
     private Long eventId;
 
-    @Column(name = "categoria_id")
+    @Column(name = "category_id")
     private Long categoryId;
 }

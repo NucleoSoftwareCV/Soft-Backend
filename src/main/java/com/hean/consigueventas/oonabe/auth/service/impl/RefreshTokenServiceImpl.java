@@ -1,4 +1,6 @@
-package com.hean.consigueventas.oonabe.auth.service;
+package com.hean.consigueventas.oonabe.auth.service.impl;
+
+import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
 
 import com.hean.consigueventas.oonabe.auth.entity.RefreshToken;
 import com.hean.consigueventas.oonabe.auth.repository.RefreshTokenRepository;
@@ -17,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class RefreshTokenService {
+public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
     @Value("${api.security.refresh.expiration}")
     private Long refreshTokenDurationMs;
@@ -25,11 +27,12 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
-    public RefreshTokenService(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
+    public RefreshTokenServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
     }
 
+    @Override
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByTokenHash(hashToken(token))
                 .map(refreshToken -> {
@@ -39,6 +42,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @Override
     public RefreshToken createRefreshToken(Long userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
@@ -59,15 +63,17 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @Override
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new TokenRefreshException("Refresh token has expired. Please make a new signin request");
+            throw new TokenRefreshException("El refresh token ha expirado. Inicia sesión nuevamente.");
         }
         return token;
     }
 
     @Transactional
+    @Override
     public int deleteByUser(Long userId) {
         return userRepository.findById(userId)
                 .map(refreshTokenRepository::deleteByUser)
@@ -75,6 +81,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @Override
     public void deleteByToken(String token) {
         refreshTokenRepository.deleteByTokenHash(hashToken(token));
     }

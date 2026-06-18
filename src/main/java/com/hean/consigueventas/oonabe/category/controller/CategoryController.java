@@ -1,8 +1,8 @@
 package com.hean.consigueventas.oonabe.category.controller;
 
-import com.hean.consigueventas.oonabe.category.dto.CategoryCreateDTO;
-import com.hean.consigueventas.oonabe.category.dto.CategoryDTO;
-import com.hean.consigueventas.oonabe.category.service.CategoryService;
+import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
+import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
+import com.hean.consigueventas.oonabe.category.service.ICategoryService;
 import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,46 +20,57 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/categories")
-@Tag(name = "Categorias", description = "Catalogo de categorias de eventos.")
+@Tag(name = "Categorías", description = "Catálogo de categorías de eventos.")
 public class CategoryController {
-    private final CategoryService categoryService;
+    private final ICategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(ICategoryService categoryService) {
         this.categoryService = categoryService;
     }
 
     @GetMapping
-    @Operation(summary = "Listar categorias activas", description = "Devuelve las categorias visibles para el catalogo publico.", security = {})
-    @ApiResponse(responseCode = "200", description = "Categorias activas")
-    public List<CategoryDTO> findActive() {
+    @Operation(summary = "Listar categorías activas", description = "Devuelve las categorías visibles para el catálogo público.", security = {})
+    @ApiResponse(responseCode = "200", description = "Categorías activas")
+    public List<CategoryResponse> findActive() {
         return categoryService.findActive();
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Crear categoria", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @Operation(summary = "Crear categoría", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Categoria creada"),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @ApiResponse(responseCode = "200", description = "Categoría creada"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "403", description = "Requiere rol ADMIN",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public CategoryDTO create(@Valid @RequestBody CategoryCreateDTO dto) {
+    public CategoryResponse create(@Valid @RequestBody CategoryUpsertRequest dto) {
         return categoryService.create(dto);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Actualizar categoria", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    public CategoryDTO update(@PathVariable Long id, @Valid @RequestBody CategoryCreateDTO dto) {
+    @Operation(summary = "Actualizar categoría", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Categoría actualizada"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "403", description = "Requiere rol ADMIN", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    public CategoryResponse update(@PathVariable Long id, @Valid @RequestBody CategoryUpsertRequest dto) {
         return categoryService.update(id, dto);
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Activar o desactivar categoria", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    public CategoryDTO toggleStatus(@PathVariable Long id) {
+    @Operation(summary = "Activar o desactivar categoría", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado de la categoría actualizado"),
+            @ApiResponse(responseCode = "403", description = "Requiere rol ADMIN", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    public CategoryResponse toggleStatus(@PathVariable Long id) {
         return categoryService.toggleStatus(id);
     }
 }

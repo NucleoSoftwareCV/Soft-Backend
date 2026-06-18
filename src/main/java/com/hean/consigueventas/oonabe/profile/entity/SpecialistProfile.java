@@ -22,55 +22,56 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "perfil_profesionales")
+@Table(name = "specialist_profiles")
 @Getter
 @Setter
 public class SpecialistProfile extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "slug", nullable = false, unique = true, length = 160)
     private String slug;
 
-    @Column(name = "nombre_publico", nullable = false, length = 150)
+    @Column(name = "public_name", nullable = false, length = 150)
     private String publicName;
 
-    @Column(name = "biografia", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "biography", nullable = false, columnDefinition = "TEXT")
     private String biography;
 
-    @Column(name = "foto_url", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "photo_url", nullable = false, columnDefinition = "TEXT")
     private String photoUrl;
 
-    @Column(name = "telefono_whatsapp", nullable = false, length = 25)
+    @Column(name = "whatsapp_phone", nullable = false, length = 25)
     private String whatsappPhone;
 
-    @Column(name = "email_publico", length = 150)
+    @Column(name = "public_email", length = 150)
     private String publicEmail;
 
-    @Column(name = "sitio_web", columnDefinition = "TEXT")
+    @Column(name = "website", columnDefinition = "TEXT")
     private String website;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_aprobacion", nullable = false, length = 20)
+    @Column(name = "approval_status", nullable = false, length = 20)
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDIENTE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_publicacion", nullable = false, length = 20)
+    @Column(name = "publication_status", nullable = false, length = 20)
     private PublicationStatus publicationStatus = PublicationStatus.BORRADOR;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "aprobado_por")
+    @JoinColumn(name = "approved_by")
     private User approvedBy;
 
-    @Column(name = "aprobado_at")
+    @Column(name = "approved_at")
     private Instant approvedAt;
 
-    @Column(name = "motivo_rechazo")
+    @Column(name = "rejection_reason")
     private String rejectionReason;
 }

@@ -19,33 +19,34 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "perfil_clientes")
+@Table(name = "customer_profiles")
 @Getter
 @Setter
 public class CustomerProfile extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "nombres", nullable = false, length = 100)
+    @Column(name = "first_names", nullable = false, length = 100)
     private String firstNames;
 
-    @Column(name = "apellidos", nullable = false, length = 100)
+    @Column(name = "last_names", nullable = false, length = 100)
     private String lastNames;
 
-    @Column(name = "telefono", length = 25)
+    @Column(name = "phone", length = 25)
     private String phone;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ciudad_preferida_id")
+    @JoinColumn(name = "preferred_city_id")
     private City preferredCity;
 
-    @Column(name = "fecha_nacimiento")
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Column(name = "avatar_url", columnDefinition = "TEXT")
