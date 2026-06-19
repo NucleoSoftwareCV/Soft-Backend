@@ -31,4 +31,11 @@ class InfrastructureHardeningTest {
     void initialFlywayMigrationIsVersioned() {
         assertThat(Files.exists(Path.of("src/main/resources/db/migration/V1__initial_oona_schema.sql"))).isTrue();
     }
+
+    @Test
+    void professionalTaxonomyFlywayMigrationIsVersioned() {
+        assertThat(Files.exists(Path.of(
+                "src/main/resources/db/migration/V3__add_professional_taxonomies.sql"
+        ))).isTrue();
+    }
 }

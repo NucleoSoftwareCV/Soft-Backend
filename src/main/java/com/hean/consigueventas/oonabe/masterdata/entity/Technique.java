@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "specialties")
+@Table(name = "techniques")
 @Getter
 @Setter
 public class Technique {
@@ -20,16 +20,9 @@ public class Technique {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = true, length = 100)
+    @Column(name = "name", nullable = false, unique = true, length = 150)
     private String name;
-
-    @Column(name = "slug", nullable = false, unique = true, length = 120)
-    private String slug;
-
-    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
-    private String description;
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
 }
-//Technique guardara las "técnicas que ofrezcan" cada profesional

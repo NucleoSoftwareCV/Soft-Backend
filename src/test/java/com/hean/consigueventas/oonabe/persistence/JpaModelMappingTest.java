@@ -6,9 +6,13 @@ import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.content.entity.HomeSection;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.interaction.entity.Favorite;
+import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
+import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.payment.entity.Payment;
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalTechnique;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalWorkTopic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -38,6 +42,14 @@ class JpaModelMappingTest {
         assertThat(activeColumn).isNotNull();
         assertThat(activeColumn.name()).isEqualTo("active");
         assertThat(activeColumn.nullable()).isFalse();
+    }
+
+    @Test
+    void professionalTaxonomyEntitiesUseEnglishTableNames() {
+        assertEntityTable(Technique.class, "techniques");
+        assertEntityTable(WorkTopic.class, "work_topics");
+        assertEntityTable(ProfessionalTechnique.class, "professional_techniques");
+        assertEntityTable(ProfessionalWorkTopic.class, "professional_work_topics");
     }
 
     private static void assertEntityTable(Class<?> entityType, String tableName) {

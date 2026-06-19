@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "temas_trabajo")
+@Table(name = "work_topics")
 @Getter
 @Setter
 public class WorkTopic extends AuditableEntity {
@@ -15,10 +15,9 @@ public class WorkTopic extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nombre", nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "activo", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 }
-//WorkTopic guardara los "temas que trabaja" cada profesional

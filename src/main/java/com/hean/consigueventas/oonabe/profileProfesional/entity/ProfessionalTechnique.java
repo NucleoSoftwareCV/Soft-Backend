@@ -15,12 +15,11 @@ import lombok.Setter;
 
 @Entity
 @Table(
-        //En tecnicas_profesional no pueden existir dos filas con el mismo profesional_id y el mismo tecnica_id
-        name = "tecnicas_profesional",
+        name = "professional_techniques",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_profesional_tecnica",
-                        columnNames = {"profesional_id", "tecnica_id"}
+                        name = "uk_professional_technique",
+                        columnNames = {"specialist_id", "technique_id"}
                 )
         }
 )
@@ -33,10 +32,10 @@ public class ProfessionalTechnique {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "profesional_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialistProfile;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tecnica_id", nullable = false)
+    @JoinColumn(name = "technique_id", nullable = false)
     private Technique technique;
 }
