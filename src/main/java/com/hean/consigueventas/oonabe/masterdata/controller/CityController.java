@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
-import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
 import com.hean.consigueventas.oonabe.masterdata.service.ICityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

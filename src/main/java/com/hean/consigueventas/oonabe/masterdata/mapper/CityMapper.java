@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.masterdata.mapper;
 
-import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

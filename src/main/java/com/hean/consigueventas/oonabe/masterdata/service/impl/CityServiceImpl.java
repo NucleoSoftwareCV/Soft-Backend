@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.masterdata.service.impl;
 
-import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
 import com.hean.consigueventas.oonabe.masterdata.mapper.CityMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 

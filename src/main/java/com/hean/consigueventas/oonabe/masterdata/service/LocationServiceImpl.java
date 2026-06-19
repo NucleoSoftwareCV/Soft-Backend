@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.masterdata.service;
 
-import com.hean.consigueventas.oonabe.location.dto.response.LocationResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.LocationResponse;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import org.springframework.stereotype.Service;

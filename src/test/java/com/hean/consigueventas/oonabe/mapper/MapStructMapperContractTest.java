@@ -1,11 +1,11 @@
 package com.hean.consigueventas.oonabe.mapper;
 
-import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
 import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
 import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
-import com.hean.consigueventas.oonabe.location.dto.response.LocationResponse;
+import com.hean.consigueventas.oonabe.masterdata.response.LocationResponse;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.mapper.CityMapper;
 import com.hean.consigueventas.oonabe.common.enums.UserStatus;
