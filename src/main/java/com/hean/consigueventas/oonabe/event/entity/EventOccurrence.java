@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.event.entity;
 
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
-import com.hean.consigueventas.oonabe.location.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -2,8 +2,8 @@ package com.hean.consigueventas.oonabe.common.config;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
-import com.hean.consigueventas.oonabe.location.entity.Location;
-import com.hean.consigueventas.oonabe.location.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;

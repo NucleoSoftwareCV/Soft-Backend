@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.interaction.entity;
 
-import com.hean.consigueventas.oonabe.profile.entity.CustomerProfile;
+import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;

@@ -2,11 +2,11 @@ package com.hean.consigueventas.oonabe.booking.entity;
 
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
 import com.hean.consigueventas.oonabe.common.enums.SessionModality;
-import com.hean.consigueventas.oonabe.location.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.payment.entity.PurchaseOrderItem;
-import com.hean.consigueventas.oonabe.profile.entity.CustomerProfile;
-import com.hean.consigueventas.oonabe.profile.entity.SpecialistProfile;
-import com.hean.consigueventas.oonabe.service.entity.OneToOneService;
+import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

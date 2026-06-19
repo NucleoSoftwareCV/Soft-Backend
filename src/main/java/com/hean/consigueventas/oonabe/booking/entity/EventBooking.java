@@ -3,7 +3,7 @@ package com.hean.consigueventas.oonabe.booking.entity;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.payment.entity.PurchaseOrderItem;
-import com.hean.consigueventas.oonabe.profile.entity.CustomerProfile;
+import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
