@@ -1,9 +1,7 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
 import com.hean.consigueventas.oonabe.location.dto.response.LocationResponse;
-import com.hean.consigueventas.oonabe.masterdata.dto.LocationDTO;
 import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
-import com.hean.consigueventas.oonabe.masterdata.service.LocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;

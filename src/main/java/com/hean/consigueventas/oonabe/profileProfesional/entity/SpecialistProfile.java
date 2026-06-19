@@ -3,7 +3,6 @@ package com.hean.consigueventas.oonabe.profileProfesional.entity;
 import com.hean.consigueventas.oonabe.common.entity.AuditableEntity;
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
-import com.hean.consigueventas.oonabe.profileType.entity.ProfileType;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,11 +57,6 @@ public class SpecialistProfile extends AuditableEntity {
 
     @Column(name = "website", columnDefinition = "TEXT")
     private String website;
-
-    //Llamamos a ProfileType
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_perfil", nullable = false, length = 20)
-    private ProfileType profileType = ProfileType.PROFESIONAL;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false, length = 20)

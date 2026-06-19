@@ -1,10 +1,10 @@
 package com.hean.consigueventas.oonabe.common.config;
 
-import com.hean.consigueventas.oonabe.catalog.entity.City;
-import com.hean.consigueventas.oonabe.catalog.repository.CityRepository;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
+import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -115,7 +115,7 @@ public class DataInitializer {
             boolean active) {
 
         cityRepository.findByNameAndProvince(name, province).orElseGet(() -> {
-            City city = new City();
+            City city = new     City();
             city.setName(name);
             city.setProvince(province);
             city.setCountryCode(countryCode);
