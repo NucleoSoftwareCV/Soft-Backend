@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.payment.entity;
 
 import com.hean.consigueventas.oonabe.common.security.SensitiveStringCryptoConverter;
-import com.hean.consigueventas.oonabe.profile.entity.CustomerProfile;
+import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

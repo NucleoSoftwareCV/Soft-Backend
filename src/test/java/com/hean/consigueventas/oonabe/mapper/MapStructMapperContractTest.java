@@ -1,16 +1,16 @@
 package com.hean.consigueventas.oonabe.mapper;
 
+import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
 import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
 import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
-import com.hean.consigueventas.oonabe.catalog.dto.response.CityResponse;
-import com.hean.consigueventas.oonabe.catalog.entity.City;
-import com.hean.consigueventas.oonabe.catalog.mapper.CityMapper;
-import com.hean.consigueventas.oonabe.common.enums.UserStatus;
 import com.hean.consigueventas.oonabe.location.dto.response.LocationResponse;
-import com.hean.consigueventas.oonabe.location.entity.Location;
-import com.hean.consigueventas.oonabe.location.mapper.LocationMapper;
+import com.hean.consigueventas.oonabe.masterdata.entity.City;
+import com.hean.consigueventas.oonabe.masterdata.mapper.CityMapper;
+import com.hean.consigueventas.oonabe.common.enums.UserStatus;
+import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;

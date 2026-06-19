@@ -2,10 +2,10 @@ package com.hean.consigueventas.oonabe;
 
 import com.hean.consigueventas.oonabe.auth.service.IAuthService;
 import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
-import com.hean.consigueventas.oonabe.catalog.service.ICityService;
 import com.hean.consigueventas.oonabe.category.service.ICategoryService;
 import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
-import com.hean.consigueventas.oonabe.location.service.ILocationService;
+import com.hean.consigueventas.oonabe.masterdata.service.ICityService;
+import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
 import com.hean.consigueventas.oonabe.user.service.IUserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
