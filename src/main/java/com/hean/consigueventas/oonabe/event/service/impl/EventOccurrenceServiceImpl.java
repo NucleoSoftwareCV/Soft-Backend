@@ -168,7 +168,7 @@ public class EventOccurrenceServiceImpl implements IEventOccurrenceService {
         occurrence.setCapacity(dto.capacity());
         occurrence.setReservedSpots(reservedSpots);
         occurrence.setStatus(dto.status() == null ? EventOccurrenceStatus.PROGRAMADA : dto.status());
-        occurrence.setVirtualUrl(dto.virtualUrl());
+//        occurrence.setVirtualUrl(dto.virtualUrl());
     }
 
     private Location resolveLocation(Long locationId) {
