@@ -51,6 +51,8 @@ public class EventOccurrenceController {
         return occurrenceService.getAllOccurrences();
     }
 
+
+
 //    @GetMapping("/public")
 //    @Operation(summary = "Listar ocurrencias públicas", description = "Devuelve las ocurrencias visibles para el público.", security = {})
 //    @ApiResponse(responseCode = "200", description = "Ocurrencias públicas encontradas")
