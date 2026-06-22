@@ -51,106 +51,106 @@ public class EventOccurrenceController {
         return occurrenceService.getAllOccurrences();
     }
 
-    @GetMapping("/public")
-    @Operation(summary = "Listar ocurrencias públicas", description = "Devuelve las ocurrencias visibles para el público.", security = {})
-    @ApiResponse(responseCode = "200", description = "Ocurrencias públicas encontradas")
-    public List<EventOccurrencePublicResponse> getPublicOccurrences() {
-        return occurrenceService.getPublicOccurrences();
-    }
+//    @GetMapping("/public")
+//    @Operation(summary = "Listar ocurrencias públicas", description = "Devuelve las ocurrencias visibles para el público.", security = {})
+//    @ApiResponse(responseCode = "200", description = "Ocurrencias públicas encontradas")
+//    public List<EventOccurrencePublicResponse> getPublicOccurrences() {
+//        return occurrenceService.getPublicOccurrences();
+//    }
+//
+//    @GetMapping("/public/date")
+//    @Operation(summary = "Buscar ocurrencias por fecha", security = {})
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
+//            @ApiResponse(responseCode = "400", description = "Fecha inválida", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDate(
+//            @Parameter(description = "Fecha de búsqueda", example = "2026-06-20")
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+//    ) {
+//        return occurrenceService.getPublicOccurrencesByDate(date);
+//    }
 
-    @GetMapping("/public/date")
-    @Operation(summary = "Buscar ocurrencias por fecha", security = {})
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
-            @ApiResponse(responseCode = "400", description = "Fecha inválida", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDate(
-            @Parameter(description = "Fecha de búsqueda", example = "2026-06-20")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        return occurrenceService.getPublicOccurrencesByDate(date);
-    }
+//    @GetMapping("/public/range")
+//    @Operation(summary = "Buscar ocurrencias por rango de fechas", security = {})
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
+//            @ApiResponse(responseCode = "400", description = "Rango de fechas inválido", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDateRange(
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+//    ) {
+//        return occurrenceService.getPublicOccurrencesByDateRange(startDate, endDate);
+//    }
+////
+//    @GetMapping("/event/{eventId}")
+//    @Operation(summary = "Listar ocurrencias de un evento", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas")
+//    public List<EventOccurrenceAdminResponse> getOccurrencesByEvent(@PathVariable Long eventId) {
+//        return occurrenceService.getOccurrencesByEvent(eventId);
+//    }
 
-    @GetMapping("/public/range")
-    @Operation(summary = "Buscar ocurrencias por rango de fechas", security = {})
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
-            @ApiResponse(responseCode = "400", description = "Rango de fechas inválido", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public List<EventOccurrencePublicResponse> getPublicOccurrencesByDateRange(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
-        return occurrenceService.getPublicOccurrencesByDateRange(startDate, endDate);
-    }
+//    @GetMapping("/{id}")
+//    @Operation(summary = "Obtener una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Ocurrencia encontrada"),
+//            @ApiResponse(responseCode = "404", description = "Ocurrencia no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public EventOccurrenceAdminResponse getOccurrenceById(@PathVariable Long id) {
+//        return occurrenceService.getOccurrenceById(id);
+//    }
 
-    @GetMapping("/event/{eventId}")
-    @Operation(summary = "Listar ocurrencias de un evento", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas")
-    public List<EventOccurrenceAdminResponse> getOccurrencesByEvent(@PathVariable Long eventId) {
-        return occurrenceService.getOccurrencesByEvent(eventId);
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Obtener una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Ocurrencia encontrada"),
-            @ApiResponse(responseCode = "404", description = "Ocurrencia no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public EventOccurrenceAdminResponse getOccurrenceById(@PathVariable Long id) {
-        return occurrenceService.getOccurrenceById(id);
-    }
-
-    @GetMapping("/filter")
-    @Operation(summary = "Filtrar ocurrencias", description = "Filtra por periodo, horario y fecha seleccionada.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
-            @ApiResponse(responseCode = "400", description = "Filtro inválido", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public List<EventOccurrenceAdminResponse> filterOccurrences(
-            @RequestParam(required = false) String dateFilter,
-            @RequestParam(required = false) String timeFilter,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate selectedDate
-    ) {
-        return occurrenceService.filterOccurrences(dateFilter, timeFilter, selectedDate);
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Crear una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Ocurrencia creada"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
-            @ApiResponse(responseCode = "404", description = "Evento o ubicación no encontrados", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public EventOccurrenceAdminResponse createOccurrence(@Valid @RequestBody EventOccurrenceUpsertRequest dto) {
-        return occurrenceService.createOccurrence(dto);
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "Actualizar una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Ocurrencia actualizada"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
-            @ApiResponse(responseCode = "404", description = "Ocurrencia, evento o ubicación no encontrados", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public EventOccurrenceAdminResponse updateOccurrence(
-            @PathVariable Long id,
-            @Valid @RequestBody EventOccurrenceUpsertRequest dto
-    ) {
-        return occurrenceService.updateOccurrence(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Eliminar una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Ocurrencia eliminada"),
-            @ApiResponse(responseCode = "404", description = "Ocurrencia no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public void deleteOccurrence(@PathVariable Long id) {
-        occurrenceService.deleteOccurrence(id);
-    }
+//    @GetMapping("/filter")
+//    @Operation(summary = "Filtrar ocurrencias", description = "Filtra por periodo, horario y fecha seleccionada.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas"),
+//            @ApiResponse(responseCode = "400", description = "Filtro inválido", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public List<EventOccurrenceAdminResponse> filterOccurrences(
+//            @RequestParam(required = false) String dateFilter,
+//            @RequestParam(required = false) String timeFilter,
+//            @RequestParam(required = false)
+//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+//            LocalDate selectedDate
+//    ) {
+//        return occurrenceService.filterOccurrences(dateFilter, timeFilter, selectedDate);
+//    }
+//
+//    @PostMapping
+//    @ResponseStatus(HttpStatus.CREATED)
+//    @Operation(summary = "Crear una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "201", description = "Ocurrencia creada"),
+//            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+//            @ApiResponse(responseCode = "404", description = "Evento o ubicación no encontrados", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public EventOccurrenceAdminResponse createOccurrence(@Valid @RequestBody EventOccurrenceUpsertRequest dto) {
+//        return occurrenceService.createOccurrence(dto);
+//    }
+//
+//    @PutMapping("/{id}")
+//    @Operation(summary = "Actualizar una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Ocurrencia actualizada"),
+//            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+//            @ApiResponse(responseCode = "404", description = "Ocurrencia, evento o ubicación no encontrados", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public EventOccurrenceAdminResponse updateOccurrence(
+//            @PathVariable Long id,
+//            @Valid @RequestBody EventOccurrenceUpsertRequest dto
+//    ) {
+//        return occurrenceService.updateOccurrence(id, dto);
+//    }
+//
+//    @DeleteMapping("/{id}")
+//    @ResponseStatus(HttpStatus.NO_CONTENT)
+//    @Operation(summary = "Eliminar una ocurrencia", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "204", description = "Ocurrencia eliminada"),
+//            @ApiResponse(responseCode = "404", description = "Ocurrencia no encontrada", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+//    })
+//    public void deleteOccurrence(@PathVariable Long id) {
+//        occurrenceService.deleteOccurrence(id);
+//    }
 }
