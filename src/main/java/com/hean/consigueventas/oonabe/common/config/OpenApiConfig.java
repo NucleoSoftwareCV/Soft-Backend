@@ -36,11 +36,27 @@ public class OpenApiConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("public")
-                .pathsToMatch("/api/v1/auth/**",
+                .pathsToMatch(
+                        "/api/v1/auth/**",
                         "/api/v1/categories/**",
                         "/api/v1/locations/**",
-                        "/api/v1/cities/**"
-                        )
+                        "/api/v1/cities/**",
+                        "/api/v1/one-to-one-services",
+                        "/api/v1/one-to-one-services/{id}",
+                        "/api/v1/one-to-one-services/slug/{slug}"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) -> {
+                            if (path.startsWith("/api/v1/one-to-one-services")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                        });
+                    }
+                })
                 .build();
     }
 
@@ -49,7 +65,22 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("protected")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/v1/auth/**", "/api/v1/categories/**", "/api/v1/locations/**")
+                .pathsToExclude(
+                        "/api/v1/auth/**",
+                        "/api/v1/categories/**",
+                        "/api/v1/locations/**"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) -> {
+                            if (path.startsWith("/api/v1/one-to-one-services")) {
+                                if (!path.equals("/api/v1/one-to-one-services/my-services")) {
+                                    pathItem.setGet(null);
+                                }
+                            }
+                        });
+                    }
+                })
                 .build();
     }
 }

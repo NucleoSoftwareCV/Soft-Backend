@@ -2,10 +2,16 @@ package com.hean.consigueventas.oonabe.common.config;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
+import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.common.enums.SessionModality;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
+import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
@@ -28,16 +34,22 @@ public class DataInitializer {
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             LocationRepository locationRepository,
-            CityRepository cityRepository
+            CityRepository cityRepository,
+            SpecialistProfileRepository specialistProfileRepository,
+            OneToOneServiceRepository serviceRepository
             ) {
         return args -> {
             Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
             Role roleAdmin = userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
+            Role roleProfessional = userService.getOrCreateRole("ROLE_PROFESSIONAL", "Profesional / Especialista");
 
             seedUser(userRepository, "user1", "user1@oona.es", "$2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2", Set.of(roleUser));
             seedUser(userRepository, "user2", "user2@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleUser));
             seedUser(userRepository, "admin_main1", "admin1@oona.es", "$2a$10$Mdap8zU9ZNG6oqsRUm6U7eh6Kr6oGpG.ZSRS.E8YI3bPJJC419mG2", Set.of(roleAdmin));
             seedUser(userRepository, "admin_main2", "admin2@oona.es", "$2a$10$Y3wc8XrAr4xxFCkll4Ao9er1XWddL39zVRwLBjUPhrcMUmB6SF9DC", Set.of(roleAdmin));
+
+            User specUser1 = seedUser(userRepository, "specialist_ana", "ana@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
+            User specUser2 = seedUser(userRepository, "specialist_carlos", "carlos@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
 
             seedCategory(categoryRepository, "Yoga", "Practicas de yoga y bienestar corporal.");
             seedCategory(categoryRepository, "Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
@@ -51,9 +63,9 @@ public class DataInitializer {
             seedCategory(categoryRepository, "Psicologia", "Acompanamiento psicologico y bienestar emocional.");
             seedCategory(categoryRepository, "Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
 
-            seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", false);
-            seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", false);
-            seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
+            Location loc1 = seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", true);
+            Location loc2 = seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", true);
+            Location loc3 = seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
 
             seedCity(cityRepository, "Madrid", "Madrid", "ES", true);
             seedCity(cityRepository, "Barcelona", "Barcelona", "ES", true);
@@ -65,19 +77,28 @@ public class DataInitializer {
             seedCity(cityRepository, "Palma", "Islas Baleares", "ES", true);
             seedCity(cityRepository, "Alicante", "Alicante", "ES", true);
             seedCity(cityRepository, "Granada", "Granada", "ES", true);
+
+            SpecialistProfile profileAna = seedSpecialist(specialistProfileRepository, specUser1, "ana-psicologa", "Ana Gómez", "Psicóloga clínica con más de 10 años de experiencia.", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", "+34600111222", "ana@oona.es", "https://anagomez.es");
+            SpecialistProfile profileCarlos = seedSpecialist(specialistProfileRepository, specUser2, "carlos-yoga", "Carlos Ruiz", "Instructor certificado de Hatha y Vinyasa Yoga.", "https://images.unsplash.com/photo-1534528741775-53994a69daeb", "+34600333444", "carlos@oona.es", "https://carlosyoga.es");
+
+            seedOneToOneService(serviceRepository, profileAna, "Terapia Psicológica de Acompañamiento", "Sesión de terapia individual enfocada en ansiedad y manejo del estrés en la vida diaria.", 60, SessionModality.ONLINE, null, 65.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Evaluación de Perfil Cognitivo", "Evaluación integral de funciones cognitivas y atención para adultos mayores.", 90, SessionModality.PRESENCIAL, loc1, 120.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Clase Personalizada de Hatha Yoga", "Sesión individual adaptada a tu nivel y objetivos físicos y espirituales.", 75, SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Asesoría de Meditación Guiada y Mindfulness", "Iniciación teórica y práctica en mindfulness y respiración consciente.", 45, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Borrrador Clase Vinyasa Yoga", "Esta clase aún está en borrador.", 60, SessionModality.ONLINE, null, 45.00, "EUR", PublicationStatus.BORRADOR);
         };
     }
 
-    private void seedUser(UserRepository userRepository, String username, String email, String encodedPassword, Set<Role> roles) {
-        if (!userRepository.existsByUsername(username)) {
+    private User seedUser(UserRepository userRepository, String username, String email, String encodedPassword, Set<Role> roles) {
+        return userRepository.findByUsername(username).orElseGet(() -> {
             User user = new User();
             user.setUsername(username);
             user.setEmail(email);
             user.setPassword(encodedPassword);
             user.setRoles(new HashSet<>(roles));
             user.setActive(true);
-            userRepository.save(user);
-        }
+            return userRepository.save(user);
+        });
     }
 
     private void seedCategory(CategoryRepository categoryRepository, String name, String description) {
@@ -90,14 +111,14 @@ public class DataInitializer {
         });
     }
 
-    private void seedLocation(
+    private Location seedLocation(
             LocationRepository locationRepository,
             String name,
             String address,
             String reference,
             boolean isActive) {
 
-        locationRepository.findByName(name).orElseGet(() -> {
+        return locationRepository.findByName(name).orElseGet(() -> {
             Location location = new Location();
             location.setName(name);
             location.setAddress(address);
@@ -115,7 +136,7 @@ public class DataInitializer {
             boolean active) {
 
         cityRepository.findByNameAndProvince(name, province).orElseGet(() -> {
-            City city = new     City();
+            City city = new City();
             city.setName(name);
             city.setProvince(province);
             city.setCountryCode(countryCode);
@@ -124,5 +145,68 @@ public class DataInitializer {
         });
     }
 
+    private SpecialistProfile seedSpecialist(
+            SpecialistProfileRepository specialistProfileRepository,
+            User user,
+            String slug,
+            String publicName,
+            String biography,
+            String photoUrl,
+            String whatsappPhone,
+            String publicEmail,
+            String website
+    ) {
+        return specialistProfileRepository.findByUserId(user.getId()).orElseGet(() -> {
+            SpecialistProfile profile = new SpecialistProfile();
+            profile.setUser(user);
+            profile.setSlug(slug);
+            profile.setPublicName(publicName);
+            profile.setBiography(biography);
+            profile.setPhotoUrl(photoUrl);
+            profile.setWhatsappPhone(whatsappPhone);
+            profile.setPublicEmail(publicEmail);
+            profile.setWebsite(website);
+            profile.setApprovalStatus(com.hean.consigueventas.oonabe.common.enums.ApprovalStatus.APROBADO);
+            profile.setPublicationStatus(com.hean.consigueventas.oonabe.common.enums.PublicationStatus.PUBLICADO);
+            return specialistProfileRepository.save(profile);
+        });
+    }
 
+    private void seedOneToOneService(
+            OneToOneServiceRepository serviceRepository,
+            SpecialistProfile specialist,
+            String title,
+            String description,
+            Integer durationMinutes,
+            SessionModality modality,
+            Location location,
+            double price,
+            String currency,
+            PublicationStatus status
+    ) {
+        String tempSlug = title.toLowerCase()
+                .replace("ñ", "n")
+                .replace("á", "a")
+                .replace("é", "e")
+                .replace("í", "i")
+                .replace("ó", "o")
+                .replace("ú", "u")
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+
+        serviceRepository.findBySlug(tempSlug).orElseGet(() -> {
+            OneToOneService service = new OneToOneService();
+            service.setSpecialist(specialist);
+            service.setSlug(tempSlug);
+            service.setTitle(title);
+            service.setDescription(description);
+            service.setDurationMinutes(durationMinutes);
+            service.setModality(modality);
+            service.setLocation(location);
+            service.setPrice(java.math.BigDecimal.valueOf(price));
+            service.setCurrency(currency);
+            service.setStatus(status);
+            return serviceRepository.save(service);
+        });
+    }
 }

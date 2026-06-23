@@ -18,7 +18,7 @@ public record OneToOneServiceResponse(
         @Schema(description = "Nombre público del especialista.")
         String specialistName,
 
-        @Schema(description = "Slug amigable para URLs.")
+        @Schema(description = "Identificador de texto amigable para la URL (enlace legible). Ejemplo: 'terapia-psicologica'.")
         String slug,
 
         @Schema(description = "Título de la sesión.")

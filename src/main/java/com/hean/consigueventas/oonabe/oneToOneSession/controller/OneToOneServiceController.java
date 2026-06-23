@@ -52,7 +52,11 @@ public class OneToOneServiceController {
     }
 
     @GetMapping("/slug/{slug}")
-    @Operation(summary = "Obtener sesión por Slug", description = "Si no está publicada, solo el dueño puede verla.", security = {})
+    @Operation(
+            summary = "Obtener sesión por enlace amigable (nombre legible de la URL)",
+            description = "Busca los detalles de una sesión utilizando el texto legible de su enlace en lugar de su número identificador ID. Ejemplo: '/slug/terapia-psicologica' en lugar de buscar por '/5'. Si no está publicada, solo el especialista creador puede verla.",
+            security = {}
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sesión encontrada"),
             @ApiResponse(responseCode = "404", description = "Sesión no encontrada o no disponible", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
