@@ -4,6 +4,9 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.enums.SessionModality;
+import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventStatus;
+import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
@@ -12,6 +15,12 @@ import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
 import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import com.hean.consigueventas.oonabe.event.entity.Event;
+import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
+import com.hean.consigueventas.oonabe.event.entity.MeetingLink;
+import com.hean.consigueventas.oonabe.event.repository.EventRepository;
+import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
+import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
@@ -21,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,7 +46,10 @@ public class DataInitializer {
             LocationRepository locationRepository,
             CityRepository cityRepository,
             SpecialistProfileRepository specialistProfileRepository,
-            OneToOneServiceRepository serviceRepository
+            OneToOneServiceRepository serviceRepository,
+            EventRepository eventRepository,
+            EventOccurrenceRepository occurrenceRepository,
+            MeetingLinkRepository meetingLinkRepository
             ) {
         return args -> {
             Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
@@ -86,6 +99,39 @@ public class DataInitializer {
             seedOneToOneService(serviceRepository, profileCarlos, "Clase Personalizada de Hatha Yoga", "Sesión individual adaptada a tu nivel y objetivos físicos y espirituales.", 75, SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
             seedOneToOneService(serviceRepository, profileCarlos, "Asesoría de Meditación Guiada y Mindfulness", "Iniciación teórica y práctica en mindfulness y respiración consciente.", 45, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
             seedOneToOneService(serviceRepository, profileCarlos, "Borrrador Clase Vinyasa Yoga", "Esta clase aún está en borrador.", 60, SessionModality.ONLINE, null, 45.00, "EUR", PublicationStatus.BORRADOR);
+
+            // Sembrado de Categorías de referencia para Eventos
+            Category catCuerpo = categoryRepository.findByName("Cuerpo y Salud").orElse(null);
+            Category catMovimiento = categoryRepository.findByName("Movimiento").orElse(null);
+            Category catSonido = categoryRepository.findByName("Sonido y Vibracion").orElse(null);
+
+            // 1. Taller de Porteo Ergonómico (Online)
+            Event event1 = seedEvent(eventRepository,
+                    "Taller de Porteo Ergonómico Fresco - Edición Verano",
+                    "Aprende las opciones más frescas para portear a tu bebé cuando hace calor.",
+                    "Taller de porteo ergonómico edición verano. En este taller veremos las opciones más frescas para portear a tu bebé cuando hace calor. Si estás embarazada es el mejor momento para informarte.",
+                    EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event1, null,
+                    Instant.parse("2026-06-29T12:00:00Z"), Instant.parse("2026-06-29T13:30:00Z"), 20,
+                    "https://zoom.us/j/9876543210?pwd=secretZoomPassword123");
+
+            // 2. Pilates Aéreo (Presencial)
+            Event event2 = seedEvent(eventRepository,
+                    "Pilates Aéreo. Llevas tu cuerpo a otro nivel",
+                    "Una experiencia de pilates en suspensión para trabajar fuerza y flexibilidad.",
+                    "Descubre los beneficios del pilates aéreo trabajando con columpios especiales. Una clase que desafía tu equilibrio y fortalece todo tu core de forma divertida y segura.",
+                    EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event2, loc1,
+                    Instant.parse("2026-06-26T15:00:00Z"), Instant.parse("2026-06-26T16:30:00Z"), 15, null);
+
+            // 3. Baño de Sonido al Atardecer (Presencial)
+            Event event3 = seedEvent(eventRepository,
+                    "Baño de Sonido al Atardecer en Paddle Surf",
+                    "Meditación vibracional flotando sobre el agua durante la puesta de sol.",
+                    "Una experiencia única que combina el equilibrio y la relajación del Paddle Surf con las vibraciones armónicas de los cuencos tibetanos y gongs al atardecer.",
+                    EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event3, loc2,
+                    Instant.parse("2026-06-26T17:30:00Z"), Instant.parse("2026-06-26T19:00:00Z"), 10, null);
         };
     }
 
@@ -208,5 +254,71 @@ public class DataInitializer {
             service.setStatus(status);
             return serviceRepository.save(service);
         });
+    }
+
+    private Event seedEvent(
+            EventRepository eventRepository,
+            String title,
+            String summary,
+            String description,
+            EventModality modality,
+            double price,
+            String currency,
+            Short minimumAge,
+            Category category,
+            SpecialistProfile specialist
+    ) {
+        return eventRepository.findByTitle(title).orElseGet(() -> {
+            Event event = new Event();
+            event.setTitle(title);
+            event.setSummary(summary);
+            event.setDescription(description);
+            event.setModality(modality);
+            event.setPriceFrom(java.math.BigDecimal.valueOf(price));
+            event.setCurrency(currency);
+            event.setMinimumAge(minimumAge);
+            event.setStatus(EventStatus.PUBLICADO);
+            event.setFeatured(true);
+            event.setCategory(category);
+            event.setSpecialist(specialist);
+            return eventRepository.save(event);
+        });
+    }
+
+    private void seedOccurrence(
+            EventOccurrenceRepository occurrenceRepository,
+            MeetingLinkRepository meetingLinkRepository,
+            Event event,
+            Location location,
+            Instant startsAt,
+            Instant endsAt,
+            Integer capacity,
+            String meetingUrl
+    ) {
+        if (occurrenceRepository.findByEventIdOrderByStartsAtAsc(event.getId()).isEmpty()) {
+            EventOccurrence occurrence = new EventOccurrence();
+            occurrence.setEvent(event);
+            occurrence.setStartsAt(startsAt);
+            occurrence.setEndsAt(endsAt);
+            occurrence.setCapacity(capacity);
+            occurrence.setReservedSpots(0);
+            occurrence.setStatus(EventOccurrenceStatus.PROGRAMADA);
+            occurrence.setLocation(location);
+
+            EventOccurrence savedOccurrence = occurrenceRepository.save(occurrence);
+
+            if (event.getModality() == EventModality.ONLINE && meetingUrl != null) {
+                MeetingLink meetingLink = new MeetingLink();
+                meetingLink.setEventOccurrence(savedOccurrence);
+                meetingLink.setPlatform("ZOOM");
+                meetingLink.setMeetingUrl(meetingUrl);
+                meetingLink.setMeetingId("123-456-789");
+                meetingLink.setPassword("secret");
+                meetingLinkRepository.save(meetingLink);
+
+                savedOccurrence.setMeetingLink(meetingLink);
+                occurrenceRepository.save(savedOccurrence);
+            }
+        }
     }
 }
