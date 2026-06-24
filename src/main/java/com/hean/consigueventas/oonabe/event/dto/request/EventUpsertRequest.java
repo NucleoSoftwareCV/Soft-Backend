@@ -53,6 +53,10 @@ public record EventUpsertRequest(
 
         @Schema(description = "Categoría del evento.")
         @NotNull(message = "La categoría es obligatoria")
-        Long categoryId
+        Long categoryId,
+
+        @Schema(description = "ID del especialista / organizador.", example = "1")
+        @NotNull(message = "El ID del especialista es obligatorio")
+        Long specialistId
 ) {
 }

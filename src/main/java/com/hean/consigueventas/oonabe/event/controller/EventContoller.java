@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/events")
 @Tag(name = "Eventos", description = "API para la gestión de eventos")
@@ -42,6 +47,25 @@ public class EventContoller {
 
         CreateEventResponse response = eventService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    @Operation(summary = "Listar todos los eventos", description = "Devuelve el listado de todos los eventos con su organizador y ocurrencias")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
+    public ResponseEntity<List<EventDetailResponse>> getAllEvents() {
+        List<EventDetailResponse> events = eventService.getAllActiveEvents();
+        return ResponseEntity.ok(events);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener detalle del evento", description = "Devuelve el detalle de un evento específico por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Detalle del evento obtenido exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Evento no encontrado")
+    })
+    public ResponseEntity<EventDetailResponse> getEventById(@PathVariable Long id) {
+        EventDetailResponse eventDetail = eventService.getEventDetail(id);
+        return ResponseEntity.ok(eventDetail);
     }
 
 }

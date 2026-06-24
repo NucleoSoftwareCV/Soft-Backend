@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.event.dto.request.CreateEventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.CreateEventResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -19,8 +20,12 @@ import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class EventService {
@@ -30,6 +35,7 @@ public class EventService {
     private final MeetingLinkRepository meetingLinkRepository;
     private final LocationRepository locationRepository;
     private final CategoryRepository categoryRepository;
+    private final SpecialistProfileRepository specialistProfileRepository;
 
     private final EventMapper eventMapper;
     private final EventOccurrenceMapper occurrenceMapper;
@@ -41,6 +47,7 @@ public class EventService {
                         MeetingLinkRepository meetingLinkRepository,
                         LocationRepository locationRepository,
                         CategoryRepository categoryRepository,
+                        SpecialistProfileRepository specialistProfileRepository,
                         EventMapper eventMapper,
                         EventOccurrenceMapper occurrenceMapper,
                         MeetingLinkMapper meetingLinkMapper,
@@ -50,6 +57,7 @@ public class EventService {
         this.meetingLinkRepository = meetingLinkRepository;
         this.locationRepository = locationRepository;
         this.categoryRepository = categoryRepository;
+        this.specialistProfileRepository = specialistProfileRepository;
         this.eventMapper = eventMapper;
         this.occurrenceMapper = occurrenceMapper;
         this.meetingLinkMapper = meetingLinkMapper;
@@ -66,6 +74,11 @@ public class EventService {
         Category category = categoryRepository.findById(request.event().categoryId())
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
         event.setCategory(category);
+
+        // 2.5 Validar y asignar especialista/organizador
+        SpecialistProfile specialist = specialistProfileRepository.findById(request.event().specialistId())
+                .orElseThrow(() -> new RuntimeException("Especialista no encontrado"));
+        event.setSpecialist(specialist);
 
         // 3. Guardar evento
         Event savedEvent = eventRepository.save(event);
@@ -95,6 +108,21 @@ public class EventService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<EventDetailResponse> getAllActiveEvents() {
+        return eventRepository.findAll()
+                .stream()
+                .map(eventMapper::toDetailResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public EventDetailResponse getEventDetail(Long id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        return eventMapper.toDetailResponse(event);
+    }
+
     private void processOnlineEvent(EventOccurrence occurrence, CreateEventUpsertRequest request) {
         if (request.occurrence().meetingLink() == null) {
             throw new IllegalArgumentException("Los datos de la reunión son obligatorios para eventos online");
@@ -116,6 +144,4 @@ public class EventService {
         locationRepository.save(location);
         occurrence.setLocation(location);
     }
-
-
 }

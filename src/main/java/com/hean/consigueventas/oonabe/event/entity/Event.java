@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.user.entity.User;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,10 +53,9 @@ public class Event {
     @Column(name = "featured", nullable = false)
     private boolean featured;
 
-//    aqui seria el profecional
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "professional_id", nullable = false)
-//    private Professional professional;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialist_id", nullable = false)
+    private SpecialistProfile specialist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
