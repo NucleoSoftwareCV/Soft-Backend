@@ -12,7 +12,7 @@ public record EventOccurrenceUpsertRequest(
         Long locationId,
         @NotNull @Min(0) Integer capacity,
         @Min(0) Integer reservedSpots,
-        EventOccurrenceStatus status,
-        String virtualUrl
+        EventOccurrenceStatus status
+//        String virtualUrl
 ) {
 }

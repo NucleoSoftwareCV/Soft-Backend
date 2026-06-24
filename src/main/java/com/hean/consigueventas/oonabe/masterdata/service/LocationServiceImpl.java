@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.masterdata.service;
 
-import com.hean.consigueventas.oonabe.masterdata.response.LocationResponse;
+import com.hean.consigueventas.oonabe.masterdata.dto.response.LocationResponse;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,10 @@ public class LocationServiceImpl implements ILocationService {
     @Transactional(readOnly = true)
     @Override
     public List<LocationResponse> findActive() {
-        return locationRepository.findByIsActiveTrueOrderByNameAsc().stream().map(locationMapper::toDto).toList();
+        return locationRepository.findByIsActiveTrueOrderByNameAsc()
+                .stream()
+                .map(locationMapper::toDto)
+                .toList();
     }
 
 

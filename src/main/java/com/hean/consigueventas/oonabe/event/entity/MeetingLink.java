@@ -21,8 +21,8 @@ public class MeetingLink {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
-    private Event event;
+    @JoinColumn(name = "event_occurrence_id", nullable = false)
+    private EventOccurrence eventOccurrence;
 
     @Column(name = "platform", nullable = false, length = 50)
     private String platform;
