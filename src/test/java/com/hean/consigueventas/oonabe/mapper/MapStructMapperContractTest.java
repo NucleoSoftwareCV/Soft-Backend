@@ -50,17 +50,23 @@ class MapStructMapperContractTest {
 
     @Test
     void mapsLocationEntity() {
+        City city = new City();
+        city.setName("Madrid");
+
         Location location = new Location();
         location.setId(9L);
         location.setName("Sede Centro");
         location.setAddress("Av. Principal 123");
+        location.setCity(city);
+        location.setLatitude(new BigDecimal("9.0"));
+        location.setLongitude(new BigDecimal("8.0"));
         location.setReference("Segundo piso");
         location.setIsActive(true);
 
         LocationResponse dto = locationMapper.toDto(location);
 
-        assertThat(dto).isEqualTo(new LocationResponse(9L, "Sede Centro", "Av. Principal 123", "Segundo piso", new BigDecimal("9.0"),
-                new BigDecimal("8.0"), "aver"));
+        assertThat(dto).isEqualTo(new LocationResponse(9L, "Sede Centro", "Av. Principal 123", "Madrid", new BigDecimal("9.0"),
+                new BigDecimal("8.0"), "Segundo piso"));
 
     }
 

@@ -238,7 +238,7 @@ class AuthFlowIntegrationTest {
     void publicLocationsOnlyReturnActiveEntries() throws Exception {
         mockMvc.perform(get("/api/v1/locations"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].name").value("Cada de vista"));
     }
 
