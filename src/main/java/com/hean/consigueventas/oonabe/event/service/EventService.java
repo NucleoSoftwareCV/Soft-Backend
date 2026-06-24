@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.event.dto.request.CreateEventUpsertRequest;
+import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.CreateEventResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
@@ -17,11 +18,17 @@ import com.hean.consigueventas.oonabe.event.mapper.MeetingLinkMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
+import com.hean.consigueventas.oonabe.event.specification.EventSpecification;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.common.enums.EventStatus;
+import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,11 +116,44 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventDetailResponse> getAllActiveEvents() {
-        return eventRepository.findAll()
-                .stream()
-                .map(eventMapper::toDetailResponse)
-                .toList();
+    public Page<EventCardResponse> getAllActiveEvents(EventFilterRequest filter, Pageable pageable) {
+        // Siempre filtramos solo eventos publicados
+        Specification<Event> spec = EventSpecification.isPublished();
+
+        // Filtros opcionales: se encadenan con AND si vienen informados
+        if (filter.search() != null && !filter.search().isBlank()) {
+            spec = spec.and(EventSpecification.titleOrSummaryContains(filter.search()));
+        }
+        if (filter.categoryId() != null) {
+            spec = spec.and(EventSpecification.hasCategory(filter.categoryId()));
+        }
+        if (filter.eventType() != null) {
+            spec = spec.and(EventSpecification.hasEventType(filter.eventType()));
+        }
+        if (filter.modality() != null) {
+            spec = spec.and(EventSpecification.hasModality(filter.modality()));
+        }
+        if (filter.cityName() != null && !filter.cityName().isBlank()) {
+            spec = spec.and(EventSpecification.hasCity(filter.cityName()));
+        }
+        if (filter.minPrice() != null) {
+            spec = spec.and(EventSpecification.minPrice(filter.minPrice()));
+        }
+        if (filter.maxPrice() != null) {
+            spec = spec.and(EventSpecification.maxPrice(filter.maxPrice()));
+        }
+        if (filter.dateFrom() != null || filter.dateTo() != null) {
+            spec = spec.and(EventSpecification.occurrenceInDateRange(filter.dateFrom(), filter.dateTo()));
+        }
+        if (filter.hourFrom() != null && filter.hourTo() != null) {
+            spec = spec.and(EventSpecification.occurrenceInHourRange(filter.hourFrom(), filter.hourTo()));
+        }
+        if (filter.isRecurring() != null) {
+            spec = spec.and(EventSpecification.isRecurring(filter.isRecurring()));
+        }
+
+        return eventRepository.findAll(spec, pageable)
+                .map(eventMapper::toCardResponse);
     }
 
     @Transactional(readOnly = true)
