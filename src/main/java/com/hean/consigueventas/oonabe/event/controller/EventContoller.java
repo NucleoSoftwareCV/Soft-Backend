@@ -50,7 +50,7 @@ public class EventContoller {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todos los eventos", description = "Devuelve el listado de todos los eventos con su organizador y ocurrencias")
+    @Operation(summary = "Listar todos los eventos", description = "Devuelve el listado de todos los eventos con su organizador y ocurrencias", security = {})
     @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
     public ResponseEntity<List<EventDetailResponse>> getAllEvents() {
         List<EventDetailResponse> events = eventService.getAllActiveEvents();
@@ -58,7 +58,7 @@ public class EventContoller {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener detalle del evento", description = "Devuelve el detalle de un evento específico por su ID")
+    @Operation(summary = "Obtener detalle del evento", description = "Devuelve el detalle de un evento específico por su ID", security = {})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Detalle del evento obtenido exitosamente"),
             @ApiResponse(responseCode = "404", description = "Evento no encontrado")

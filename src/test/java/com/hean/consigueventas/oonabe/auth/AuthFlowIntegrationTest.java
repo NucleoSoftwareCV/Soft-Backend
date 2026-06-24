@@ -253,8 +253,6 @@ class AuthFlowIntegrationTest {
     void removedFeatureRoutesAreNotPublic() throws Exception {
         mockMvc.perform(get("/api/v1/home"))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(get("/api/v1/events"))
-                .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/specialists"))
                 .andExpect(status().isUnauthorized());
     }

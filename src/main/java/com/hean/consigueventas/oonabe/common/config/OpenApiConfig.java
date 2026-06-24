@@ -43,12 +43,20 @@ public class OpenApiConfig {
                         "/api/v1/cities/**",
                         "/api/v1/one-to-one-services",
                         "/api/v1/one-to-one-services/{id}",
-                        "/api/v1/one-to-one-services/slug/{slug}"
+                        "/api/v1/one-to-one-services/slug/{slug}",
+                        "/api/v1/events",
+                        "/api/v1/events/{id}"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     if (openApi.getPaths() != null) {
                         openApi.getPaths().forEach((path, pathItem) -> {
                             if (path.startsWith("/api/v1/one-to-one-services")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                            if (path.startsWith("/api/v1/events")) {
                                 pathItem.setPost(null);
                                 pathItem.setPut(null);
                                 pathItem.setPatch(null);
@@ -77,6 +85,9 @@ public class OpenApiConfig {
                                 if (!path.equals("/api/v1/one-to-one-services/my-services")) {
                                     pathItem.setGet(null);
                                 }
+                            }
+                            if (path.startsWith("/api/v1/events")) {
+                                pathItem.setGet(null);
                             }
                         });
                     }
