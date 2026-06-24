@@ -64,9 +64,18 @@ public class OpenApiConfig {
                             }
                         });
                     }
+                    // Eliminar el securityRequirement global (bearerAuth) de TODOS los
+                    // paths de la definición Public para que Swagger no envíe cabeceras
+                    // de autorización vacías en endpoints públicos.
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) ->
+                            pathItem.readOperations().forEach(op -> op.setSecurity(java.util.Collections.emptyList()))
+                        );
+                    }
                 })
                 .build();
     }
+
 
     @Bean
     public GroupedOpenApi protectedApi() {

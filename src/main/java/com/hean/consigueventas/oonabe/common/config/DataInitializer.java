@@ -7,6 +7,7 @@ import com.hean.consigueventas.oonabe.common.enums.SessionModality;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
+import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
@@ -76,10 +77,6 @@ public class DataInitializer {
             seedCategory(categoryRepository, "Psicologia", "Acompanamiento psicologico y bienestar emocional.");
             seedCategory(categoryRepository, "Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
 
-            Location loc1 = seedLocation(locationRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", true);
-            Location loc2 = seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", true);
-            Location loc3 = seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
-
             seedCity(cityRepository, "Madrid", "Madrid", "ES", true);
             seedCity(cityRepository, "Barcelona", "Barcelona", "ES", true);
             seedCity(cityRepository, "Valencia", "Valencia", "ES", true);
@@ -90,6 +87,10 @@ public class DataInitializer {
             seedCity(cityRepository, "Palma", "Islas Baleares", "ES", true);
             seedCity(cityRepository, "Alicante", "Alicante", "ES", true);
             seedCity(cityRepository, "Granada", "Granada", "ES", true);
+
+            Location loc1 = seedLocation(locationRepository, cityRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", "Valencia", true);
+            Location loc2 = seedLocation(locationRepository, cityRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", "Barcelona", true);
+            Location loc3 = seedLocation(locationRepository, cityRepository, "Cada de vista", "hola", "Acceso", "Madrid", true);
 
             SpecialistProfile profileAna = seedSpecialist(specialistProfileRepository, specUser1, "ana-psicologa", "Ana Gómez", "Psicóloga clínica con más de 10 años de experiencia.", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", "+34600111222", "ana@oona.es", "https://anagomez.es");
             SpecialistProfile profileCarlos = seedSpecialist(specialistProfileRepository, specUser2, "carlos-yoga", "Carlos Ruiz", "Instructor certificado de Hatha y Vinyasa Yoga.", "https://images.unsplash.com/photo-1534528741775-53994a69daeb", "+34600333444", "carlos@oona.es", "https://carlosyoga.es");
@@ -104,13 +105,18 @@ public class DataInitializer {
             Category catCuerpo = categoryRepository.findByName("Cuerpo y Salud").orElse(null);
             Category catMovimiento = categoryRepository.findByName("Movimiento").orElse(null);
             Category catSonido = categoryRepository.findByName("Sonido y Vibracion").orElse(null);
+            Category catHielo = categoryRepository.findByName("Hielo y Breathwork").orElse(null);
+            Category catYoga = categoryRepository.findByName("Yoga").orElse(null);
+            Category catMeditacion = categoryRepository.findByName("Meditacion y Mindfulness").orElse(null);
+            Category catNutricion = categoryRepository.findByName("Nutricion y Cocina").orElse(null);
 
             // 1. Taller de Porteo Ergonómico (Online)
             Event event1 = seedEvent(eventRepository,
                     "Taller de Porteo Ergonómico Fresco - Edición Verano",
                     "Aprende las opciones más frescas para portear a tu bebé cuando hace calor.",
                     "Taller de porteo ergonómico edición verano. En este taller veremos las opciones más frescas para portear a tu bebé cuando hace calor. Si estás embarazada es el mejor momento para informarte.",
-                    EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna);
+                    EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna,
+                    EventType.TALLER, false);
             seedOccurrence(occurrenceRepository, meetingLinkRepository, event1, null,
                     Instant.parse("2026-06-29T12:00:00Z"), Instant.parse("2026-06-29T13:30:00Z"), 20,
                     "https://zoom.us/j/9876543210?pwd=secretZoomPassword123");
@@ -120,7 +126,8 @@ public class DataInitializer {
                     "Pilates Aéreo. Llevas tu cuerpo a otro nivel",
                     "Una experiencia de pilates en suspensión para trabajar fuerza y flexibilidad.",
                     "Descubre los beneficios del pilates aéreo trabajando con columpios especiales. Una clase que desafía tu equilibrio y fortalece todo tu core de forma divertida y segura.",
-                    EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos);
+                    EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos,
+                    EventType.CLASE, true);
             seedOccurrence(occurrenceRepository, meetingLinkRepository, event2, loc1,
                     Instant.parse("2026-06-26T15:00:00Z"), Instant.parse("2026-06-26T16:30:00Z"), 15, null);
 
@@ -129,9 +136,72 @@ public class DataInitializer {
                     "Baño de Sonido al Atardecer en Paddle Surf",
                     "Meditación vibracional flotando sobre el agua durante la puesta de sol.",
                     "Una experiencia única que combina el equilibrio y la relajación del Paddle Surf con las vibraciones armónicas de los cuencos tibetanos y gongs al atardecer.",
-                    EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos);
+                    EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos,
+                    EventType.CEREMONIA, false);
             seedOccurrence(occurrenceRepository, meetingLinkRepository, event3, loc2,
                     Instant.parse("2026-06-26T17:30:00Z"), Instant.parse("2026-06-26T19:00:00Z"), 10, null);
+
+            // 4. Taller de Breathwork & Hielo (Presencial)
+            Event event4 = seedEvent(eventRepository,
+                    "Taller de Breathwork & Hielo. Despierta tu fuego interno",
+                    "Aprende técnicas avanzadas de respiración y sumérgete en tina de hielo.",
+                    "Taller práctico de respiración consciente combinado con la inmersión en tina de hielo. Aprende a dominar tu mente, controlar tu sistema nervioso y potenciar tu sistema inmune.",
+                    EventModality.PRESENCIAL, 45.00, "EUR", (short) 18, catHielo, profileAna,
+                    EventType.TALLER, false);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event4, loc2,
+                    Instant.parse("2026-06-27T10:00:00Z"), Instant.parse("2026-06-27T12:00:00Z"), 12, null);
+
+            // 5. Clase Personalizada de Yoga Vinyasa (Presencial)
+            Event event5 = seedEvent(eventRepository,
+                    "Clase Especial de Yoga Vinyasa al Aire Libre",
+                    "Práctica fluida y dinámica de Vinyasa Yoga conectando respiración y movimiento en la playa.",
+                    "Disfruta de una sesión de Yoga Vinyasa al aire libre. Fluiremos de postura a postura guiados por la respiración para revitalizar el cuerpo y calmar la mente en un entorno natural.",
+                    EventModality.PRESENCIAL, 15.00, "EUR", (short) 12, catYoga, profileCarlos,
+                    EventType.CLASE, true);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event5, loc1,
+                    Instant.parse("2026-06-28T09:00:00Z"), Instant.parse("2026-06-28T10:30:00Z"), 25, null);
+
+            // 6. Iniciación a la Meditación Trascendental (Online)
+            Event event6 = seedEvent(eventRepository,
+                    "Iniciación a la Meditación Trascendental y del Sonido",
+                    "Aprende las bases teóricas y prácticas para establecer una práctica de meditación diaria.",
+                    "En este encuentro online aprenderás el origen, los beneficios científicos y las técnicas fundamentales de la meditación trascendental para reducir el ruido mental.",
+                    EventModality.ONLINE, 15.00, "EUR", (short) 16, catMeditacion, profileAna,
+                    EventType.ENCUENTRO_GRUPAL, false);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event6, null,
+                    Instant.parse("2026-06-28T18:00:00Z"), Instant.parse("2026-06-28T19:30:00Z"), 50,
+                    "https://zoom.us/j/1112223333?pwd=meditationPass456");
+
+            // 7. Taller de Nutrición Consciente (Online)
+            Event event7 = seedEvent(eventRepository,
+                    "Taller de Nutrición Consciente y Batch Cooking",
+                    "Organiza tus comidas de la semana comiendo sano, rico y de forma balanceada.",
+                    "Aprende a planificar un menú saludable y a cocinar en un solo bloque de tiempo (batch cooking) con recetas sencillas y nutritivas para toda la semana.",
+                    EventModality.ONLINE, 25.00, "EUR", (short) 18, catNutricion, profileAna,
+                    EventType.TALLER, false);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event7, null,
+                    Instant.parse("2026-06-30T19:00:00Z"), Instant.parse("2026-06-30T21:00:00Z"), 30,
+                    "https://zoom.us/j/4445556666?pwd=nutritionPass789");
+
+            // 8. Retiro Urbano de Mindfulness (Presencial)
+            Event event8 = seedEvent(eventRepository,
+                    "Retiro Urbano de Mindfulness y Naturaleza",
+                    "Un día entero de desconexión y presencia plena en el parque del Retiro.",
+                    "Una jornada dedicada al cultivo de la atención plena a través de caminatas conscientes, prácticas de escaneo corporal y meditaciones en grupo en medio de la naturaleza.",
+                    EventModality.PRESENCIAL, 60.00, "EUR", (short) 18, catMeditacion, profileCarlos,
+                    EventType.RETIRO, false);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event8, loc3,
+                    Instant.parse("2026-07-02T10:00:00Z"), Instant.parse("2026-07-02T17:00:00Z"), 15, null);
+
+            // 9. Sesión Especial de Baño de Gongs (Presencial)
+            Event event9 = seedEvent(eventRepository,
+                    "Sesión Especial de Baño de Gongs y Armónicos",
+                    "Relajación profunda a través del sonido sagrado y las vibraciones del gong.",
+                    "Sumérgete en un océano de vibraciones terapéuticas. Los gongs y los cuencos de cuarzo te guiarán a un estado meditativo profundo para restaurar tu energía vital.",
+                    EventModality.PRESENCIAL, 25.00, "EUR", (short) 16, catSonido, profileCarlos,
+                    EventType.CEREMONIA, true);
+            seedOccurrence(occurrenceRepository, meetingLinkRepository, event9, loc1,
+                    Instant.parse("2026-07-03T20:00:00Z"), Instant.parse("2026-07-03T21:30:00Z"), 20, null);
         };
     }
 
@@ -159,9 +229,11 @@ public class DataInitializer {
 
     private Location seedLocation(
             LocationRepository locationRepository,
+            CityRepository cityRepository,
             String name,
             String address,
             String reference,
+            String cityName,
             boolean isActive) {
 
         return locationRepository.findByName(name).orElseGet(() -> {
@@ -170,6 +242,9 @@ public class DataInitializer {
             location.setAddress(address);
             location.setReference(reference);
             location.setIsActive(isActive);
+            if (cityName != null) {
+                location.setCity(cityRepository.findByName(cityName).orElse(null));
+            }
             return locationRepository.save(location);
         });
     }
@@ -266,7 +341,9 @@ public class DataInitializer {
             String currency,
             Short minimumAge,
             Category category,
-            SpecialistProfile specialist
+            SpecialistProfile specialist,
+            EventType eventType,
+            boolean isRecurring
     ) {
         return eventRepository.findByTitle(title).orElseGet(() -> {
             Event event = new Event();
@@ -279,6 +356,8 @@ public class DataInitializer {
             event.setMinimumAge(minimumAge);
             event.setStatus(EventStatus.PUBLICADO);
             event.setFeatured(true);
+            event.setEventType(eventType);
+            event.setRecurring(isRecurring);
             event.setCategory(category);
             event.setSpecialist(specialist);
             return eventRepository.save(event);

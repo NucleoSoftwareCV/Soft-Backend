@@ -6,10 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
-@Schema(description = "Datos detallados de un evento, incluyendo organizador y sus ocurrencias/horarios")
-public record EventDetailResponse(
+@Schema(description = "Datos resumidos de un evento para mostrar en tarjetas/listados")
+public record EventCardResponse(
         @Schema(description = "ID del evento")
         Long id,
 
@@ -18,9 +17,6 @@ public record EventDetailResponse(
 
         @Schema(description = "Resumen corto")
         String summary,
-
-        @Schema(description = "Descripción completa")
-        String description,
 
         @Schema(description = "Modalidad (ONLINE o PRESENCIAL)")
         EventModality modality,
@@ -31,34 +27,34 @@ public record EventDetailResponse(
         @Schema(description = "Moneda")
         String currency,
 
-        @Schema(description = "Edad mínima")
-        Short minimumAge,
-
-        @Schema(description = "¿Destacado?")
-        Boolean featured,
-
         @Schema(description = "ID de la categoría")
         Long categoryId,
 
         @Schema(description = "Nombre de la categoría")
         String categoryName,
 
-        @Schema(description = "Organizador del evento")
-        EventOrganizerResponse organizer,
+        @Schema(description = "ID del organizador")
+        Long organizerId,
 
-        @Schema(description = "Horarios y ubicaciones del evento")
-        List<EventOccurrenceResponse> occurrences,
+        @Schema(description = "Nombre del organizador")
+        String organizerName,
+
+        @Schema(description = "URL de la foto del organizador")
+        String organizerPhotoUrl,
+
+        @Schema(description = "Fecha de inicio del primer horario programado")
+        Instant startsAt,
+
+        @Schema(description = "Fecha de fin del primer horario programado")
+        Instant endsAt,
+
+        @Schema(description = "Ciudad (para eventos presenciales)")
+        String cityName,
 
         @Schema(description = "Tipo de experiencia (TALLER, RETIRO, CLASE, etc.)")
         EventType eventType,
 
         @Schema(description = "¿Es recurrente?")
-        Boolean isRecurring,
-
-        @Schema(description = "Fecha de creación")
-        Instant createdAt,
-
-        @Schema(description = "Fecha de actualización")
-        Instant updatedAt
+        Boolean isRecurring
 ) {
 }
