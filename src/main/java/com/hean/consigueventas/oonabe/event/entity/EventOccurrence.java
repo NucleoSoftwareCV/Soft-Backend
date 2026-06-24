@@ -50,7 +50,7 @@ public class EventOccurrence {
     @Column(name = "status", nullable = false, length = 20)
     private EventOccurrenceStatus status = EventOccurrenceStatus.PROGRAMADA;
 
-    @Version
-    @Column(name = "version", nullable = false)
-    private Long version;
+//    @Version
+//    @Column(name = "version", nullable = false)
+//    private Long version;
 }
