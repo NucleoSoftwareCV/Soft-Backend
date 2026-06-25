@@ -7,8 +7,16 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CityRepository extends JpaRepository<City, Long> {
-    List<City> findByIsActiveTrueOrderByNameAsc();
 
-//    Optional<City> findByName(String name);
-    Optional<City> findByNameAndProvince(String name, String province);
+    //Filtro público
+    List<City> findByIsActiveTrue();
+
+    //Filtro administrativo por estado
+    List<City> findByIsActive(Boolean isActive);
+
+    // DataInitializer
+    Optional<City> findByNameAndProvince(
+            String name,
+            String province
+    );
 }

@@ -4,8 +4,12 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
+import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
+import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
@@ -28,7 +32,9 @@ public class DataInitializer {
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             LocationRepository locationRepository,
-            CityRepository cityRepository
+            CityRepository cityRepository,
+            WorkTopicRepository workTopicRepository,
+            TechniqueRepository techniqueRepository
             ) {
         return args -> {
             Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
@@ -55,16 +61,19 @@ public class DataInitializer {
             seedLocation(locationRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", false);
             seedLocation(locationRepository, "Cada de vista", "hola", "Acceso", true);
 
-            seedCity(cityRepository, "Madrid", "Madrid", "ES", true);
-            seedCity(cityRepository, "Barcelona", "Barcelona", "ES", true);
-            seedCity(cityRepository, "Valencia", "Valencia", "ES", true);
-            seedCity(cityRepository, "Sevilla", "Sevilla", "ES", true);
-            seedCity(cityRepository, "MÃ¡laga", "MÃ¡laga", "ES", true);
-            seedCity(cityRepository, "Bilbao", "Vizcaya", "ES", true);
-            seedCity(cityRepository, "Zaragoza", "Zaragoza", "ES", true);
-            seedCity(cityRepository, "Palma", "Islas Baleares", "ES", true);
-            seedCity(cityRepository, "Alicante", "Alicante", "ES", true);
-            seedCity(cityRepository, "Granada", "Granada", "ES", true);
+            seedCity(cityRepository, "Madrid", "Madrid");
+            seedCity(cityRepository, "Barcelona", "Barcelona");
+            seedCity(cityRepository, "Valencia", "Valencia");
+
+            seedWorkTopic(workTopicRepository, "Autoestima", true);
+            seedWorkTopic(workTopicRepository, "Motivacion", true);
+            seedWorkTopic(workTopicRepository, "Bienestar", true);
+            seedWorkTopic(workTopicRepository, "Resiliencia", true);
+
+            seedTechnique(techniqueRepository, "Terapia", true);
+            seedTechnique(techniqueRepository, "Acupuntura", true);
+            seedTechnique(techniqueRepository, "Quiropraxia", true);
+            seedTechnique(techniqueRepository, "Yoga", true);
         };
     }
 
@@ -110,19 +119,48 @@ public class DataInitializer {
     private void seedCity(
             CityRepository cityRepository,
             String name,
-            String province,
-            String countryCode,
-            boolean active) {
+            String province
+    ) {
+        cityRepository.findByNameAndProvince(name, province)
+                .orElseGet(() -> {
+                    City city = new City();
+                    city.setName(name.trim());
+                    city.setProvince(province.trim());
+                    city.setCountryCode("ES");
+                    city.setIsActive(true);
 
-        cityRepository.findByNameAndProvince(name, province).orElseGet(() -> {
-            City city = new     City();
-            city.setName(name);
-            city.setProvince(province);
-            city.setCountryCode(countryCode);
-            city.setIsActive(active);
-            return cityRepository.save(city);
-        });
+                    return cityRepository.save(city);
+                });
+    }
+    private void seedWorkTopic(
+            WorkTopicRepository workTopicRepository,
+            String name,
+            boolean active
+    ) {
+        String normalizedName = name.trim();
+
+        workTopicRepository.findByNameIgnoreCase(normalizedName)
+                .orElseGet(() -> {
+                    WorkTopic workTopic = new WorkTopic();
+                    workTopic.setName(normalizedName);
+                    workTopic.setActive(active);
+                    return workTopicRepository.save(workTopic);
+                });
     }
 
+    private void seedTechnique(
+            TechniqueRepository techniqueRepository,
+            String name,
+            boolean active
+    ) {
+        String normalizedName = name.trim();
 
+        techniqueRepository.findByNameIgnoreCase(normalizedName)
+                .orElseGet(() -> {
+                    Technique technique = new Technique();
+                    technique.setName(normalizedName);
+                    technique.setActive(active);
+                    return techniqueRepository.save(technique);
+                });
+    }
 }

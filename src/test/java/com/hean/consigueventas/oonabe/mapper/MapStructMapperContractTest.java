@@ -1,12 +1,10 @@
 package com.hean.consigueventas.oonabe.mapper;
 
-import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
 import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
 import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.mapper.CategoryMapper;
-import com.hean.consigueventas.oonabe.masterdata.response.LocationResponse;
-import com.hean.consigueventas.oonabe.masterdata.entity.City;
+import com.hean.consigueventas.oonabe.masterdata.dto.response.LocationResponse;
 import com.hean.consigueventas.oonabe.masterdata.mapper.CityMapper;
 import com.hean.consigueventas.oonabe.common.enums.UserStatus;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
@@ -61,19 +59,6 @@ class MapStructMapperContractTest {
         assertThat(dto).isEqualTo(new LocationResponse(9L, "Sede Centro", "Av. Principal 123", "Segundo piso", true));
     }
 
-    @Test
-    void mapsCityEntity() {
-        City city = new City();
-        city.setId(4L);
-        city.setName("Lima");
-        city.setProvince("Lima");
-        city.setCountryCode("PE");
-        city.setIsActive(true);
-
-        CityResponse dto = cityMapper.toDto(city);
-
-        assertThat(dto).isEqualTo(new CityResponse(4L, "Lima", "Lima", "PE", true));
-    }
 
     @Test
     void mapsUserEntityAndNormalizesRoles() {

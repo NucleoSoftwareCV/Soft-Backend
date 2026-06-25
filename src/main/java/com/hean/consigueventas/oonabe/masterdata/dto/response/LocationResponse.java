@@ -1,4 +1,4 @@
-package com.hean.consigueventas.oonabe.masterdata.response;
+package com.hean.consigueventas.oonabe.masterdata.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Ubicacion física activa.")
