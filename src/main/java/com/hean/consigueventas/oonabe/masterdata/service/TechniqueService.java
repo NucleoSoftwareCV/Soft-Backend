@@ -1,9 +1,8 @@
 package com.hean.consigueventas.oonabe.masterdata.service;
 
-import com.hean.consigueventas.oonabe.masterdata.dto.TechniqueDTO;
-import com.hean.consigueventas.oonabe.masterdata.dto.WorkTopicDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.Admin.TechniqueAdminDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.User.TechniquePublicDTO;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
-import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.masterdata.mapper.TechniqueMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
 import org.springframework.stereotype.Service;
@@ -25,93 +24,121 @@ public class TechniqueService {
         this.techniqueMapper = techniqueMapper;
     }
 
-    //Listar todas las tecnicas
+    // Admin: lista todas o filtra por estado
     @Transactional(readOnly = true)
-    public List<TechniqueDTO> getAllTechniques() {
-        return techniqueRepository.findAll()
-                .stream()
-                .map(techniqueMapper::toDto)
+    public List<TechniqueAdminDTO> getAllTechniques(Boolean active) {
+
+        List<Technique> techniques;
+
+        if (active == null) {
+            techniques = techniqueRepository.findAll();
+        } else {
+            techniques = techniqueRepository.findByActive(active);
+        }
+
+        return techniques.stream()
+                .map(techniqueMapper::toAdminDto)
                 .toList();
     }
 
-    //Listar las tecnicas activas
+    // Público: lista únicamente las técnicas activas
     @Transactional(readOnly = true)
-    public List<TechniqueDTO> getActiveTechniques() {
+    public List<TechniquePublicDTO> getActiveTechniques() {
         return techniqueRepository.findByActive(true)
                 .stream()
-                .map(techniqueMapper::toDto)
+                .map(techniqueMapper::toPublicDto)
                 .toList();
     }
 
-    //Buscar las tecnicas por nombre
+    // Público: busca únicamente una técnica activa por nombre
     @Transactional(readOnly = true)
-    public TechniqueDTO getTechniqueByName(String name) {
+    public TechniquePublicDTO getTechniqueByName(String name) {
+
+        String normalizedName = name.trim();
+
         Technique technique = techniqueRepository
-                .findByNameIgnoreCase(name.trim())
+                .findByNameIgnoreCaseAndActiveTrue(normalizedName)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Tecnica de trabajo no encontrado con nombre: " + name
+                                "Técnica activa no encontrada con nombre: "
+                                        + normalizedName
                         )
                 );
 
-        return techniqueMapper.toDto(technique);
+        return techniqueMapper.toPublicDto(technique);
     }
 
-    //Crear topics
+    // Admin: crea una técnica
     @Transactional
-    public TechniqueDTO createTechnique(TechniqueDTO techniqueDTO) {
-        String name = techniqueDTO.name().trim();
+    public TechniqueAdminDTO createTechnique(
+            TechniqueAdminDTO techniqueAdminDTO
+    ) {
+        String normalizedName = techniqueAdminDTO.name().trim();
 
-        if (techniqueRepository.existsByNameIgnoreCase(name)) {
+        if (techniqueRepository.existsByNameIgnoreCase(normalizedName)) {
             throw new IllegalArgumentException(
-                    "Ya existe una tecnica de trabajo con el nombre: " + name
+                    "Ya existe una técnica con el nombre: "
+                            + normalizedName
             );
         }
 
-        Technique technique = techniqueMapper.toEntity(techniqueDTO);
+        Technique technique =
+                techniqueMapper.toEntity(techniqueAdminDTO);
 
-        technique.setName(name);
+        technique.setName(normalizedName);
         technique.setActive(true);
 
         Technique savedTechnique =
                 techniqueRepository.save(technique);
 
-        return techniqueMapper.toDto(savedTechnique);
+        return techniqueMapper.toAdminDto(savedTechnique);
     }
 
-    //Actualizar las tecnicas
+    // Admin: actualiza una técnica
     @Transactional
-    public TechniqueDTO updateTechnique(
+    public TechniqueAdminDTO updateTechnique(
             Long id,
-            TechniqueDTO techniqueDTO
+            TechniqueAdminDTO techniqueAdminDTO
     ) {
         Technique existingTechnique = techniqueRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Tecnica de trabajo no encontrado con ID: " + id
+                                "Técnica no encontrada con ID: " + id
                         )
                 );
 
+        String normalizedName = techniqueAdminDTO.name().trim();
+
+        if (techniqueRepository.existsByNameIgnoreCaseAndIdNot(
+                normalizedName,
+                id
+        )) {
+            throw new IllegalArgumentException(
+                    "Ya existe otra técnica con el nombre: "
+                            + normalizedName
+            );
+        }
+
         techniqueMapper.updateEntityFromDto(
-                techniqueDTO,
+                techniqueAdminDTO,
                 existingTechnique
         );
 
-        existingTechnique.setName(techniqueDTO.name().trim());
+        existingTechnique.setName(normalizedName);
 
         Technique updatedTechnique =
                 techniqueRepository.save(existingTechnique);
 
-        return techniqueMapper.toDto(updatedTechnique);
+        return techniqueMapper.toAdminDto(updatedTechnique);
     }
 
-    //Desactivar topics
+    // Admin: desactiva una técnica sin eliminarla
     @Transactional
     public void deactivateTechnique(Long id) {
         Technique technique = techniqueRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Tecnica de trabajo no encontrado con ID: " + id
+                                "Técnica no encontrada con ID: " + id
                         )
                 );
 

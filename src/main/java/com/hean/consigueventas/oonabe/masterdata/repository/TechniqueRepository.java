@@ -9,12 +9,20 @@ import java.util.Optional;
 
 public interface TechniqueRepository extends JpaRepository<Technique, Long> {
 
+    //DataInitializer
     //Busca una tecnica por nombre con diferenciador de mayusculas y minusculas
     Optional<Technique> findByNameIgnoreCase(String name);
+
+    // Trae técnicas por estado
+    List<Technique> findByActive(boolean active);
+
+    //Trae unicamente las tecnicas activos
+    Optional<Technique> findByNameIgnoreCaseAndActiveTrue(String name);
 
     //Comprueba si la tecnica ya existe antes de crearlo
     boolean existsByNameIgnoreCase(String name);
 
-    //Trae unicamente las tecnicas activos y los ordena alfabeticamente
-    List<Technique> findByActive(boolean active);
+    // Comprueba si existe tecnicas duplicadas al actualizar, ignorando el mismo registro
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
 }

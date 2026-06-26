@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
-import com.hean.consigueventas.oonabe.masterdata.dto.WorkTopicDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.Admin.WorkTopicAdminDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.User.WorkTopicPublicDTO;
 import com.hean.consigueventas.oonabe.masterdata.service.WorkTopicService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,47 +19,52 @@ public class WorkTopicController {
         this.workTopicService = workTopicService;
     }
 
-    // Solo el ADMIN puede ver los temas activos e inactivos
+    // Admin: ve todos o filtra por estado
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<WorkTopicDTO> getAllTopics() {
-        return workTopicService.getAllTopics();
+    public List<WorkTopicAdminDTO> getAllTopics(
+            @RequestParam(required = false) Boolean active
+    ) {
+        return workTopicService.getAllTopics(active);
     }
 
-    // Todos pueden ver los temas activos
+    // Público: ve únicamente temas activos
     @GetMapping("/active")
-    public List<WorkTopicDTO> getActiveTopics() {
+    public List<WorkTopicPublicDTO> getActiveTopics() {
         return workTopicService.getActiveTopics();
     }
 
-    // Solo el ADMIN puede buscar un tema por su nombre
+    // Público: busca únicamente temas activos por nombre
     @GetMapping("/search")
-    public WorkTopicDTO getTopicByName(
+    public WorkTopicPublicDTO getTopicByName(
             @RequestParam String name
     ) {
         return workTopicService.getTopicByName(name);
     }
 
-    // Solo el ADMIN puede crear un tema
+    // Admin: crea un tema
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public WorkTopicDTO createTopic(
-            @Valid @RequestBody WorkTopicDTO workTopicDTO
+    @PreAuthorize("hasRole('ADMIN')")
+    public WorkTopicAdminDTO createTopic(
+            @Valid @RequestBody WorkTopicAdminDTO workTopicAdminDTO
     ) {
-        return workTopicService.createTopic(workTopicDTO);
+        return workTopicService.createTopic(workTopicAdminDTO);
     }
 
-    // Solo el ADMIN puede modificar un tema
+    // Admin: actualiza un tema
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public WorkTopicDTO updateTopic(
+    public WorkTopicAdminDTO updateTopic(
             @PathVariable Long id,
-            @Valid @RequestBody WorkTopicDTO workTopicDTO
+            @Valid @RequestBody WorkTopicAdminDTO workTopicAdminDTO
     ) {
-        return workTopicService.updateTopic(id, workTopicDTO);
+        return workTopicService.updateTopic(
+                id,
+                workTopicAdminDTO
+        );
     }
 
-    // Solo el ADMIN puede desactivar un tema
+    // Admin: desactiva un tema
     @PatchMapping("/{id}/desactivar")
     @PreAuthorize("hasRole('ADMIN')")
     public void deactivateTopic(@PathVariable Long id) {

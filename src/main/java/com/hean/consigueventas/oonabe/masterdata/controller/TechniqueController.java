@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
-import com.hean.consigueventas.oonabe.masterdata.dto.TechniqueDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.Admin.TechniqueAdminDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.User.TechniquePublicDTO;
 import com.hean.consigueventas.oonabe.masterdata.service.TechniqueService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/technique")
+@RequestMapping("/api/v1/techniques")
 public class TechniqueController {
 
     private final TechniqueService techniqueService;
@@ -18,47 +19,52 @@ public class TechniqueController {
         this.techniqueService = techniqueService;
     }
 
-    // Solo el ADMIN puede ver las tecnicas activas e inactivas
+    // Admin: ve todas o filtra por estado
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<TechniqueDTO> getAllTechniques() {
-        return techniqueService.getAllTechniques();
+    public List<TechniqueAdminDTO> getAllTechniques(
+            @RequestParam(required = false) Boolean active
+    ) {
+        return techniqueService.getAllTechniques(active);
     }
 
-    // Todos pueden ver las tecnicas activos
+    // Público: solo ve técnicas activas
     @GetMapping("/active")
-    public List<TechniqueDTO> getActiveTechniques() {
+    public List<TechniquePublicDTO> getActiveTechniques() {
         return techniqueService.getActiveTechniques();
     }
 
-    // Solo el ADMIN puede buscar una tecnica por su nombre
+    // Público: solo puede buscar técnicas activas
     @GetMapping("/search")
-    public TechniqueDTO getTechniqueByName(
+    public TechniquePublicDTO getTechniqueByName(
             @RequestParam String name
     ) {
         return techniqueService.getTechniqueByName(name);
     }
 
-    // Solo el ADMIN puede crear una tecnica
+    // Admin: crea una técnica
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public TechniqueDTO createTechnique(
-            @Valid @RequestBody TechniqueDTO techniqueDTO
+    @PreAuthorize("hasRole('ADMIN')")
+    public TechniqueAdminDTO createTechnique(
+            @Valid @RequestBody TechniqueAdminDTO techniqueAdminDTO
     ) {
-        return techniqueService.createTechnique(techniqueDTO);
+        return techniqueService.createTechnique(techniqueAdminDTO);
     }
 
-    // Solo el ADMIN puede modificar una tecnica
+    // Admin: actualiza una técnica
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public TechniqueDTO updateTechnique(
+    public TechniqueAdminDTO updateTechnique(
             @PathVariable Long id,
-            @Valid @RequestBody TechniqueDTO techniqueDTO
+            @Valid @RequestBody TechniqueAdminDTO techniqueAdminDTO
     ) {
-        return techniqueService.updateTechnique(id, techniqueDTO);
+        return techniqueService.updateTechnique(
+                id,
+                techniqueAdminDTO
+        );
     }
 
-    // Solo el ADMIN puede desactivar una tecnica
+    // Admin: desactiva una técnica
     @PatchMapping("/{id}/desactivar")
     @PreAuthorize("hasRole('ADMIN')")
     public void deactivateTechnique(@PathVariable Long id) {

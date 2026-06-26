@@ -8,12 +8,19 @@ import java.util.Optional;
 
 public interface WorkTopicRepository extends JpaRepository<WorkTopic, Long> {
 
-    //Busca un tema por nombre con diferenciador de mayusculas y minusculas
+    // DataInitializer
+    // Busca sin diferenciar mayúsculas y minúsculas
     Optional<WorkTopic> findByNameIgnoreCase(String name);
 
-    //Comprueba si el tema ya existe antes de crearlo
+    // Búsqueda pública: solo encuentra temas activos
+    Optional<WorkTopic> findByNameIgnoreCaseAndActiveTrue(String name);
+
+    // Comprueba duplicados al crear
     boolean existsByNameIgnoreCase(String name);
 
-    //Trae unicamente los temas activos y los ordena alfabeticamente
+    // Comprueba duplicados al actualizar, ignorando el registro actual
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    // Obtiene temas según su estado
     List<WorkTopic> findByActive(boolean active);
 }

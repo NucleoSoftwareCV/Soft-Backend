@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.masterdata.service;
 
-import com.hean.consigueventas.oonabe.masterdata.dto.WorkTopicDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.Admin.WorkTopicAdminDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.User.WorkTopicPublicDTO;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.masterdata.mapper.WorkTopicMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
@@ -23,65 +24,81 @@ public class WorkTopicService {
         this.workTopicMapper = workTopicMapper;
     }
 
-    //Listar todos los temas
+    // Admin: lista todos los temas o filtra por estado
     @Transactional(readOnly = true)
-    public List<WorkTopicDTO> getAllTopics() {
-        return workTopicRepository.findAll()
-                .stream()
-                .map(workTopicMapper::toDto)
+    public List<WorkTopicAdminDTO> getAllTopics(Boolean active) {
+
+        List<WorkTopic> topics;
+
+        if (active == null) {
+            topics = workTopicRepository.findAll();
+        } else {
+            topics = workTopicRepository.findByActive(active);
+        }
+
+        return topics.stream()
+                .map(workTopicMapper::toAdminDto)
                 .toList();
     }
 
-    //Listar los temas activos
+    // Público: lista únicamente los temas activos
     @Transactional(readOnly = true)
-    public List<WorkTopicDTO> getActiveTopics() {
+    public List<WorkTopicPublicDTO> getActiveTopics() {
         return workTopicRepository.findByActive(true)
                 .stream()
-                .map(workTopicMapper::toDto)
+                .map(workTopicMapper::toPublicDto)
                 .toList();
     }
 
-    //Buscar los temas por nombre
+    // Público: busca únicamente un tema activo por nombre
     @Transactional(readOnly = true)
-    public WorkTopicDTO getTopicByName(String name) {
+    public WorkTopicPublicDTO getTopicByName(String name) {
+
+        String normalizedName = name.trim();
+
         WorkTopic workTopic = workTopicRepository
-                .findByNameIgnoreCase(name.trim())
+                .findByNameIgnoreCaseAndActiveTrue(normalizedName)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Tema de trabajo no encontrado con nombre: " + name
+                                "Tema de trabajo activo no encontrado con nombre: "
+                                        + normalizedName
                         )
                 );
 
-        return workTopicMapper.toDto(workTopic);
+        return workTopicMapper.toPublicDto(workTopic);
     }
 
-    //Crear los temas
+    // Admin: crea un tema
     @Transactional
-    public WorkTopicDTO createTopic(WorkTopicDTO workTopicDTO) {
-        String name = workTopicDTO.name().trim();
+    public WorkTopicAdminDTO createTopic(
+            WorkTopicAdminDTO workTopicAdminDTO
+    ) {
+        String normalizedName = workTopicAdminDTO.name().trim();
 
-        if (workTopicRepository.existsByNameIgnoreCase(name)) {
+        if (workTopicRepository.existsByNameIgnoreCase(normalizedName)) {
             throw new IllegalArgumentException(
-                    "Ya existe un tema de trabajo con el nombre: " + name
+                    "Ya existe un tema de trabajo con el nombre: "
+                            + normalizedName
             );
         }
 
-        WorkTopic workTopic = workTopicMapper.toEntity(workTopicDTO);
+        WorkTopic workTopic =
+                workTopicMapper.toEntity(workTopicAdminDTO);
 
-        workTopic.setName(name);
+        workTopic.setName(normalizedName);
         workTopic.setActive(true);
 
         WorkTopic savedWorkTopic =
                 workTopicRepository.save(workTopic);
 
-        return workTopicMapper.toDto(savedWorkTopic);
+        return workTopicMapper.toAdminDto(savedWorkTopic);
     }
 
-    //Actualizar los temas
+    // Admin: actualiza un tema
     @Transactional
-    public WorkTopicDTO updateTopic(
+    public WorkTopicAdminDTO updateTopic(
             Long id,
-            WorkTopicDTO workTopicDTO
+            WorkTopicAdminDTO workTopicAdminDTO
     ) {
         WorkTopic existingWorkTopic = workTopicRepository.findById(id)
                 .orElseThrow(() ->
@@ -90,22 +107,35 @@ public class WorkTopicService {
                         )
                 );
 
+        String normalizedName = workTopicAdminDTO.name().trim();
+
+        if (workTopicRepository.existsByNameIgnoreCaseAndIdNot(
+                normalizedName,
+                id
+        )) {
+            throw new IllegalArgumentException(
+                    "Ya existe otro tema de trabajo con el nombre: "
+                            + normalizedName
+            );
+        }
+
         workTopicMapper.updateEntityFromDto(
-                workTopicDTO,
+                workTopicAdminDTO,
                 existingWorkTopic
         );
 
-        existingWorkTopic.setName(workTopicDTO.name().trim());
+        existingWorkTopic.setName(normalizedName);
 
         WorkTopic updatedWorkTopic =
                 workTopicRepository.save(existingWorkTopic);
 
-        return workTopicMapper.toDto(updatedWorkTopic);
+        return workTopicMapper.toAdminDto(updatedWorkTopic);
     }
 
-    //Desactivar los temas
+    // Admin: desactiva un tema
     @Transactional
     public void deactivateTopic(Long id) {
+
         WorkTopic workTopic = workTopicRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
