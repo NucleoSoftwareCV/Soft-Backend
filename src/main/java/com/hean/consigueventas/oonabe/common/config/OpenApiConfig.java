@@ -36,20 +36,71 @@ public class OpenApiConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("public")
-                .pathsToMatch("/api/v1/auth/**",
+                .pathsToMatch(
+                        "/api/v1/auth/**",
                         "/api/v1/categories/**",
                         "/api/v1/locations/**",
-                        "/api/v1/cities/**"
-                        )
+                        "/api/v1/cities/**",
+                        "/api/v1/one-to-one-services",
+                        "/api/v1/one-to-one-services/{id}",
+                        "/api/v1/one-to-one-services/slug/{slug}",
+                        "/api/v1/events",
+                        "/api/v1/events/{id}"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) -> {
+                            if (path.startsWith("/api/v1/one-to-one-services")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                            if (path.startsWith("/api/v1/events")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                        });
+                    }
+                    // Eliminar el securityRequirement global (bearerAuth) de TODOS los
+                    // paths de la definición Public para que Swagger no envíe cabeceras
+                    // de autorización vacías en endpoints públicos.
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) ->
+                            pathItem.readOperations().forEach(op -> op.setSecurity(java.util.Collections.emptyList()))
+                        );
+                    }
+                })
                 .build();
     }
+
 
     @Bean
     public GroupedOpenApi protectedApi() {
         return GroupedOpenApi.builder()
                 .group("protected")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/v1/auth/**", "/api/v1/categories/**", "/api/v1/locations/**")
+                .pathsToExclude(
+                        "/api/v1/auth/**",
+                        "/api/v1/categories/**",
+                        "/api/v1/locations/**"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    if (openApi.getPaths() != null) {
+                        openApi.getPaths().forEach((path, pathItem) -> {
+                            if (path.startsWith("/api/v1/one-to-one-services")) {
+                                if (!path.equals("/api/v1/one-to-one-services/my-services")) {
+                                    pathItem.setGet(null);
+                                }
+                            }
+                            if (path.startsWith("/api/v1/events")) {
+                                pathItem.setGet(null);
+                            }
+                        });
+                    }
+                })
                 .build();
     }
 }

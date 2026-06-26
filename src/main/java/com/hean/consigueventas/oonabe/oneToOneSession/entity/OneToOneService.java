@@ -16,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -74,4 +75,19 @@ public class OneToOneService extends AuditableEntity {
 
     @Column(name = "approved_at")
     private Instant approvedAt;
+
+    @PrePersist
+    public void generateSlug() {
+        if (slug == null || slug.isBlank()) {
+            slug = title == null ? null : title.toLowerCase()
+                    .replace("ñ", "n")
+                    .replace("á", "a")
+                    .replace("é", "e")
+                    .replace("í", "i")
+                    .replace("ó", "o")
+                    .replace("ú", "u")
+                    .replaceAll("[^a-z0-9]+", "-")
+                    .replaceAll("(^-|-$)", "");
+        }
+    }
 }

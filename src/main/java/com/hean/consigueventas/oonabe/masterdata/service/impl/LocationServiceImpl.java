@@ -22,7 +22,10 @@ public class LocationServiceImpl implements ILocationService {
     @Transactional(readOnly = true)
     @Override
     public List<LocationResponse> findActive() {
-        return locationRepository.findByIsActiveTrueOrderByNameAsc().stream().map(locationMapper::toDto).toList();
+        return locationRepository.findByIsActiveTrueOrderByNameAsc()
+                .stream()
+                .map(locationMapper::toDto)
+                .toList();
     }
 
 

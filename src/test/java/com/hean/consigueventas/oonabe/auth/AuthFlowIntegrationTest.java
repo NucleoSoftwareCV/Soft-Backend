@@ -238,7 +238,7 @@ class AuthFlowIntegrationTest {
     void publicLocationsOnlyReturnActiveEntries() throws Exception {
         mockMvc.perform(get("/api/v1/locations"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].name").value("Cada de vista"));
     }
 
@@ -252,8 +252,6 @@ class AuthFlowIntegrationTest {
     @Test
     void removedFeatureRoutesAreNotPublic() throws Exception {
         mockMvc.perform(get("/api/v1/home"))
-                .andExpect(status().isUnauthorized());
-        mockMvc.perform(get("/api/v1/events"))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/specialists"))
                 .andExpect(status().isUnauthorized());

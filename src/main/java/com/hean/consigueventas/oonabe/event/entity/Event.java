@@ -1,27 +1,18 @@
 package com.hean.consigueventas.oonabe.event.entity;
 
+import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventReservationType;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
+import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "events")
@@ -33,9 +24,6 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    @Column(name = "slug", nullable = false, unique = true, length = 180)
-    private String slug;
 
     @Column(name = "title", nullable = false, length = 180)
     private String title;
@@ -50,19 +38,12 @@ public class Event {
     @Column(name = "modality", nullable = false, length = 15)
     private EventModality modality;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reservation_type", nullable = false, length = 20)
-    private EventReservationType reservationType;
-
-    @Column(name = "external_reservation_url", columnDefinition = "TEXT")
-    private String externalReservationUrl;
-
     @Column(name = "starting_price", precision = 10, scale = 2)
     private BigDecimal priceFrom;
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency = "EUR";
-
+//revision
     @Column(name = "minimum_age")
     private Short minimumAge;
 
@@ -73,25 +54,36 @@ public class Event {
     @Column(name = "featured", nullable = false)
     private boolean featured;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", length = 25)
+    private EventType eventType;
+
+    @Column(name = "is_recurring", nullable = false)
+    private boolean isRecurring = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    @JoinColumn(name = "specialist_id", nullable = false)
+    private SpecialistProfile specialist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
     private User approvedBy;
 
-    @Column(name = "approved_at")
-    private Instant approvedAt;
+//    @Column(name = "approved_at")
+//    private Instant approvedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+    @OneToMany(mappedBy = "event")
+    private List<EventOccurrence> occurrences;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
 
     @PrePersist
     void prePersist() {
