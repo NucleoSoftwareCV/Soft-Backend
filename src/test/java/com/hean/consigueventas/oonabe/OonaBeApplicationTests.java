@@ -4,7 +4,7 @@ import com.hean.consigueventas.oonabe.auth.service.IAuthService;
 import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
 import com.hean.consigueventas.oonabe.category.service.ICategoryService;
 import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
-import com.hean.consigueventas.oonabe.masterdata.service.ICityService;
+import com.hean.consigueventas.oonabe.masterdata.service.CityService;
 import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
 import com.hean.consigueventas.oonabe.user.service.IUserService;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ class OonaBeApplicationTests {
     void eachServiceInterfaceHasExactlyOneImplementation() {
         assertSingleBean(IAuthService.class);
         assertSingleBean(IRefreshTokenService.class);
-        assertSingleBean(ICityService.class);
+        assertSingleBean(CityService.class);
         assertSingleBean(ICategoryService.class);
         assertSingleBean(IEventOccurrenceService.class);
         assertSingleBean(ILocationService.class);

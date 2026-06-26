@@ -1,33 +1,34 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
-import com.hean.consigueventas.oonabe.masterdata.response.CityResponse;
-import com.hean.consigueventas.oonabe.masterdata.service.ICityService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.hean.consigueventas.oonabe.masterdata.dto.Admin.CityAdminDTO;
+import com.hean.consigueventas.oonabe.masterdata.dto.User.CityPublicDTO;
+import com.hean.consigueventas.oonabe.masterdata.service.CityService;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/cities")
-@Tag(name = "Ciudades", description = "Ciudades disponibles para eventos y sesiónes.")
+
 public class CityController {
 
-    private final ICityService cityService;
+    private final CityService cityService;
 
-    public CityController(ICityService cityService) {
+    public CityController(CityService cityService) {
         this.cityService = cityService;
     }
 
+    // Endpoint público
     @GetMapping
-    @Operation(summary = "Listar ciudades activas", description = "Devuelve las ciudades visibles para el catálogo público.", security = {})
-    @ApiResponse(responseCode = "200", description = "Ciudades activas")
-    public List<CityResponse> findActive() {
+    public List<CityPublicDTO> findActive() {
         return cityService.findActive();
     }
 
-
+    // Endpoint administrativo
+    @GetMapping("/admin")
+    public List<CityAdminDTO> findAllForAdmin(
+            @RequestParam(required = false) Boolean active
+    ) {
+        return cityService.findAllForAdmin(active);
+    }
 }

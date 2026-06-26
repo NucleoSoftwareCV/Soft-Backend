@@ -52,6 +52,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/event-occurrences/public", "/api/v1/event-occurrences/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cities/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/technique/active", "/api/v1/technique/search").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
                         .anyRequest().authenticated()
