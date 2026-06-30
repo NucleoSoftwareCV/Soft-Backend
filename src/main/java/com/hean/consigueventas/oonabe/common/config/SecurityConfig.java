@@ -35,7 +35,7 @@ public class SecurityConfig {
     public SecurityConfig(
             AuthTokenFilter authTokenFilter,
             UserDetailsService userDetailsService,
-            @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
+            @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
         this.authTokenFilter = authTokenFilter;
         this.userDetailsService = userDetailsService;
         this.allowedOrigins = allowedOrigins;
@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cities/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/technique/active", "/api/v1/technique/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/techniques/active", "/api/v1/techniques/search").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()

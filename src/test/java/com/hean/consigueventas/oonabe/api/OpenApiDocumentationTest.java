@@ -32,4 +32,16 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/cities'].get.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/users/me'].get.security[0].bearerAuth").exists());
     }
+
+    @Test
+    void publicOpenApiDoesNotRequireJwtForPublicEvents() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/public"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.security").isArray())
+                .andExpect(jsonPath("$.security").isEmpty())
+                .andExpect(jsonPath("$.paths['/api/v1/events'].get.security").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/events'].get.security").isEmpty())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}'].get.security").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}'].get.security").isEmpty());
+    }
 }

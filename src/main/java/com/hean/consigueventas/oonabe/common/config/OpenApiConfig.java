@@ -48,6 +48,7 @@ public class OpenApiConfig {
                         "/api/v1/events/{id}"
                 )
                 .addOpenApiCustomizer(openApi -> {
+                    openApi.setSecurity(java.util.Collections.emptyList());
                     if (openApi.getPaths() != null) {
                         openApi.getPaths().forEach((path, pathItem) -> {
                             if (path.startsWith("/api/v1/one-to-one-services")) {

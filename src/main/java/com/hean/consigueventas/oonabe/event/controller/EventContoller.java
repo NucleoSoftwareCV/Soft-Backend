@@ -61,7 +61,7 @@ public class EventContoller {
             summary = "Listar eventos (paginado + filtros)",
             description = "Devuelve el listado paginado de eventos activos. " +
                     "Todos los parámetros de filtro son opcionales y se combinan con AND.",
-            security = @SecurityRequirement(name = "")
+            security = {}
     )
     @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
     public ResponseEntity<Page<EventCardResponse>> getAllEvents(
@@ -113,7 +113,7 @@ public class EventContoller {
     @GetMapping("/{id}")
     @Operation(summary = "Obtener detalle del evento",
             description = "Devuelve el detalle completo de un evento por su ID",
-            security = @SecurityRequirement(name = ""))
+            security = {})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Detalle obtenido exitosamente"),
             @ApiResponse(responseCode = "404", description = "Evento no encontrado")
