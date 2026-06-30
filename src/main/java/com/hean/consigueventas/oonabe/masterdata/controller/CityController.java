@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/cities")
 @Tag(name = "Ciudades", description = "Catalogo publico y administrativo de ciudades.")
-
 public class CityController {
 
     private final CityService cityService;
@@ -21,9 +20,9 @@ public class CityController {
         this.cityService = cityService;
     }
 
-    // Endpoint público
+    // Endpoint publico
     @GetMapping
-    @Operation(summary = "Listar ciudades activas")
+    @Operation(summary = "Listar ciudades activas", security = {})
     public List<CityPublicDTO> findActive() {
         return cityService.findActive();
     }

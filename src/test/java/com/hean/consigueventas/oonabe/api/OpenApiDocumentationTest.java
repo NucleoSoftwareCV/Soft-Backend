@@ -44,4 +44,12 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}'].get.security").isArray())
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}'].get.security").isEmpty());
     }
+
+    @Test
+    void publicOpenApiDoesNotRequireJwtForOneToOnePublicListing() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/public"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/one-to-one-services'].get.security").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/one-to-one-services'].get.security").isEmpty());
+    }
 }

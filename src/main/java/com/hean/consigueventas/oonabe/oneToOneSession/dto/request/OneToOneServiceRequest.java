@@ -21,6 +21,9 @@ public record OneToOneServiceRequest(
         @NotBlank(message = "La descripción es obligatoria")
         String description,
 
+        @Schema(description = "URL de imagen para la tarjeta publica.", example = "https://images.unsplash.com/photo-...")
+        String imageUrl,
+
         @Schema(description = "Duración en minutos.", example = "60")
         @NotNull(message = "La duración es obligatoria")
         Integer durationMinutes,
