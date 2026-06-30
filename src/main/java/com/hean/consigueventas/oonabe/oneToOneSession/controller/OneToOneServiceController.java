@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.security.SecurityUtils;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.request.OneToOneServiceRequest;
+import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceCardResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.service.OneToOneSessionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +27,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @Validated
@@ -37,8 +44,10 @@ public class OneToOneServiceController {
     @GetMapping
     @Operation(summary = "Listar sesiones publicadas", description = "Devuelve todas las sesiones con estado PUBLICADO.", security = {})
     @ApiResponse(responseCode = "200", description = "Lista de sesiones públicas")
-    public List<OneToOneServiceResponse> getPublicServices() {
-        return service.getPublicServices();
+    public Page<OneToOneServiceCardResponse> getPublicServices(
+            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return service.getPublicServices(sanitizePublicListingPageable(pageable));
     }
 
     @GetMapping("/{id}")
@@ -106,5 +115,21 @@ public class OneToOneServiceController {
     })
     public OneToOneServiceResponse toggleStatus(@PathVariable Long id, @RequestParam PublicationStatus status) {
         return service.toggleStatus(id, SecurityUtils.getAuthenticatedUserId(), status);
+    }
+
+    private Pageable sanitizePublicListingPageable(Pageable pageable) {
+        Set<String> allowedSortProperties = Set.of("createdAt", "title", "price", "durationMinutes");
+        Sort safeSort = Sort.by(Sort.Order.desc("createdAt"));
+
+        if (pageable.getSort().isSorted()) {
+            List<Sort.Order> validOrders = pageable.getSort().stream()
+                    .filter(order -> allowedSortProperties.contains(order.getProperty()))
+                    .toList();
+            if (!validOrders.isEmpty()) {
+                safeSort = Sort.by(validOrders);
+            }
+        }
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), safeSort);
     }
 }

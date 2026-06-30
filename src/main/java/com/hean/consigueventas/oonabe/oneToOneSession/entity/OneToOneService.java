@@ -48,6 +48,9 @@ public class OneToOneService extends AuditableEntity {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 

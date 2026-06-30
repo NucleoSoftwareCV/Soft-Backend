@@ -7,12 +7,15 @@ import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.request.OneToOneServiceRequest;
+import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceCardResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
 import com.hean.consigueventas.oonabe.oneToOneSession.mapper.OneToOneServiceMapper;
 import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,11 +42,9 @@ public class OneToOneSessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<OneToOneServiceResponse> getPublicServices() {
-        return serviceRepository.findByStatus(PublicationStatus.PUBLICADO)
-                .stream()
-                .map(serviceMapper::toDto)
-                .toList();
+    public Page<OneToOneServiceCardResponse> getPublicServices(Pageable pageable) {
+        return serviceRepository.findByStatus(PublicationStatus.PUBLICADO, pageable)
+                .map(serviceMapper::toCardDto);
     }
 
     @Transactional(readOnly = true)
@@ -117,6 +118,7 @@ public class OneToOneSessionService {
 
         entity.setTitle(request.title());
         entity.setDescription(request.description());
+        entity.setImageUrl(request.imageUrl());
         entity.setDurationMinutes(request.durationMinutes());
         entity.setModality(request.modality());
         entity.setPrice(request.price());
