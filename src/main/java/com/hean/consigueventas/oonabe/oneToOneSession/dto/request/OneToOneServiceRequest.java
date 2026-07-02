@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Schema(description = "Datos para crear o actualizar un servicio de sesión 1-a-1.")
 public record OneToOneServiceRequest(
@@ -44,6 +45,12 @@ public record OneToOneServiceRequest(
         String currency,
 
         @Schema(description = "Estado de publicación.", example = "BORRADOR")
-        PublicationStatus status
+        PublicationStatus status,
+
+        @Schema(description = "IDs de los temas de trabajo asociados.")
+        Set<Long> workTopics,
+
+        @Schema(description = "IDs de las técnicas asociadas.")
+        Set<Long> techniques
 ) {
 }
