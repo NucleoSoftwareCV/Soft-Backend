@@ -65,7 +65,7 @@ public class EventContoller {
     )
     @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
     public ResponseEntity<Page<EventCardResponse>> getAllEvents(
-            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @PageableDefault(size = 12, sort = "startsAt", direction = Sort.Direction.ASC) Pageable pageable,
 
             @Parameter(description = "Búsqueda por texto en título o resumen")
             @RequestParam(required = false) String search,
