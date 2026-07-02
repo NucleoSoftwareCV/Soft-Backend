@@ -15,9 +15,13 @@ public interface WorkTopicMapper {
     WorkTopicAdminDTO toAdminDto(WorkTopic workTopic);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     WorkTopic toEntity(WorkTopicAdminDTO workTopicAdminDTO);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromDto(
             WorkTopicAdminDTO workTopicAdminDTO,
             @MappingTarget WorkTopic workTopic

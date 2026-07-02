@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Set;
 
 @Schema(description = "Detalles del servicio de sesión 1-a-1.")
 public record OneToOneServiceResponse(
@@ -52,6 +53,13 @@ public record OneToOneServiceResponse(
         Instant createdAt,
 
         @Schema(description = "Fecha de última actualización.")
-        Instant updatedAt
+        Instant updatedAt,
+
+        @Schema(description = "Nombres de los temas de trabajo asociados")
+        Set<String> workTopics,
+
+        @Schema(description = "Nombres de las técnicas asociadas")
+        Set<String> techniques
+
 ) {
 }

@@ -42,12 +42,35 @@ public class OneToOneServiceController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar sesiones publicadas", description = "Devuelve todas las sesiones con estado PUBLICADO.", security = {})
-    @ApiResponse(responseCode = "200", description = "Lista de sesiones públicas")
+    @Operation(
+            summary = "Listar sesiones publicadas",
+            description = "Devuelve sesiones publicadas y permite filtrar por tema y técnica.",
+            security = {}
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Lista de sesiones públicas"
+    )
     public Page<OneToOneServiceCardResponse> getPublicServices(
-            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+
+            @RequestParam(required = false)
+            Long workTopicId,
+
+            @RequestParam(required = false)
+            Long techniqueId,
+
+            @PageableDefault(
+                    size = 12,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            )
+            Pageable pageable
     ) {
-        return service.getPublicServices(sanitizePublicListingPageable(pageable));
+        return service.getPublicServices(
+                workTopicId,
+                techniqueId,
+                sanitizePublicListingPageable(pageable)
+        );
     }
 
     @GetMapping("/{id}")
