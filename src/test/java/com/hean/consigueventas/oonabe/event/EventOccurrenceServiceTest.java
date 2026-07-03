@@ -2,20 +2,19 @@ package com.hean.consigueventas.oonabe.event;
 
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminResponse;
-import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrencePublicResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.mapper.EventOccurrenceMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
-import com.hean.consigueventas.oonabe.event.repository.EventRepository;
-import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
-import com.hean.consigueventas.oonabe.event.service.impl.EventOccurrenceServiceImpl;
-import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
+import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,42 +33,27 @@ class EventOccurrenceServiceTest {
     private static final ZoneId LIMA_ZONE = ZoneId.of("America/Lima");
 
     private final EventOccurrenceRepository occurrenceRepository = mock(EventOccurrenceRepository.class);
-    private final EventRepository eventRepository = mock(EventRepository.class);
-    private final LocationRepository locationRepository = mock(LocationRepository.class);
     private final EventOccurrenceMapper mapper = Mappers.getMapper(EventOccurrenceMapper.class);
-    private final IEventOccurrenceService service = new EventOccurrenceServiceImpl(
+    private final EventOccurrenceService service = new EventOccurrenceService(
             occurrenceRepository,
-            eventRepository,
-            locationRepository,
             mapper
     );
 
     @Test
-    void filtersOccurrencesByDateRangeAndTimeWindowUsingInstants() {
-        LocalDate date = LocalDate.of(2026, 6, 20);
-        EventOccurrence occurrence = occurrenceAt(date, LocalTime.of(9, 0), LocalTime.of(11, 0));
-        EventOccurrence afternoonOccurrence = occurrenceAt(date, LocalTime.of(17, 0), LocalTime.of(19, 0));
-        when(occurrenceRepository.findByStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
-                at(date, LocalTime.MIN),
-                at(date.plusDays(1), LocalTime.MIN)
-        )).thenReturn(List.of(occurrence, afternoonOccurrence));
-
-        List<EventOccurrenceAdminResponse> result = service.filterOccurrences(
-                "ELEGIR_FECHA",
-                "MANANA",
-                date
+    void getsAllOccurrencesUsingPageable() {
+        Pageable pageable = PageRequest.of(0, 20);
+        EventOccurrence occurrence = occurrenceAt(
+                LocalDate.of(2026, 6, 20),
+                LocalTime.of(9, 0),
+                LocalTime.of(11, 0)
         );
+        when(occurrenceRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(occurrence), pageable, 1));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().startsAt()).isEqualTo(at(date, LocalTime.of(9, 0)));
-        ArgumentCaptor<Instant> startCaptor = ArgumentCaptor.forClass(Instant.class);
-        ArgumentCaptor<Instant> endCaptor = ArgumentCaptor.forClass(Instant.class);
-        verify(occurrenceRepository).findByStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
-                startCaptor.capture(),
-                endCaptor.capture()
-        );
-        assertThat(startCaptor.getValue()).isEqualTo(at(date, LocalTime.MIN));
-        assertThat(endCaptor.getValue()).isEqualTo(at(date.plusDays(1), LocalTime.MIN));
+        Page<EventOccurrenceAdminResponse> result = service.getAllOccurrences(pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().getFirst().eventTitle()).isEqualTo("Taller");
+        verify(occurrenceRepository).findAll(pageable);
     }
 
     @Test
@@ -88,22 +72,6 @@ class EventOccurrenceServiceTest {
         assertThat(dto.reservedSpots()).isEqualTo(12);
         assertThat(dto.availableSpots()).isEqualTo(18);
         assertThat(dto.soldOut()).isFalse();
-    }
-
-    @Test
-    void getsPublicOccurrencesByDateRangeUsingExclusiveEndDate() {
-        LocalDate startDate = LocalDate.of(2026, 6, 20);
-        LocalDate endDate = LocalDate.of(2026, 6, 22);
-        EventOccurrence occurrence = occurrenceAt(startDate, LocalTime.of(18, 0), LocalTime.of(20, 0));
-        when(occurrenceRepository.findByStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
-                at(startDate, LocalTime.MIN),
-                at(endDate.plusDays(1), LocalTime.MIN)
-        )).thenReturn(List.of(occurrence));
-
-        List<EventOccurrencePublicResponse> result = service.getPublicOccurrencesByDateRange(startDate, endDate);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().eventTitle()).isEqualTo("Taller");
     }
 
     private static EventOccurrence occurrenceAt(LocalDate date, LocalTime startTime, LocalTime endTime) {
