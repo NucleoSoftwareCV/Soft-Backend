@@ -39,7 +39,13 @@ build/
 # Codex / agent local artifacts
 .cache/
 outputs/
+.agents/
 .agents/skills/
+.claude/
+.codex/
+.skills/
+AGENTS.local.md
+CLAUDE.local.md
 
 # Local generated documents
 *.xlsx

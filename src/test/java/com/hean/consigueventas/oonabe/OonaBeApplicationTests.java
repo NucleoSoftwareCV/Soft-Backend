@@ -3,7 +3,7 @@ package com.hean.consigueventas.oonabe;
 import com.hean.consigueventas.oonabe.auth.service.IAuthService;
 import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
 import com.hean.consigueventas.oonabe.category.service.ICategoryService;
-import com.hean.consigueventas.oonabe.event.service.IEventOccurrenceService;
+import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
 import com.hean.consigueventas.oonabe.masterdata.service.CityService;
 import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
 import com.hean.consigueventas.oonabe.user.service.IUserService;
@@ -30,7 +30,7 @@ class OonaBeApplicationTests {
         assertSingleBean(IRefreshTokenService.class);
         assertSingleBean(CityService.class);
         assertSingleBean(ICategoryService.class);
-        assertSingleBean(IEventOccurrenceService.class);
+        assertSingleBean(EventOccurrenceService.class);
         assertSingleBean(ILocationService.class);
         assertSingleBean(IUserService.class);
     }

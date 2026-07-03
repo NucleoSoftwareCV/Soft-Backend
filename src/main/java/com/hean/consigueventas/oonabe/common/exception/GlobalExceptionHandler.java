@@ -4,13 +4,15 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.LocalDateTime;
 import java.net.URI;
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,16 +29,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
-        ProblemDetail detail = problem(
-                HttpStatus.BAD_REQUEST,
-                "Solicitud inválida",
-                "Uno o mas campos no cumplen las reglas de validacion.",
-                "validation-error",
-                request);
-        detail.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> new FieldViolation(error.getField(), error.getDefaultMessage()))
-                .toList());
-        return detail;
+        return validationProblem(ex.getBindingResult(), request);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ProblemDetail handleBindingValidation(BindException ex, WebRequest request) {
+        return validationProblem(ex.getBindingResult(), request);
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
@@ -56,7 +54,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenRefreshException.class)
     public ProblemDetail handleTokenRefresh(TokenRefreshException ex, WebRequest request) {
-        return problem(HttpStatus.FORBIDDEN, "Refresh token inválido", ex.getMessage(), "refresh-token-invalid", request);
+        return problem(HttpStatus.FORBIDDEN, "Refresh token invalido", ex.getMessage(), "refresh-token-invalid", request);
+    }
+
+    private ProblemDetail validationProblem(BindingResult bindingResult, WebRequest request) {
+        ProblemDetail detail = problem(
+                HttpStatus.BAD_REQUEST,
+                "Solicitud invalida",
+                "Uno o mas campos no cumplen las reglas de validacion.",
+                "validation-error",
+                request);
+        detail.setProperty("errors", bindingResult.getFieldErrors().stream()
+                .map(error -> new FieldViolation(error.getField(), error.getDefaultMessage()))
+                .toList());
+        return detail;
     }
 
     private ProblemDetail problem(

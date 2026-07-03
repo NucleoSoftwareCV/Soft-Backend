@@ -462,7 +462,7 @@ public class DataInitializer {
             Integer capacity,
             String meetingUrl
     ) {
-        if (occurrenceRepository.findByEventIdOrderByStartsAtAsc(event.getId()).isEmpty()) {
+        if (!occurrenceRepository.existsByEventId(event.getId())) {
             EventOccurrence occurrence = new EventOccurrence();
             occurrence.setEvent(event);
             occurrence.setStartsAt(startsAt);

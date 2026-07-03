@@ -26,6 +26,7 @@ public interface EventOccurrenceMapper {
     @Mapping(target = "eventTitle", source = "event.title")
     @Mapping(target = "locationId", source = "location.id")
     @Mapping(target = "locationName", source = "location.name")
+    @Mapping(target = "virtualUrl", source = "meetingLink.meetingUrl")
     @Mapping(target = "availableSpots", expression = "java(availableSpots(occurrence))")
     @Mapping(target = "soldOut", expression = "java(isSoldOut(occurrence))")
     EventOccurrenceAdminResponse toAdminDto(EventOccurrence occurrence);
@@ -41,6 +42,7 @@ public interface EventOccurrenceMapper {
     @Mapping(target = "availableSpots", expression = "java(occurrence.getCapacity() - occurrence.getReservedSpots())")
     @Mapping(target = "soldOut", expression = "java(occurrence.getCapacity() - occurrence.getReservedSpots() == 0)")
     @Mapping(target = "location", source = "location")
+    @Mapping(target = "location.cityName", source = "location.city.name")
     @Mapping(target = "meetingLink", source = "meetingLink")
     EventOccurrenceResponse toResponse(EventOccurrence occurrence);
 
