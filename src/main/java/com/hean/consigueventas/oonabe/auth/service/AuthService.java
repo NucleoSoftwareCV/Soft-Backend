@@ -35,13 +35,13 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final UserService userService;
     private final UserMapper userMapper;
-    private final IRefreshTokenService refreshTokenService;
+    private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthService(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
                        UserService userService, UserMapper userMapper,
-                       IRefreshTokenService refreshTokenService, UserRepository userRepository,
+                       RefreshTokenService refreshTokenService, UserRepository userRepository,
                        GoogleTokenVerifier googleTokenVerifier) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;

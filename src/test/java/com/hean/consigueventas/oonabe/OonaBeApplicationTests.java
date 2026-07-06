@@ -27,7 +27,7 @@ class OonaBeApplicationTests {
     @Test
     void eachServiceInterfaceHasExactlyOneImplementation() {
         assertSingleBean(AuthService.class);
-        assertSingleBean(IRefreshTokenService.class);
+        assertSingleBean(RefreshTokenService.class);
         assertSingleBean(CityService.class);
         assertSingleBean(ICategoryService.class);
         assertSingleBean(IEventOccurrenceService.class);
