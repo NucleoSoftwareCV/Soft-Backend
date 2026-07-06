@@ -6,7 +6,7 @@ import com.hean.consigueventas.oonabe.auth.dto.request.LoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.request.RegisterRequest;
 import com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest;
 import com.hean.consigueventas.oonabe.auth.dto.response.TokenRefreshResponse;
-import com.hean.consigueventas.oonabe.auth.service.IAuthService;
+import com.hean.consigueventas.oonabe.auth.service.AuthService;
 import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,9 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Autenticación", description = "Registro, login, refresh token y cierre de sesión.")
 public class AuthController {
 
-    private final IAuthService authService;
+    private final AuthService authService;
 
-    public AuthController(IAuthService authService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
     }
 

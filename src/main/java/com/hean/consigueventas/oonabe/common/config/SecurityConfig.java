@@ -57,6 +57,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/customers/promote").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
