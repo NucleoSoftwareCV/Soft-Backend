@@ -29,7 +29,7 @@ import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
-import com.hean.consigueventas.oonabe.user.service.IUserService;
+import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,12 +40,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Configuration
-@Profile({"default", "dev", "local", "test"})
+@Profile({ "default", "dev", "local", "test" })
 public class DataInitializer {
 
     @Bean
     CommandLineRunner seedBaseData(
-            IUserService userService,
+            UserService userService,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             LocationRepository locationRepository,
@@ -56,23 +56,30 @@ public class DataInitializer {
             EventOccurrenceRepository occurrenceRepository,
             MeetingLinkRepository meetingLinkRepository,
             WorkTopicRepository workTopicRepository,
-            TechniqueRepository techniqueRepository
-            ) {
+            TechniqueRepository techniqueRepository) {
         return args -> {
-            Role roleUser = userService.getOrCreateRole("ROLE_USER", "Usuario final");
-            Role roleAdmin = userService.getOrCreateRole("ROLE_ADMIN", "Administrador del sistema");
-            Role roleProfessional = userService.getOrCreateRole("ROLE_PROFESSIONAL", "Profesional / Especialista");
+            Role roleUser = userService.getOrCreateRole(Role.ROLE_USER, "Usuario final");
+            Role roleAdmin = userService.getOrCreateRole(Role.ROLE_ADMIN, "Administrador del sistema");
+            Role roleProfessional = userService.getOrCreateRole(Role.ROLE_PROFFESIONAL,
+                    "Profesional / Especialista / Centro de Salud / Organizador");
 
-            seedUser(userRepository, "user1", "user1@oona.es", "$2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2", Set.of(roleUser));
-            seedUser(userRepository, "user2", "user2@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleUser));
-            seedUser(userRepository, "admin_main1", "admin1@oona.es", "$2a$10$Mdap8zU9ZNG6oqsRUm6U7eh6Kr6oGpG.ZSRS.E8YI3bPJJC419mG2", Set.of(roleAdmin));
-            seedUser(userRepository, "admin_main2", "admin2@oona.es", "$2a$10$Y3wc8XrAr4xxFCkll4Ao9er1XWddL39zVRwLBjUPhrcMUmB6SF9DC", Set.of(roleAdmin));
+            seedUser(userRepository, "user1", "user1@oona.es",
+                    "$2a$12$UW77HqKPS52U7hJF9BCEYO9xS7SG9Y5/QsoMtpQ7fdJWiQfqeiJd2", Set.of(roleUser));
+            seedUser(userRepository, "user2", "user2@oona.es",
+                    "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleUser));
+            seedUser(userRepository, "admin_main1", "admin1@oona.es",
+                    "$2a$10$Mdap8zU9ZNG6oqsRUm6U7eh6Kr6oGpG.ZSRS.E8YI3bPJJC419mG2", Set.of(roleAdmin));
+            seedUser(userRepository, "admin_main2", "admin2@oona.es",
+                    "$2a$10$Y3wc8XrAr4xxFCkll4Ao9er1XWddL39zVRwLBjUPhrcMUmB6SF9DC", Set.of(roleAdmin));
 
-            User specUser1 = seedUser(userRepository, "specialist_ana", "ana@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
-            User specUser2 = seedUser(userRepository, "specialist_carlos", "carlos@oona.es", "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
+            User specUser1 = seedUser(userRepository, "specialist_ana", "ana@oona.es",
+                    "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
+            User specUser2 = seedUser(userRepository, "specialist_carlos", "carlos@oona.es",
+                    "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G", Set.of(roleProfessional));
 
             seedCategory(categoryRepository, "Yoga", "Practicas de yoga y bienestar corporal.");
-            seedCategory(categoryRepository, "Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
+            seedCategory(categoryRepository, "Hielo y Breathwork",
+                    "Experiencias de respiracion consciente y exposicion al frio.");
             seedCategory(categoryRepository, "Arte y Creatividad", "Actividades creativas para expresion y bienestar.");
             seedCategory(categoryRepository, "Movimiento", "Experiencias de movimiento consciente.");
             seedCategory(categoryRepository, "Deporte", "Actividades físicas orientadas al bienestar.");
@@ -88,29 +95,65 @@ public class DataInitializer {
             seedCity(cityRepository, "Barcelona", "Barcelona");
             seedCity(cityRepository, "Valencia", "Valencia");
 
-            //Se crea primero City para poder asociarlas correctamente a Location
-            Location loc1 = seedLocation(locationRepository, cityRepository, "Centro Holistico Miraflores", "Av. Larco 123", "LINK", "Valencia", "Valencia", true);
-            Location loc2 = seedLocation(locationRepository, cityRepository, "Casa Bienestar San Isidro", "Av. Javier Prado 456", "LINK", "Barcelona", "Barcelona", true);
-            Location loc3 = seedLocation(locationRepository, cityRepository, "Cada de vista", "hola", "Acceso", "Madrid", "Madrid", true);
+            // Se crea primero City para poder asociarlas correctamente a Location
+            Location loc1 = seedLocation(locationRepository, cityRepository, "Centro Holistico Miraflores",
+                    "Av. Larco 123", "LINK", "Valencia", "Valencia", true);
+            Location loc2 = seedLocation(locationRepository, cityRepository, "Casa Bienestar San Isidro",
+                    "Av. Javier Prado 456", "LINK", "Barcelona", "Barcelona", true);
+            Location loc3 = seedLocation(locationRepository, cityRepository, "Cada de vista", "hola", "Acceso",
+                    "Madrid", "Madrid", true);
 
-            SpecialistProfile profileAna = seedSpecialist(specialistProfileRepository, specUser1, "ana-psicologa", "Ana Gómez", "Psicóloga clínica con más de 10 años de experiencia.", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", "+34600111222", "ana@oona.es", "https://anagomez.es");
-            SpecialistProfile profileCarlos = seedSpecialist(specialistProfileRepository, specUser2, "carlos-yoga", "Carlos Ruiz", "Instructor certificado de Hatha y Vinyasa Yoga.", "https://images.unsplash.com/photo-1534528741775-53994a69daeb", "+34600333444", "carlos@oona.es", "https://carlosyoga.es");
+            SpecialistProfile profileAna = seedSpecialist(specialistProfileRepository, specUser1, "ana-psicologa",
+                    "Ana Gómez", "Psicóloga clínica con más de 10 años de experiencia.",
+                    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", "+34600111222", "ana@oona.es",
+                    "https://anagomez.es");
+            SpecialistProfile profileCarlos = seedSpecialist(specialistProfileRepository, specUser2, "carlos-yoga",
+                    "Carlos Ruiz", "Instructor certificado de Hatha y Vinyasa Yoga.",
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb", "+34600333444", "carlos@oona.es",
+                    "https://carlosyoga.es");
 
-            seedOneToOneService(serviceRepository, profileAna, "Terapia Psicológica de Acompañamiento", "Sesión de terapia individual enfocada en ansiedad y manejo del estrés en la vida diaria.", 60, SessionModality.ONLINE, null, 65.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileAna, "Evaluación de Perfil Cognitivo", "Evaluación integral de funciones cognitivas y atención para adultos mayores.", 90, SessionModality.PRESENCIAL, loc1, 120.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "Clase Personalizada de Hatha Yoga", "Sesión individual adaptada a tu nivel y objetivos físicos y espirituales.", 75, SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "Asesoría de Meditación Guiada y Mindfulness", "Iniciación teórica y práctica en mindfulness y respiración consciente.", 45, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "Borrrador Clase Vinyasa Yoga", "Esta clase aún está en borrador.", 60, SessionModality.ONLINE, null, 45.00, "EUR", PublicationStatus.BORRADOR);
+            seedOneToOneService(serviceRepository, profileAna, "Terapia Psicológica de Acompañamiento",
+                    "Sesión de terapia individual enfocada en ansiedad y manejo del estrés en la vida diaria.", 60,
+                    SessionModality.ONLINE, null, 65.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Evaluación de Perfil Cognitivo",
+                    "Evaluación integral de funciones cognitivas y atención para adultos mayores.", 90,
+                    SessionModality.PRESENCIAL, loc1, 120.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Clase Personalizada de Hatha Yoga",
+                    "Sesión individual adaptada a tu nivel y objetivos físicos y espirituales.", 75,
+                    SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Asesoría de Meditación Guiada y Mindfulness",
+                    "Iniciación teórica y práctica en mindfulness y respiración consciente.", 45,
+                    SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Borrrador Clase Vinyasa Yoga",
+                    "Esta clase aún está en borrador.", 60, SessionModality.ONLINE, null, 45.00, "EUR",
+                    PublicationStatus.BORRADOR);
 
             // Sembrado de Categorías de referencia para Eventos
-            seedOneToOneService(serviceRepository, profileAna, "Asesoria porteo ergonomico", "Acompanamiento individual para elegir y ajustar portabebes de forma comoda y segura.", 60, SessionModality.ONLINE, null, 60.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileAna, "Identifica la herida de infancia que condiciona tus relaciones", "Sesion individual para reconocer patrones emocionales y trabajarlos con herramientas terapeuticas.", 60, SessionModality.ONLINE, null, 70.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "Bano de sonido para parejas - Sound Healing", "Experiencia personalizada de sonido y relajacion profunda para dos personas.", 120, SessionModality.PRESENCIAL, loc2, 80.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileAna, "Constelacion individual para desbloquear avances", "Sesion de acompanamiento sistemico enfocada en claridad emocional y toma de decisiones.", 60, SessionModality.ONLINE, null, 100.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "Cafe Aromatico", "Sesion sensorial para reconectar con presencia, respiracion y rituales de pausa consciente.", 60, SessionModality.PRESENCIAL, loc1, 15.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileCarlos, "ETERUM FLOW EXPERIENCE", "Sesion individual de movimiento consciente adaptada a tu energia y objetivos corporales.", 90, SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileAna, "Descubre tu piel asesoria cosmetica fresca", "Asesoria personalizada para crear una rutina de cuidado facial simple y consciente.", 60, SessionModality.ONLINE, null, 0.00, "EUR", PublicationStatus.PUBLICADO);
-            seedOneToOneService(serviceRepository, profileAna, "Embarazo acompanamiento emocional", "Sesion individual para transitar embarazo y maternidad con herramientas de regulacion emocional.", 90, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Asesoria porteo ergonomico",
+                    "Acompanamiento individual para elegir y ajustar portabebes de forma comoda y segura.", 60,
+                    SessionModality.ONLINE, null, 60.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna,
+                    "Identifica la herida de infancia que condiciona tus relaciones",
+                    "Sesion individual para reconocer patrones emocionales y trabajarlos con herramientas terapeuticas.",
+                    60, SessionModality.ONLINE, null, 70.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Bano de sonido para parejas - Sound Healing",
+                    "Experiencia personalizada de sonido y relajacion profunda para dos personas.", 120,
+                    SessionModality.PRESENCIAL, loc2, 80.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Constelacion individual para desbloquear avances",
+                    "Sesion de acompanamiento sistemico enfocada en claridad emocional y toma de decisiones.", 60,
+                    SessionModality.ONLINE, null, 100.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "Cafe Aromatico",
+                    "Sesion sensorial para reconectar con presencia, respiracion y rituales de pausa consciente.", 60,
+                    SessionModality.PRESENCIAL, loc1, 15.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileCarlos, "ETERUM FLOW EXPERIENCE",
+                    "Sesion individual de movimiento consciente adaptada a tu energia y objetivos corporales.", 90,
+                    SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Descubre tu piel asesoria cosmetica fresca",
+                    "Asesoria personalizada para crear una rutina de cuidado facial simple y consciente.", 60,
+                    SessionModality.ONLINE, null, 0.00, "EUR", PublicationStatus.PUBLICADO);
+            seedOneToOneService(serviceRepository, profileAna, "Embarazo acompanamiento emocional",
+                    "Sesion individual para transitar embarazo y maternidad con herramientas de regulacion emocional.",
+                    90, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO);
 
             Category catCuerpo = categoryRepository.findByName("Cuerpo y Salud").orElse(null);
             Category catMovimiento = categoryRepository.findByName("Movimiento").orElse(null);
@@ -228,7 +271,8 @@ public class DataInitializer {
         };
     }
 
-    private User seedUser(UserRepository userRepository, String username, String email, String encodedPassword, Set<Role> roles) {
+    private User seedUser(UserRepository userRepository, String username, String email, String encodedPassword,
+            Set<Role> roles) {
         return userRepository.findByUsername(username).orElseGet(() -> {
             User user = new User();
             user.setUsername(username);
@@ -276,8 +320,7 @@ public class DataInitializer {
     private void seedCity(
             CityRepository cityRepository,
             String name,
-            String province
-    ) {
+            String province) {
         cityRepository.findByNameAndProvince(name, province)
                 .orElseGet(() -> {
                     City city = new City();
@@ -289,11 +332,11 @@ public class DataInitializer {
                     return cityRepository.save(city);
                 });
     }
+
     private void seedWorkTopic(
             WorkTopicRepository workTopicRepository,
             String name,
-            boolean active
-    ) {
+            boolean active) {
         String normalizedName = name.trim();
 
         workTopicRepository.findByNameIgnoreCase(normalizedName)
@@ -308,8 +351,7 @@ public class DataInitializer {
     private void seedTechnique(
             TechniqueRepository techniqueRepository,
             String name,
-            boolean active
-    ) {
+            boolean active) {
         String normalizedName = name.trim();
 
         techniqueRepository.findByNameIgnoreCase(normalizedName)
@@ -330,8 +372,7 @@ public class DataInitializer {
             String photoUrl,
             String whatsappPhone,
             String publicEmail,
-            String website
-    ) {
+            String website) {
         return specialistProfileRepository.findByUserId(user.getId()).orElseGet(() -> {
             SpecialistProfile profile = new SpecialistProfile();
             profile.setUser(user);
@@ -358,8 +399,7 @@ public class DataInitializer {
             Location location,
             double price,
             String currency,
-            PublicationStatus status
-    ) {
+            PublicationStatus status) {
         String tempSlug = title.toLowerCase()
                 .replace("ñ", "n")
                 .replace("á", "a")
@@ -431,8 +471,7 @@ public class DataInitializer {
             Category category,
             SpecialistProfile specialist,
             EventType eventType,
-            boolean isRecurring
-    ) {
+            boolean isRecurring) {
         return eventRepository.findByTitle(title).orElseGet(() -> {
             Event event = new Event();
             event.setTitle(title);

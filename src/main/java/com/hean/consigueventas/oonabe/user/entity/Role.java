@@ -23,6 +23,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Role {
+    public static final String ROLE_USER = "ROLE_USER";
+    public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_PROFFESIONAL = "ROLE_PROFFESIONAL";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

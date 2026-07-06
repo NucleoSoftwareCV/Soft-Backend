@@ -6,6 +6,8 @@ Este documento describe la arquitectura que existe actualmente en el repositorio
 
 Oona Backend es un monolito modular desarrollado con Spring Boot. El código se organiza mediante **package-by-feature**: cada paquete representa un dominio y, cuando la funcionalidad está implementada, contiene sus propias capas técnicas.
 
+Esto se verificó mediante un análisis de código y ahora se considera un **monolito con arquitectura modular**.
+
 El paquete raíz es:
 
 ```text

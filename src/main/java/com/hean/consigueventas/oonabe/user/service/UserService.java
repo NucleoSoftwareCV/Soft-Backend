@@ -1,8 +1,5 @@
-package com.hean.consigueventas.oonabe.user.service.impl;
+package com.hean.consigueventas.oonabe.user.service;
 
-import com.hean.consigueventas.oonabe.user.service.IUserService;
-
-import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.common.exception.UserAlreadyExistsException;
 import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
@@ -19,22 +16,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-public class UserServiceImpl implements IUserService {
+public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryCustomerProfileService temporaryCustomerProfileService;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, TemporaryCustomerProfileService temporaryCustomerProfileService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.temporaryCustomerProfileService = temporaryCustomerProfileService;
     }
 
     @Transactional
-    @Override
     public User registerUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new UserAlreadyExistsException("El nombre de usuario ya está en uso.");
@@ -44,26 +42,25 @@ public class UserServiceImpl implements IUserService {
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        Role userRole = getOrCreateRole("ROLE_USER", "Usuario final");
+        Role userRole = getOrCreateRole(Role.ROLE_USER, "Usuario final");
         user.setRoles(new HashSet<>(Set.of(userRole)));
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        temporaryCustomerProfileService.createProfileForUser(savedUser);
+        return savedUser;
     }
 
     @Transactional
-    @Override
     public Role getOrCreateRole(String name, String description) {
         return roleRepository.findByName(name)
                 .orElseGet(() -> roleRepository.save(Role.builder().name(name).description(description).active(true).build()));
     }
 
     @Transactional(readOnly = true)
-    @Override
     public UserResponse findById(Long id) {
         return userMapper.toDto(findEntityById(id));
     }
 
     @Transactional(readOnly = true)
-    @Override
     public User findEntityById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));

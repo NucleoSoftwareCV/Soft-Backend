@@ -1,7 +1,4 @@
-package com.hean.consigueventas.oonabe.auth.service.impl;
-
-import com.hean.consigueventas.oonabe.auth.service.IAuthService;
-import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
+package com.hean.consigueventas.oonabe.auth.service;
 
 import com.hean.consigueventas.oonabe.auth.dto.request.GoogleLoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.response.JwtResponse;
@@ -18,7 +15,7 @@ import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.mapper.UserMapper;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
-import com.hean.consigueventas.oonabe.user.service.IUserService;
+import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,19 +29,19 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class AuthServiceImpl implements IAuthService {
+public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
-    private final IUserService userService;
+    private final UserService userService;
     private final UserMapper userMapper;
-    private final IRefreshTokenService refreshTokenService;
+    private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final GoogleTokenVerifier googleTokenVerifier;
 
-    public AuthServiceImpl(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
-                       IUserService userService, UserMapper userMapper,
-                       IRefreshTokenService refreshTokenService, UserRepository userRepository,
+    public AuthService(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
+                       UserService userService, UserMapper userMapper,
+                       RefreshTokenService refreshTokenService, UserRepository userRepository,
                        GoogleTokenVerifier googleTokenVerifier) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
@@ -56,7 +53,6 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Transactional
-    @Override
     public UserResponse register(RegisterRequest request) {
         User user = new User();
         user.setUsername(request.username());
@@ -66,7 +62,6 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Transactional
-    @Override
     public JwtResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password()));
@@ -82,7 +77,6 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Transactional
-    @Override
     public JwtResponse loginWithGoogle(GoogleLoginRequest request) {
         Map<String, Object> response = googleTokenVerifier.verifyToken(request.idToken());
 
@@ -139,7 +133,6 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Transactional
-    @Override
     public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
         String requestRefreshToken = request.refreshToken();
 
@@ -154,9 +147,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Transactional
-    @Override
     public void logout(TokenRefreshRequest request) {
         refreshTokenService.deleteByToken(request.refreshToken());
     }
 }
-

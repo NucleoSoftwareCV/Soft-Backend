@@ -1,12 +1,12 @@
 package com.hean.consigueventas.oonabe;
 
-import com.hean.consigueventas.oonabe.auth.service.IAuthService;
-import com.hean.consigueventas.oonabe.auth.service.IRefreshTokenService;
+import com.hean.consigueventas.oonabe.auth.service.AuthService;
+import com.hean.consigueventas.oonabe.auth.service.RefreshTokenService;
 import com.hean.consigueventas.oonabe.category.service.ICategoryService;
 import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
 import com.hean.consigueventas.oonabe.masterdata.service.CityService;
 import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
-import com.hean.consigueventas.oonabe.user.service.IUserService;
+import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -26,13 +26,13 @@ class OonaBeApplicationTests {
 
     @Test
     void eachServiceInterfaceHasExactlyOneImplementation() {
-        assertSingleBean(IAuthService.class);
-        assertSingleBean(IRefreshTokenService.class);
+        assertSingleBean(AuthService.class);
+        assertSingleBean(RefreshTokenService.class);
         assertSingleBean(CityService.class);
         assertSingleBean(ICategoryService.class);
         assertSingleBean(EventOccurrenceService.class);
         assertSingleBean(ILocationService.class);
-        assertSingleBean(IUserService.class);
+        assertSingleBean(UserService.class);
     }
 
     private void assertSingleBean(Class<?> serviceType) {
