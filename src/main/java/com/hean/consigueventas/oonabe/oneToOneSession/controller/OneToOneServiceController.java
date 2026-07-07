@@ -1,38 +1,34 @@
 package com.hean.consigueventas.oonabe.oneToOneSession.controller;
 
-import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
-import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.security.SecurityUtils;
-import com.hean.consigueventas.oonabe.oneToOneSession.dto.request.OneToOneServiceRequest;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceCardResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.service.OneToOneSessionService;
+import com.hean.consigueventas.oonabe.oneToOneSession.support.OneToOnePageables;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Set;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Validated
 @RequestMapping("/api/v1/one-to-one-services")
-@Tag(name = "Sesiones 1-a-1", description = "Gestión de plantillas de servicios y sesiones individuales 1-a-1.")
+@Tag(name = "Sesiones 1-a-1", description = "API publica para explorar sesiones individuales 1-a-1.")
 public class OneToOneServiceController {
 
     private final OneToOneSessionService service;
@@ -44,40 +40,36 @@ public class OneToOneServiceController {
     @GetMapping
     @Operation(
             summary = "Listar sesiones publicadas",
-            description = "Devuelve sesiones publicadas y permite filtrar por tema y técnica.",
+            description = """
+                    Devuelve sesiones publicadas y permite filtrar por tema y tecnica.
+                    Parametros de paginacion: page, size y sort.
+                    Tamano maximo permitido: 100. Orden por defecto: createdAt,desc.
+                    Campos de orden permitidos: createdAt, title, price, durationMinutes.
+                    """,
             security = {}
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Lista de sesiones públicas"
-    )
+    @ApiResponse(responseCode = "200", description = "Lista de sesiones publicas")
     public Page<OneToOneServiceCardResponse> getPublicServices(
-
-            @RequestParam(required = false)
-            Long workTopicId,
-
-            @RequestParam(required = false)
-            Long techniqueId,
-
-            @PageableDefault(
-                    size = 12,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            )
-            Pageable pageable
+            @Parameter(description = "ID del tema de trabajo", example = "1")
+            @RequestParam(required = false) Long workTopicId,
+            @Parameter(description = "ID de la tecnica", example = "1")
+            @RequestParam(required = false) Long techniqueId,
+            @ParameterObject
+            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return service.getPublicServices(
-                workTopicId,
-                techniqueId,
-                sanitizePublicListingPageable(pageable)
-        );
+        return service.getPublicServices(workTopicId, techniqueId, OneToOnePageables.sanitizePublicListing(pageable));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener sesión por ID", description = "Si no está publicada, solo el dueño puede verla.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @Operation(
+            summary = "Obtener sesion publicada por ID",
+            description = "Devuelve el detalle publico de una sesion publicada.",
+            security = {}
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Sesión encontrada"),
-            @ApiResponse(responseCode = "404", description = "Sesión no encontrada o no disponible", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            @ApiResponse(responseCode = "200", description = "Sesion encontrada"),
+            @ApiResponse(responseCode = "404", description = "Sesion no encontrada o no disponible",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public OneToOneServiceResponse getById(@PathVariable Long id) {
         return service.getById(id, SecurityUtils.getAuthenticatedUserId());
@@ -85,74 +77,16 @@ public class OneToOneServiceController {
 
     @GetMapping("/slug/{slug}")
     @Operation(
-            summary = "Obtener sesión por enlace amigable (nombre legible de la URL)",
-            description = "Busca los detalles de una sesión utilizando el texto legible de su enlace en lugar de su número identificador ID. Ejemplo: '/slug/terapia-psicologica' en lugar de buscar por '/5'. Si no está publicada, solo el especialista creador puede verla.",
+            summary = "Obtener sesion por enlace amigable",
+            description = "Busca los detalles publicos de una sesion utilizando el texto legible de su enlace.",
             security = {}
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Sesión encontrada"),
-            @ApiResponse(responseCode = "404", description = "Sesión no encontrada o no disponible", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            @ApiResponse(responseCode = "200", description = "Sesion encontrada"),
+            @ApiResponse(responseCode = "404", description = "Sesion no encontrada o no disponible",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public OneToOneServiceResponse getBySlug(@PathVariable String slug) {
         return service.getBySlug(slug, SecurityUtils.getAuthenticatedUserId());
-    }
-
-    @GetMapping("/my-services")
-    @PreAuthorize("hasRole('PROFESSIONAL')")
-    @Operation(summary = "Listar mis sesiones (Especialista)", description = "Devuelve todas las sesiones asociadas al especialista logueado.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponse(responseCode = "200", description = "Lista de sesiones del especialista")
-    public List<OneToOneServiceResponse> getMyServices() {
-        return service.getMyServices(SecurityUtils.getAuthenticatedUserId());
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('PROFESSIONAL')")
-    @Operation(summary = "Crear nueva sesión (Especialista)", description = "Crea un nuevo servicio de sesión 1-a-1.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Sesión creada exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public OneToOneServiceResponse createService(@Valid @RequestBody OneToOneServiceRequest request) {
-        return service.createService(SecurityUtils.getAuthenticatedUserId(), request);
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PROFESSIONAL')")
-    @Operation(summary = "Actualizar sesión (Especialista)", description = "Modifica los datos de una sesión existente del especialista logueado.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Sesión actualizada exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o inconsistentes", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
-            @ApiResponse(responseCode = "404", description = "Sesión no encontrada o no pertenece al especialista", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public OneToOneServiceResponse updateService(@PathVariable Long id, @Valid @RequestBody OneToOneServiceRequest request) {
-        return service.updateService(id, SecurityUtils.getAuthenticatedUserId(), request);
-    }
-
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('PROFESSIONAL')")
-    @Operation(summary = "Cambiar estado de publicación", description = "Modifica el estado de una sesión (BORRADOR, PUBLICADO, OCULTO).", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estado cambiado exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Sesión no encontrada o no pertenece al especialista", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    public OneToOneServiceResponse toggleStatus(@PathVariable Long id, @RequestParam PublicationStatus status) {
-        return service.toggleStatus(id, SecurityUtils.getAuthenticatedUserId(), status);
-    }
-
-    private Pageable sanitizePublicListingPageable(Pageable pageable) {
-        Set<String> allowedSortProperties = Set.of("createdAt", "title", "price", "durationMinutes");
-        Sort safeSort = Sort.by(Sort.Order.desc("createdAt"));
-
-        if (pageable.getSort().isSorted()) {
-            List<Sort.Order> validOrders = pageable.getSort().stream()
-                    .filter(order -> allowedSortProperties.contains(order.getProperty()))
-                    .toList();
-            if (!validOrders.isEmpty()) {
-                safeSort = Sort.by(validOrders);
-            }
-        }
-
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), safeSort);
     }
 }

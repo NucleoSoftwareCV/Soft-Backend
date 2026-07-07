@@ -60,7 +60,7 @@ public class DataInitializer {
         return args -> {
             Role roleUser = userService.getOrCreateRole(Role.ROLE_USER, "Usuario final");
             Role roleAdmin = userService.getOrCreateRole(Role.ROLE_ADMIN, "Administrador del sistema");
-            Role roleProfessional = userService.getOrCreateRole(Role.ROLE_PROFFESIONAL,
+            Role roleProfessional = userService.getOrCreateRole(Role.ROLE_PROFESSIONAL,
                     "Profesional / Especialista / Centro de Salud / Organizador");
 
             seedUser(userRepository, "user1", "user1@oona.es",
