@@ -8,7 +8,19 @@ import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -72,7 +84,7 @@ public class OneToOneService extends AuditableEntity {
     @Column(name = "approved_at")
     private Instant approvedAt;
 
-    @ManyToMany (fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "one_to_one_service_work_topics",
             joinColumns = @JoinColumn(name = "one_to_one_service_id"),
@@ -87,19 +99,4 @@ public class OneToOneService extends AuditableEntity {
             inverseJoinColumns = @JoinColumn(name = "technique_id")
     )
     private Set<Technique> techniques = new HashSet<>();
-
-    @PrePersist
-    public void generateSlug() {
-        if (slug == null || slug.isBlank()) {
-            slug = title == null ? null : title.toLowerCase()
-                    .replace("ñ", "n")
-                    .replace("á", "a")
-                    .replace("é", "e")
-                    .replace("í", "i")
-                    .replace("ó", "o")
-                    .replace("ú", "u")
-                    .replaceAll("[^a-z0-9]+", "-")
-                    .replaceAll("(^-|-$)", "");
-        }
-    }
 }

@@ -1,11 +1,22 @@
 package com.hean.consigueventas.oonabe.oneToOneSession;
 
+import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
+import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
+import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
+import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
+import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
+import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
 
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
@@ -16,10 +27,46 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class OneToOnePublicListingIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private OneToOneServiceRepository serviceRepository;
+
+    @Autowired
+    private WorkTopicRepository workTopicRepository;
+
+    @Autowired
+    private TechniqueRepository techniqueRepository;
+
+    private Long serviceId;
+    private String serviceSlug;
+    private Long workTopicId;
+    private Long techniqueId;
+
+    @BeforeEach
+    void setUpFilterData() {
+        OneToOneService service = serviceRepository.findAll().stream()
+                .filter(item -> item.getStatus() == PublicationStatus.PUBLICADO)
+                .findFirst()
+                .orElseThrow();
+        WorkTopic workTopic = workTopicRepository.findByNameIgnoreCase("Bienestar").orElseThrow();
+        Technique technique = techniqueRepository.findByNameIgnoreCase("Terapia").orElseThrow();
+
+        service.setWorkTopics(new HashSet<>(service.getWorkTopics()));
+        service.setTechniques(new HashSet<>(service.getTechniques()));
+        service.getWorkTopics().add(workTopic);
+        service.getTechniques().add(technique);
+        OneToOneService saved = serviceRepository.save(service);
+
+        serviceId = saved.getId();
+        serviceSlug = saved.getSlug();
+        workTopicId = workTopic.getId();
+        techniqueId = technique.getId();
+    }
 
     @Test
     void publicListingIsPaginatedAndOnlyExposesCardFields() throws Exception {
@@ -48,6 +95,50 @@ class OneToOnePublicListingIntegrationTest {
     }
 
     @Test
+    void publicListingFiltersByWorkTopic() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("workTopicId", workTopicId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+    }
+
+    @Test
+    void publicListingFiltersByTechnique() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("techniqueId", techniqueId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+    }
+
+    @Test
+    void publicListingFiltersByWorkTopicAndTechnique() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("workTopicId", workTopicId.toString())
+                        .param("techniqueId", techniqueId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+    }
+
+    @Test
+    void publicDetailByIdWorksWithoutToken() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services/{id}", serviceId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(serviceId))
+                .andExpect(jsonPath("$.description").exists());
+    }
+
+    @Test
+    void publicDetailBySlugWorksWithoutToken() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services/slug/{slug}", serviceSlug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(serviceId))
+                .andExpect(jsonPath("$.slug").value(serviceSlug));
+    }
+
+    @Test
     void secondPageUsesRequestedSizeAndOnlyPublishedSessions() throws Exception {
         mockMvc.perform(get("/api/v1/one-to-one-services")
                         .param("page", "1")
@@ -67,6 +158,16 @@ class OneToOnePublicListingIntegrationTest {
                         .param("sort", "[\"string\"]"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.totalElements").value(12));
+    }
+
+    @Test
+    void publicListingCapsPageSizeToOneHundred() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("page", "0")
+                        .param("size", "500"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(100))
                 .andExpect(jsonPath("$.totalElements").value(12));
     }
 }

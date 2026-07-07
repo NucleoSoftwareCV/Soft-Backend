@@ -55,7 +55,7 @@ public class RolePromotionService {
         request.setStatus(newStatus);
         
         if (newStatus == PromotionStatus.APROBADO) {
-            Role roleProf = roleRepository.findByName(Role.ROLE_PROFFESIONAL)
+            Role roleProf = roleRepository.findByName(Role.ROLE_PROFESSIONAL)
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
             request.getUser().getRoles().add(roleProf);
             userRepository.save(request.getUser());
