@@ -22,6 +22,15 @@ public record EventDetailResponse(
         @Schema(description = "Descripción completa")
         String description,
 
+        @Schema(description = "Elementos incluidos en el evento")
+        List<String> includes,
+
+        @Schema(description = "Puntos destacados del evento")
+        List<String> highlights,
+
+        @Schema(description = "Elementos que debe traer la persona asistente")
+        List<String> whatToBring,
+
         @Schema(description = "Modalidad (ONLINE o PRESENCIAL)")
         EventModality modality,
 
