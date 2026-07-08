@@ -122,9 +122,45 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(Long id) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con ID: " + id));
+        Event event = getEventOrThrow(id);
         return eventMapper.toDetailResponse(event);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EventCardResponse> getSimilarEvents(Long id, Pageable pageable) {
+        Event event = getEventOrThrow(id);
+        Specification<Event> spec = EventSpecification.isPublished()
+                .and(EventSpecification.excludeEvent(event.getId()))
+                .and(EventSpecification.hasCategory(event.getCategory().getId()))
+                .and(EventSpecification.hasDifferentSpecialist(event.getSpecialist().getId()))
+                .and(orderByStartsAtIfRequested(pageable));
+
+        return eventRepository.findAll(spec, withoutStartsAtSort(pageable))
+                .map(eventMapper::toCardResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EventCardResponse> getOrganizerEvents(Long id, Pageable pageable) {
+        Event event = getEventOrThrow(id);
+        Specification<Event> spec = EventSpecification.isPublished()
+                .and(EventSpecification.excludeEvent(event.getId()))
+                .and(EventSpecification.hasSpecialist(event.getSpecialist().getId()))
+                .and(orderByStartsAtIfRequested(pageable));
+
+        return eventRepository.findAll(spec, withoutStartsAtSort(pageable))
+                .map(eventMapper::toCardResponse);
+    }
+
+    private Event getEventOrThrow(Long id) {
+        return eventRepository.findDetailById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con ID: " + id));
+    }
+
+    private Specification<Event> orderByStartsAtIfRequested(Pageable pageable) {
+        Sort.Order startsAtOrder = startsAtOrder(pageable);
+        return startsAtOrder == null
+                ? (root, query, cb) -> cb.conjunction()
+                : EventSpecification.orderByNextProgrammedOccurrence(startsAtOrder.getDirection());
     }
 
     private Sort.Order startsAtOrder(Pageable pageable) {

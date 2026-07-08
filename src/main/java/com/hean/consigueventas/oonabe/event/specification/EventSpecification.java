@@ -85,6 +85,18 @@ public final class EventSpecification {
         return (root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId);
     }
 
+    public static Specification<Event> hasSpecialist(Long specialistId) {
+        return (root, query, cb) -> cb.equal(root.get("specialist").get("id"), specialistId);
+    }
+
+    public static Specification<Event> hasDifferentSpecialist(Long specialistId) {
+        return (root, query, cb) -> cb.notEqual(root.get("specialist").get("id"), specialistId);
+    }
+
+    public static Specification<Event> excludeEvent(Long eventId) {
+        return (root, query, cb) -> cb.notEqual(root.get("id"), eventId);
+    }
+
     public static Specification<Event> hasEventType(EventType eventType) {
         return (root, query, cb) -> cb.equal(root.get("eventType"), eventType);
     }

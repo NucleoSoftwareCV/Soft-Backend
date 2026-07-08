@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Schema(description = "Datos para crear un evento.")
 public record EventUpsertRequest(
@@ -26,6 +27,20 @@ public record EventUpsertRequest(
         @Schema(description = "Descripción completa del evento.")
         @NotBlank(message = "La descripción es obligatoria")
         String description,
+
+        @Schema(description = "Elementos incluidos en el evento.", example = "[\"Material para practicar yoga\"]")
+        @Size(max = 20, message = "No se pueden registrar mas de 20 elementos incluidos")
+        List<@NotBlank(message = "El elemento incluido no puede estar vacio") @Size(max = 180) String> includes,
+
+
+        @Schema(description = "Puntos destacados del evento.", example = "[\"Yoga\", \"Respiracion consciente\"]")
+        @Size(max = 20, message = "No se pueden registrar mas de 20 puntos destacados")
+        List<@NotBlank(message = "El punto destacado no puede estar vacio") @Size(max = 180) String> highlights,
+
+
+        @Schema(description = "Elementos que debe traer la persona asistente.", example = "[\"Ropa comoda\"]")
+        @Size(max = 20, message = "No se pueden registrar mas de 20 elementos para traer")
+        List<@NotBlank(message = "El elemento para traer no puede estar vacio") @Size(max = 180) String> whatToBring,
 
 
         @Schema(description = "Modalidad del evento.", example = "VIRTUAL")

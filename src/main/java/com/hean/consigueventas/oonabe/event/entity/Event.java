@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -33,6 +34,24 @@ public class Event {
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
+
+    @ElementCollection
+    @CollectionTable(name = "event_includes", joinColumns = @JoinColumn(name = "event_id"))
+    @OrderColumn(name = "item_order")
+    @Column(name = "item", nullable = false, length = 180)
+    private List<String> includes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "event_highlights", joinColumns = @JoinColumn(name = "event_id"))
+    @OrderColumn(name = "item_order")
+    @Column(name = "highlight", nullable = false, length = 180)
+    private List<String> highlights = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "event_what_to_bring", joinColumns = @JoinColumn(name = "event_id"))
+    @OrderColumn(name = "item_order")
+    @Column(name = "item", nullable = false, length = 180)
+    private List<String> whatToBring = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "modality", nullable = false, length = 15)
