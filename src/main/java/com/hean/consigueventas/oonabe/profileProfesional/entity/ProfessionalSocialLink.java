@@ -1,10 +1,7 @@
 package com.hean.consigueventas.oonabe.profileProfesional.entity;
 
-import com.hean.consigueventas.oonabe.common.enums.SocialLinkType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,18 +23,18 @@ public class ProfessionalSocialLink {
     @Column(name = "id")
     private Long id;
 
+    // Antes: specialist_id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "specialist_id", nullable = false)
-    private SpecialistProfile specialist;
+    @JoinColumn(name = "specialist_profile_id", nullable = false)
+    private SpecialistProfile specialistProfile;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 30)
-    private SocialLinkType type;
+    //Antes: type
+    //Valores: INSTAGRAM, FACEBOOK, TIKTOK, YOUTUBE
+    @Column(name = "platform", nullable = false, length = 30)
+    private String platform;
 
-    @Column(name = "url", nullable = false, columnDefinition = "TEXT")
-    private String url;
+    //Antes: url
+    @Column(name = "profile_url", nullable = false, columnDefinition = "TEXT")
+    private String profileUrl;
 
-    @Column(name = "sort_order", nullable = false)
-    private Short sortOrder = 0;
 }
-//Redes sociales de los profesionales
