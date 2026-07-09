@@ -12,4 +12,5 @@ dist
 !.env.example
 Dockerfile
 docker-compose*.yml
+.docker/
 README.md
