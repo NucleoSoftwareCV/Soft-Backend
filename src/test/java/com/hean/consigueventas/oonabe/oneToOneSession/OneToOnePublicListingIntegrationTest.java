@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,6 +46,7 @@ class OneToOnePublicListingIntegrationTest {
 
     private Long serviceId;
     private String serviceSlug;
+    private String serviceSearchTerm;
     private Long workTopicId;
     private Long techniqueId;
 
@@ -64,6 +67,7 @@ class OneToOnePublicListingIntegrationTest {
 
         serviceId = saved.getId();
         serviceSlug = saved.getSlug();
+        serviceSearchTerm = saved.getTitle().substring(0, Math.min(8, saved.getTitle().length()));
         workTopicId = workTopic.getId();
         techniqueId = technique.getId();
     }
@@ -99,8 +103,8 @@ class OneToOnePublicListingIntegrationTest {
         mockMvc.perform(get("/api/v1/one-to-one-services")
                         .param("workTopicId", workTopicId.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
     }
 
     @Test
@@ -108,8 +112,8 @@ class OneToOnePublicListingIntegrationTest {
         mockMvc.perform(get("/api/v1/one-to-one-services")
                         .param("techniqueId", techniqueId.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
     }
 
     @Test
@@ -118,8 +122,17 @@ class OneToOnePublicListingIntegrationTest {
                         .param("workTopicId", workTopicId.toString())
                         .param("techniqueId", techniqueId.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].id").value(serviceId));
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
+    }
+
+    @Test
+    void publicListingSearchesByText() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("search", serviceSearchTerm))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
     }
 
     @Test

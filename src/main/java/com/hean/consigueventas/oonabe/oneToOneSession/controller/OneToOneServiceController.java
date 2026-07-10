@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.oneToOneSession.controller;
 
 import com.hean.consigueventas.oonabe.common.security.SecurityUtils;
+import com.hean.consigueventas.oonabe.common.dto.response.PagedResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceCardResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.dto.response.OneToOneServiceResponse;
 import com.hean.consigueventas.oonabe.oneToOneSession.service.OneToOneSessionService;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -41,15 +41,21 @@ public class OneToOneServiceController {
     @Operation(
             summary = "Listar sesiones publicadas",
             description = """
-                    Devuelve sesiones publicadas y permite filtrar por tema y tecnica.
+                    Devuelve sesiones publicadas y permite buscar por texto o filtrar por tema y tecnica.
                     Parametros de paginacion: page, size y sort.
                     Tamano maximo permitido: 100. Orden por defecto: createdAt,desc.
                     Campos de orden permitidos: createdAt, title, price, durationMinutes.
                     """,
             security = {}
     )
-    @ApiResponse(responseCode = "200", description = "Lista de sesiones publicas")
-    public Page<OneToOneServiceCardResponse> getPublicServices(
+    @ApiResponse(
+            responseCode = "200",
+            description = "Pagina de sesiones publicas con datos minimos para cards.",
+            content = @Content(schema = @Schema(implementation = PagedResponse.class))
+    )
+    public PagedResponse<OneToOneServiceCardResponse> getPublicServices(
+            @Parameter(description = "Texto de busqueda por titulo, descripcion, especialista, tema o tecnica", example = "psicologia")
+            @RequestParam(required = false) String search,
             @Parameter(description = "ID del tema de trabajo", example = "1")
             @RequestParam(required = false) Long workTopicId,
             @Parameter(description = "ID de la tecnica", example = "1")
@@ -57,7 +63,9 @@ public class OneToOneServiceController {
             @ParameterObject
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return service.getPublicServices(workTopicId, techniqueId, OneToOnePageables.sanitizePublicListing(pageable));
+        return PagedResponse.from(
+                service.getPublicServices(search, workTopicId, techniqueId, OneToOnePageables.sanitizePublicListing(pageable))
+        );
     }
 
     @GetMapping("/{id}")

@@ -61,9 +61,9 @@ public class OneToOneSessionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OneToOneServiceCardResponse> getPublicServices(Long workTopicId, Long techniqueId, Pageable pageable) {
+    public Page<OneToOneServiceCardResponse> getPublicServices(String search, Long workTopicId, Long techniqueId, Pageable pageable) {
         return serviceRepository
-                .findAll(OneToOneServiceSpecification.publicListing(workTopicId, techniqueId), pageable)
+                .findAll(OneToOneServiceSpecification.publicListing(search, workTopicId, techniqueId), pageable)
                 .map(serviceMapper::toCardDto);
     }
 
