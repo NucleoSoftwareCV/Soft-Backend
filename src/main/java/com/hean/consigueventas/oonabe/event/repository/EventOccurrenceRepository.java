@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence, Long> {
 
     boolean existsByEventId(Long eventId);
+
+    java.util.Optional<EventOccurrence> findFirstByEventId(Long eventId);
 }

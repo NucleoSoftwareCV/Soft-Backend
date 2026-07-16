@@ -11,6 +11,7 @@ import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class MasterDataSeeder {
@@ -34,6 +35,7 @@ public class MasterDataSeeder {
         this.techniqueRepository = techniqueRepository;
     }
 
+    @Transactional
     public SeedData seed() {
         seedCategory("Yoga", "Practicas de yoga y bienestar corporal.");
         seedCategory("Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
@@ -85,13 +87,27 @@ public class MasterDataSeeder {
     }
 
     private void seedCategory(String name, String description) {
-        categoryRepository.findByName(name).orElseGet(() -> {
-            Category category = new Category();
-            category.setName(name);
-            category.setDescription(description);
-            category.setActive(true);
-            return categoryRepository.save(category);
-        });
+        Category category = categoryRepository.findByName(name).orElse(null);
+        if (category == null) {
+            Category newCategory = new Category();
+            newCategory.setName(name);
+            newCategory.setDescription(description);
+            newCategory.setActive(true);
+            categoryRepository.save(newCategory);
+        } else {
+            boolean changed = false;
+            if (!description.equals(category.getDescription())) {
+                category.setDescription(description);
+                changed = true;
+            }
+            if (!category.isActive()) {
+                category.setActive(true);
+                changed = true;
+            }
+            if (changed) {
+                categoryRepository.save(category);
+            }
+        }
     }
 
     private Location seedLocation(
@@ -102,51 +118,107 @@ public class MasterDataSeeder {
             String provinceName,
             boolean isActive) {
 
-        return locationRepository.findByName(name).orElseGet(() -> {
-            Location location = new Location();
-            location.setName(name);
-            location.setAddress(address);
-            location.setReference(reference);
-            location.setIsActive(isActive);
-            if (cityName != null && provinceName != null) {
-                location.setCity(cityRepository.findByNameAndProvince(cityName, provinceName).orElse(null));
+        Location location = locationRepository.findByName(name).orElse(null);
+        City targetCity = (cityName != null && provinceName != null)
+                ? cityRepository.findByNameAndProvince(cityName, provinceName).orElse(null)
+                : null;
+
+        if (location == null) {
+            Location newLocation = new Location();
+            newLocation.setName(name);
+            newLocation.setAddress(address);
+            newLocation.setReference(reference);
+            newLocation.setIsActive(isActive);
+            newLocation.setCity(targetCity);
+            return locationRepository.save(newLocation);
+        } else {
+            boolean changed = false;
+            if (!address.equals(location.getAddress())) {
+                location.setAddress(address);
+                changed = true;
             }
-            return locationRepository.save(location);
-        });
+            if (!reference.equals(location.getReference())) {
+                location.setReference(reference);
+                changed = true;
+            }
+            if (location.getIsActive() != isActive) {
+                location.setIsActive(isActive);
+                changed = true;
+            }
+            if (targetCity != null && !targetCity.equals(location.getCity())) {
+                location.setCity(targetCity);
+                changed = true;
+            }
+            if (changed) {
+                return locationRepository.save(location);
+            }
+            return location;
+        }
     }
 
     private void seedCity(String name, String province) {
-        cityRepository.findByNameAndProvince(name, province)
-                .orElseGet(() -> {
-                    City city = new City();
-                    city.setName(name.trim());
-                    city.setProvince(province.trim());
-                    city.setCountryCode("ES");
-                    city.setIsActive(true);
-                    return cityRepository.save(city);
-                });
+        City city = cityRepository.findByNameAndProvince(name, province).orElse(null);
+        if (city == null) {
+            City newCity = new City();
+            newCity.setName(name.trim());
+            newCity.setProvince(province.trim());
+            newCity.setCountryCode("ES");
+            newCity.setIsActive(true);
+            cityRepository.save(newCity);
+        } else {
+            boolean changed = false;
+            if (!"ES".equals(city.getCountryCode())) {
+                city.setCountryCode("ES");
+                changed = true;
+            }
+            if (!city.getIsActive()) {
+                city.setIsActive(true);
+                changed = true;
+            }
+            if (changed) {
+                cityRepository.save(city);
+            }
+        }
     }
 
     private void seedWorkTopic(String name, boolean active) {
         String normalizedName = name.trim();
-        workTopicRepository.findByNameIgnoreCase(normalizedName)
-                .orElseGet(() -> {
-                    WorkTopic workTopic = new WorkTopic();
-                    workTopic.setName(normalizedName);
-                    workTopic.setActive(active);
-                    return workTopicRepository.save(workTopic);
-                });
+        WorkTopic workTopic = workTopicRepository.findByNameIgnoreCase(normalizedName).orElse(null);
+        if (workTopic == null) {
+            WorkTopic newWorkTopic = new WorkTopic();
+            newWorkTopic.setName(normalizedName);
+            newWorkTopic.setActive(active);
+            workTopicRepository.save(newWorkTopic);
+        } else {
+            boolean changed = false;
+            if (workTopic.isActive() != active) {
+                workTopic.setActive(active);
+                changed = true;
+            }
+            if (changed) {
+                workTopicRepository.save(workTopic);
+            }
+        }
     }
 
     private void seedTechnique(String name, boolean active) {
         String normalizedName = name.trim();
-        techniqueRepository.findByNameIgnoreCase(normalizedName)
-                .orElseGet(() -> {
-                    Technique technique = new Technique();
-                    technique.setName(normalizedName);
-                    technique.setActive(active);
-                    return techniqueRepository.save(technique);
-                });
+        Technique technique = techniqueRepository.findByNameIgnoreCase(normalizedName).orElse(null);
+        if (technique == null) {
+            Technique newTechnique = new Technique();
+            newTechnique.setName(normalizedName);
+            newTechnique.setActive(active);
+            techniqueRepository.save(newTechnique);
+        } else {
+            boolean changed = false;
+            if (technique.isActive() != active) {
+                technique.setActive(active);
+                changed = true;
+            }
+            if (changed) {
+                techniqueRepository.save(technique);
+            }
+        }
     }
 
     public record SeedData(

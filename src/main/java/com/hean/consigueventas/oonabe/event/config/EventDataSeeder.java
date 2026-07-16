@@ -14,7 +14,9 @@ import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -34,6 +36,7 @@ public class EventDataSeeder {
         this.meetingLinkRepository = meetingLinkRepository;
     }
 
+    @Transactional
     public void seed(
             Category catCuerpo,
             Category catMovimiento,
@@ -197,7 +200,7 @@ public class EventDataSeeder {
 
         Event event13 = seedEvent(
                 "Danza Consciente para Liberar Energia",
-                "Movimiento guiado para desbloquear tension y activar vitalidad.",
+                "Movimiento guiado para desbloquear tension and activar vitalidad.",
                 "Una experiencia de movimiento libre con pautas sencillas para conectar con ritmo, respiracion y presencia.",
                 EventModality.PRESENCIAL, 24.00, "EUR", (short) 16, catMovimiento, profileAna,
                 EventType.CLASE, false);
@@ -221,23 +224,42 @@ public class EventDataSeeder {
             SpecialistProfile specialist,
             EventType eventType,
             boolean isRecurring) {
-        return eventRepository.findByTitle(title).orElseGet(() -> {
-            Event event = new Event();
-            event.setTitle(title);
-            event.setSummary(summary);
-            event.setDescription(description);
-            event.setModality(modality);
-            event.setPriceFrom(java.math.BigDecimal.valueOf(price));
-            event.setCurrency(currency);
-            event.setMinimumAge(minimumAge);
-            event.setStatus(EventStatus.PUBLICADO);
-            event.setFeatured(true);
-            event.setEventType(eventType);
-            event.setRecurring(isRecurring);
-            event.setCategory(category);
-            event.setSpecialist(specialist);
-            return eventRepository.save(event);
-        });
+        Event event = eventRepository.findByTitle(title).orElse(null);
+        BigDecimal targetPrice = BigDecimal.valueOf(price);
+        if (event == null) {
+            Event newEvent = new Event();
+            newEvent.setTitle(title);
+            newEvent.setSummary(summary);
+            newEvent.setDescription(description);
+            newEvent.setModality(modality);
+            newEvent.setPriceFrom(targetPrice);
+            newEvent.setCurrency(currency);
+            newEvent.setMinimumAge(minimumAge);
+            newEvent.setStatus(EventStatus.PUBLICADO);
+            newEvent.setFeatured(true);
+            newEvent.setEventType(eventType);
+            newEvent.setRecurring(isRecurring);
+            newEvent.setCategory(category);
+            newEvent.setSpecialist(specialist);
+            return eventRepository.save(newEvent);
+        } else {
+            boolean changed = false;
+            if (!summary.equals(event.getSummary())) { event.setSummary(summary); changed = true; }
+            if (!description.equals(event.getDescription())) { event.setDescription(description); changed = true; }
+            if (modality != event.getModality()) { event.setModality(modality); changed = true; }
+            if (targetPrice.compareTo(event.getPriceFrom()) != 0) { event.setPriceFrom(targetPrice); changed = true; }
+            if (!currency.equals(event.getCurrency())) { event.setCurrency(currency); changed = true; }
+            if (!minimumAge.equals(event.getMinimumAge())) { event.setMinimumAge(minimumAge); changed = true; }
+            if (event.getStatus() != EventStatus.PUBLICADO) { event.setStatus(EventStatus.PUBLICADO); changed = true; }
+            if (eventType != event.getEventType()) { event.setEventType(eventType); changed = true; }
+            if (isRecurring != event.isRecurring()) { event.setRecurring(isRecurring); changed = true; }
+            if (category != null && (event.getCategory() == null || !category.getId().equals(event.getCategory().getId()))) { event.setCategory(category); changed = true; }
+            if (specialist != null && (event.getSpecialist() == null || !specialist.getId().equals(event.getSpecialist().getId()))) { event.setSpecialist(specialist); changed = true; }
+            if (changed) {
+                return eventRepository.save(event);
+            }
+            return event;
+        }
     }
 
     private void seedEventDetailSections(
@@ -247,15 +269,15 @@ public class EventDataSeeder {
             List<String> whatToBring) {
         boolean changed = false;
 
-        if (!includes.isEmpty()) {
+        if (event.getIncludes() == null || !event.getIncludes().equals(includes)) {
             event.setIncludes(new java.util.ArrayList<>(includes));
             changed = true;
         }
-        if (!highlights.isEmpty()) {
+        if (event.getHighlights() == null || !event.getHighlights().equals(highlights)) {
             event.setHighlights(new java.util.ArrayList<>(highlights));
             changed = true;
         }
-        if (!whatToBring.isEmpty()) {
+        if (event.getWhatToBring() == null || !event.getWhatToBring().equals(whatToBring)) {
             event.setWhatToBring(new java.util.ArrayList<>(whatToBring));
             changed = true;
         }
@@ -273,16 +295,17 @@ public class EventDataSeeder {
             Integer capacity,
             String meetingUrl
     ) {
-        if (!occurrenceRepository.existsByEventId(event.getId())) {
-            EventOccurrence occurrence = new EventOccurrence();
-            occurrence.setEvent(event);
-            occurrence.setStartsAt(startsAt);
-            occurrence.setEndsAt(endsAt);
-            occurrence.setCapacity(capacity);
-            occurrence.setReservedSpots(0);
-            occurrence.setStatus(EventOccurrenceStatus.PROGRAMADA);
-            occurrence.setLocation(location);
-            EventOccurrence savedOccurrence = occurrenceRepository.save(occurrence);
+        EventOccurrence occurrence = occurrenceRepository.findFirstByEventId(event.getId()).orElse(null);
+        if (occurrence == null) {
+            EventOccurrence newOccurrence = new EventOccurrence();
+            newOccurrence.setEvent(event);
+            newOccurrence.setStartsAt(startsAt);
+            newOccurrence.setEndsAt(endsAt);
+            newOccurrence.setCapacity(capacity);
+            newOccurrence.setReservedSpots(0);
+            newOccurrence.setStatus(EventOccurrenceStatus.PROGRAMADA);
+            newOccurrence.setLocation(location);
+            EventOccurrence savedOccurrence = occurrenceRepository.save(newOccurrence);
 
             if (event.getModality() == EventModality.ONLINE && meetingUrl != null) {
                 MeetingLink meetingLink = new MeetingLink();
@@ -295,6 +318,40 @@ public class EventDataSeeder {
 
                 savedOccurrence.setMeetingLink(meetingLink);
                 occurrenceRepository.save(savedOccurrence);
+            }
+        } else {
+            boolean changed = false;
+            if (!startsAt.equals(occurrence.getStartsAt())) { occurrence.setStartsAt(startsAt); changed = true; }
+            if (!endsAt.equals(occurrence.getEndsAt())) { occurrence.setEndsAt(endsAt); changed = true; }
+            if (!capacity.equals(occurrence.getCapacity())) { occurrence.setCapacity(capacity); changed = true; }
+            if ((location == null && occurrence.getLocation() != null) || (location != null && (occurrence.getLocation() == null || !location.getId().equals(occurrence.getLocation().getId())))) {
+                occurrence.setLocation(location);
+                changed = true;
+            }
+            EventOccurrence savedOccurrence = occurrence;
+            if (changed) {
+                savedOccurrence = occurrenceRepository.save(occurrence);
+            }
+
+            if (event.getModality() == EventModality.ONLINE && meetingUrl != null) {
+                MeetingLink meetingLink = meetingLinkRepository.findByEventOccurrenceId(savedOccurrence.getId()).orElse(null);
+                if (meetingLink == null) {
+                    meetingLink = new MeetingLink();
+                    meetingLink.setEventOccurrence(savedOccurrence);
+                    meetingLink.setPlatform("ZOOM");
+                    meetingLink.setMeetingUrl(meetingUrl);
+                    meetingLink.setMeetingId("123-456-789");
+                    meetingLink.setPassword("secret");
+                    meetingLinkRepository.save(meetingLink);
+
+                    savedOccurrence.setMeetingLink(meetingLink);
+                    occurrenceRepository.save(savedOccurrence);
+                } else {
+                    if (!meetingUrl.equals(meetingLink.getMeetingUrl())) {
+                        meetingLink.setMeetingUrl(meetingUrl);
+                        meetingLinkRepository.save(meetingLink);
+                    }
+                }
             }
         }
     }

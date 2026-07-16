@@ -11,6 +11,7 @@ import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
 import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -32,13 +33,14 @@ public class OneToOneDataSeeder {
         this.techniqueRepository = techniqueRepository;
     }
 
+    @Transactional
     public void seed(
             SpecialistProfile profileAna,
             SpecialistProfile profileCarlos,
             Location loc1,
             Location loc2) {
         seedOneToOneService(profileAna, "Terapia Psicologica de Acompanamiento",
-                "Sesion de terapia individual enfocada en ansiedad y manejo del estres en la vida diaria.", 60,
+                "Sesion de terapia individual enfocada en ansiedad y manejo del estres in la vida diaria.", 60,
                 SessionModality.ONLINE, null, 65.00, "EUR", PublicationStatus.PUBLICADO,
                 Set.of("Autoestima", "Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileAna, "Evaluacion de Perfil Cognitivo",
@@ -106,25 +108,57 @@ public class OneToOneDataSeeder {
             Set<String> techniqueNames) {
         String slug = slugify(title);
 
-        OneToOneService service = serviceRepository.findBySlug(slug).orElseGet(() -> {
+        OneToOneService service = serviceRepository.findBySlug(slug).orElse(null);
+        Set<WorkTopic> targetWorkTopics = resolveWorkTopics(workTopicNames);
+        Set<Technique> targetTechniques = resolveTechniques(techniqueNames);
+        BigDecimal targetPrice = BigDecimal.valueOf(price);
+
+        if (service == null) {
             OneToOneService newService = new OneToOneService();
             newService.setSpecialist(specialist);
             newService.setSlug(slug);
-            return newService;
-        });
+            newService.setTitle(title);
+            newService.setDescription(description);
+            newService.setImageUrl(defaultSessionImageUrl(title));
+            newService.setDurationMinutes(durationMinutes);
+            newService.setModality(modality);
+            newService.setLocation(location);
+            newService.setPrice(targetPrice);
+            newService.setCurrency(currency);
+            newService.setStatus(status);
+            newService.setWorkTopics(targetWorkTopics);
+            newService.setTechniques(targetTechniques);
+            serviceRepository.save(newService);
+        } else {
+            boolean changed = false;
+            if (!specialist.getId().equals(service.getSpecialist().getId())) { service.setSpecialist(specialist); changed = true; }
+            if (!title.equals(service.getTitle())) { service.setTitle(title); changed = true; }
+            if (!description.equals(service.getDescription())) { service.setDescription(description); changed = true; }
+            if (!durationMinutes.equals(service.getDurationMinutes())) { service.setDurationMinutes(durationMinutes); changed = true; }
+            if (modality != service.getModality()) { service.setModality(modality); changed = true; }
+            if ((location == null && service.getLocation() != null) || (location != null && (service.getLocation() == null || !location.getId().equals(service.getLocation().getId())))) {
+                service.setLocation(location);
+                changed = true;
+            }
+            if (targetPrice.compareTo(service.getPrice()) != 0) { service.setPrice(targetPrice); changed = true; }
+            if (!currency.equals(service.getCurrency())) { service.setCurrency(currency); changed = true; }
+            if (status != service.getStatus()) { service.setStatus(status); changed = true; }
 
-        service.setTitle(title);
-        service.setDescription(description);
-        service.setImageUrl(defaultSessionImageUrl(title));
-        service.setDurationMinutes(durationMinutes);
-        service.setModality(modality);
-        service.setLocation(location);
-        service.setPrice(BigDecimal.valueOf(price));
-        service.setCurrency(currency);
-        service.setStatus(status);
-        service.setWorkTopics(resolveWorkTopics(workTopicNames));
-        service.setTechniques(resolveTechniques(techniqueNames));
-        serviceRepository.save(service);
+            Set<String> currentWorkTopics = service.getWorkTopics().stream().map(WorkTopic::getName).collect(Collectors.toSet());
+            if (!workTopicNames.equals(currentWorkTopics)) {
+                service.setWorkTopics(targetWorkTopics);
+                changed = true;
+            }
+            Set<String> currentTechniques = service.getTechniques().stream().map(Technique::getName).collect(Collectors.toSet());
+            if (!techniqueNames.equals(currentTechniques)) {
+                service.setTechniques(targetTechniques);
+                changed = true;
+            }
+
+            if (changed) {
+                serviceRepository.save(service);
+            }
+        }
     }
 
     private Set<WorkTopic> resolveWorkTopics(Set<String> names) {

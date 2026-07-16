@@ -27,7 +27,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void registerLoginAndAccessMeWithJwt() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -40,7 +40,7 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.username").value("authuser"))
                 .andExpect(jsonPath("$.roles[0]").value("USER"));
 
-        String responseContent = mockMvc.perform(post("/api/v1/auth/login")
+        String responseContent = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -58,7 +58,7 @@ class AuthFlowIntegrationTest {
 
         String token = responseContent.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
 
-        mockMvc.perform(get("/api/v1/users/me")
+        mockMvc.perform(get("/api/users/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("authuser@example.com"));
@@ -66,7 +66,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void refreshTokenAndLogoutFlow() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -77,7 +77,7 @@ class AuthFlowIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -95,7 +95,7 @@ class AuthFlowIntegrationTest {
         String token = loginResponse.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
         String refreshToken = loginResponse.replaceAll(".*\\\"refreshToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
 
-        String refreshResponse = mockMvc.perform(post("/api/v1/auth/refresh-token")
+        String refreshResponse = mockMvc.perform(post("/api/auth/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
                 .andExpect(status().isOk())
@@ -107,17 +107,17 @@ class AuthFlowIntegrationTest {
 
         String newAccessToken = refreshResponse.replaceAll(".*\\\"accessToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
 
-        mockMvc.perform(get("/api/v1/users/me")
+        mockMvc.perform(get("/api/users/me")
                         .header("Authorization", "Bearer " + newAccessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("refreshuser@example.com"));
 
-        mockMvc.perform(post("/api/v1/auth/logout")
+        mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(post("/api/v1/auth/refresh-token")
+        mockMvc.perform(post("/api/auth/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
                 .andExpect(status().isForbidden());
@@ -125,7 +125,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void registerDuplicateUserReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -136,7 +136,7 @@ class AuthFlowIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -151,7 +151,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void loginWithWrongPasswordReturns401() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -165,7 +165,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void protectedEndpointWithoutJwtReturnsUnauthorizedOrForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/users/me"))
+        mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -198,7 +198,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void authenticatedUserCannotManageCategories() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -209,7 +209,7 @@ class AuthFlowIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

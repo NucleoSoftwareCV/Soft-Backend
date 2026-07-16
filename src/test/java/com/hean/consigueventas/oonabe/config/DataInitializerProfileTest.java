@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.config;
 
-import com.hean.consigueventas.oonabe.common.config.DataInitializer;
+import com.hean.consigueventas.oonabe.common.config.DataSeederOrchestrator;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Profile;
 
@@ -10,9 +10,9 @@ class DataInitializerProfileTest {
 
     @Test
     void dataInitializerRunsForLocalDevelopmentProfiles() {
-        Profile profile = DataInitializer.class.getAnnotation(Profile.class);
+        Profile profile = DataSeederOrchestrator.class.getAnnotation(Profile.class);
 
         assertThat(profile).isNotNull();
-        assertThat(profile.value()).containsExactlyInAnyOrder("default", "dev", "local", "test");
+        assertThat(profile.value()).containsExactlyInAnyOrder("default", "dev", "local", "test", "postgres");
     }
 }

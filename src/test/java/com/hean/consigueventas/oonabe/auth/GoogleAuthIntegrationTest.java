@@ -50,7 +50,7 @@ class GoogleAuthIntegrationTest {
         Optional<User> existing = userRepository.findByUsernameOrEmail(testEmail, testEmail);
         existing.ifPresent(user -> userRepository.delete(user));
 
-        mockMvc.perform(post("/api/v1/auth/google")
+        mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -75,7 +75,7 @@ class GoogleAuthIntegrationTest {
         Mockito.when(googleTokenVerifier.verifyToken("existing-token")).thenReturn(googleMockResponse);
 
         // Ensure user exists
-        mockMvc.perform(post("/api/v1/auth/google")
+        mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -85,7 +85,7 @@ class GoogleAuthIntegrationTest {
                 .andExpect(status().isOk());
 
         // Perform login again
-        mockMvc.perform(post("/api/v1/auth/google")
+        mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

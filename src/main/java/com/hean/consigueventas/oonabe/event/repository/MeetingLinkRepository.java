@@ -4,4 +4,5 @@ import com.hean.consigueventas.oonabe.event.entity.MeetingLink;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MeetingLinkRepository extends JpaRepository<MeetingLink, Long> {
+    java.util.Optional<MeetingLink> findByEventOccurrenceId(Long eventOccurrenceId);
 }
