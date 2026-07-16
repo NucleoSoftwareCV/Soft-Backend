@@ -1,10 +1,16 @@
 package com.hean.consigueventas.oonabe.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hean.consigueventas.oonabe.auth.security.AuthTokenFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -21,6 +27,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Configuration
@@ -30,14 +39,17 @@ public class SecurityConfig {
 
     private final AuthTokenFilter authTokenFilter;
     private final UserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
             AuthTokenFilter authTokenFilter,
             UserDetailsService userDetailsService,
+            ObjectMapper objectMapper,
             @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
         this.authTokenFilter = authTokenFilter;
         this.userDetailsService = userDetailsService;
+        this.objectMapper = objectMapper;
         this.allowedOrigins = allowedOrigins;
     }
 
@@ -62,8 +74,20 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) -> response.sendError(401, "No autenticado"))
-                        .accessDeniedHandler((request, response, accessDeniedException) -> response.sendError(403, "No autorizado"))
+                        .authenticationEntryPoint((request, response, authException) -> writeSecurityProblem(
+                                request,
+                                response,
+                                HttpStatus.UNAUTHORIZED,
+                                "No autenticado",
+                                "Debes autenticarte para acceder a este recurso.",
+                                "unauthenticated"))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> writeSecurityProblem(
+                                request,
+                                response,
+                                HttpStatus.FORBIDDEN,
+                                "No autorizado",
+                                "No tienes permisos para realizar esta accion.",
+                                "forbidden"))
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
@@ -99,5 +123,24 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private void writeSecurityProblem(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            HttpStatus status,
+            String title,
+            String message,
+            String type) throws IOException {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, message);
+        detail.setTitle(title);
+        detail.setType(URI.create("https://api.oona.local/errors/" + type));
+        detail.setProperty("message", message);
+        detail.setProperty("timestamp", LocalDateTime.now());
+        detail.setProperty("path", request.getRequestURI());
+
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(), detail);
     }
 }

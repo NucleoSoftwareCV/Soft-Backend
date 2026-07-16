@@ -59,4 +59,13 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/one-to-one-services'].get.security").isArray())
                 .andExpect(jsonPath("$.paths['/api/v1/one-to-one-services'].get.security").isEmpty());
     }
+
+    @Test
+    void protectedOpenApiDocumentsCommunityMatchRequest() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/protected"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/community/match-request'].put.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/community/match-request'].put.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/community/match-request'].get").doesNotExist());
+    }
 }

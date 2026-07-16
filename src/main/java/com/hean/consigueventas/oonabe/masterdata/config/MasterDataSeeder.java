@@ -46,6 +46,8 @@ public class MasterDataSeeder {
         seedCategory("Nutricion y Cocina", "Experiencias de alimentacion consciente.");
         seedCategory("Psicologia", "Acompanamiento psicologico y bienestar emocional.");
         seedCategory("Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
+        seedCategory("Maternidad y Familia", "Experiencias de bienestar para la maternidad y la familia.");
+        seedCategory("Emprendimiento", "Experiencias para emprender con bienestar y proposito.");
 
         seedCity("Madrid", "Madrid");
         seedCity("Barcelona", "Barcelona");
