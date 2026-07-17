@@ -38,6 +38,8 @@
         <jjwt.version>0.12.6</jjwt.version>
         <!-- Propiedad de Lombok -->
         <lombok.version>1.18.34</lombok.version>
+        <!-- Activación de APT para soporte de MapStruct en IDEs (VS Code/Eclipse) -->
+        <m2e.apt.activation>jdt_apt</m2e.apt.activation>
     </properties>
     <dependencies>
         <dependency>
