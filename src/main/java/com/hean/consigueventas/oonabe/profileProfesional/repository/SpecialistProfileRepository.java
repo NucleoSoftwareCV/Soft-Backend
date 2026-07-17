@@ -50,4 +50,16 @@ public interface SpecialistProfileRepository
             PublicationStatus publicationStatus,
             Pageable pageable
     );
+
+    //Filtrar perfiles pendientes - aprobados - rechazados
+    Page<SpecialistProfile> findByApprovalStatus(
+            ApprovalStatus approvalStatus,
+            Pageable pageable
+    );
+
+    //Filtrar perfiles publicados - borradores
+    Page<SpecialistProfile> findByPublicationStatus(
+            PublicationStatus publicationStatus,
+            Pageable pageable
+    );
 }

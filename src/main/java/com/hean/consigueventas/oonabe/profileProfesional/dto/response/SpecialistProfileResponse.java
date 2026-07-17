@@ -32,6 +32,9 @@ public record SpecialistProfileResponse(
         @Schema(description = "URL de la foto principal")
         String photoUrl,
 
+        @Schema(description = "URL del banner del perfil")
+        String bannerUrl,
+
         @Schema(description = "Número de WhatsApp")
         String whatsappPhone,
 
@@ -70,9 +73,6 @@ public record SpecialistProfileResponse(
 
         @Schema(description = "Técnicas asociadas")
         Set<String> techniques,
-
-        @Schema(description = "Banner e imágenes de la galería")
-        List<ProfessionalImageResponse> images,
 
         @Schema(description = "Redes sociales del perfil")
         List<ProfessionalSocialLinkResponse> socialLinks
