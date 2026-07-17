@@ -48,8 +48,13 @@ public class SpecialistProfile extends AuditableEntity {
     @Column(name = "biography", nullable = false, columnDefinition = "TEXT")
     private String biography;
 
-    @Column(name = "photo_url", nullable = false, columnDefinition = "TEXT")
+    //Medidas exactas:  126x126
+    @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
+
+    //Medidas exactas: 1248x256
+    @Column(name = "banner_url", columnDefinition = "TEXT")
+    private String bannerUrl;
 
     @Column(name = "whatsapp_phone", nullable = false, length = 25)
     private String whatsappPhone;

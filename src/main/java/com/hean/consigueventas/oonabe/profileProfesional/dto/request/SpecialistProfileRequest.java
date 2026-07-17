@@ -19,9 +19,6 @@ public record SpecialistProfileRequest(
         @NotBlank(message = "La biografía es obligatoria")
         String biography,
 
-        @NotBlank(message = "La foto del perfil es obligatoria")
-        String photoUrl,
-
         @NotBlank(message = "El número de WhatsApp es obligatorio")
         @Size(max = 25, message = "El número de WhatsApp no puede superar los 25 caracteres")
         String whatsappPhone,
