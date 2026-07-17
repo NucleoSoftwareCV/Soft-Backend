@@ -1,6 +1,8 @@
 package com.hean.consigueventas.oonabe.common.exception;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -55,6 +57,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TokenRefreshException.class)
     public ProblemDetail handleTokenRefresh(TokenRefreshException ex, WebRequest request) {
         return problem(HttpStatus.FORBIDDEN, "Refresh token invalido", ex.getMessage(), "refresh-token-invalid", request);
+    }
+
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, OptimisticLockException.class})
+    public ProblemDetail handleOptimisticLock(Exception ex, WebRequest request) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "Conflicto de actualizacion",
+                "El recurso fue modificado por otra solicitud. Recarga los datos e intenta nuevamente.",
+                "concurrent-update",
+                request);
     }
 
     private ProblemDetail validationProblem(BindingResult bindingResult, WebRequest request) {

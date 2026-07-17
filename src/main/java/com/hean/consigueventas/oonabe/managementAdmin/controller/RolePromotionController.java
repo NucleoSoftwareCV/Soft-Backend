@@ -3,6 +3,7 @@ package com.hean.consigueventas.oonabe.managementAdmin.controller;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.managementAdmin.dto.PromotionResponseDto;
 import com.hean.consigueventas.oonabe.managementAdmin.dto.RolePromotionRequestDto;
+import com.hean.consigueventas.oonabe.managementAdmin.enums.PromotionStatus;
 import com.hean.consigueventas.oonabe.managementAdmin.service.RolePromotionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,7 +46,7 @@ public class RolePromotionController {
     @Operation(summary = "Evaluar solicitud", description = "Permite a un admin aprobar o rechazar una solicitud.")
     public PromotionResponseDto evaluatePromotionRequest(
             @PathVariable Long id,
-            @RequestParam String status) {
+            @RequestParam PromotionStatus status) {
         return rolePromotionService.evaluatePromotionRequest(id, status);
     }
 }

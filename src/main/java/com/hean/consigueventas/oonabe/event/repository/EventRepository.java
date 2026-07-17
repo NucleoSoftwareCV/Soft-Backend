@@ -19,10 +19,7 @@ public interface EventRepository extends JpaRepository<Event, Long>,
             "occurrences",
             "occurrences.location",
             "occurrences.location.city",
-            "occurrences.meetingLink",
-            "includes",
-            "highlights",
-            "whatToBring"
+            "occurrences.meetingLink"
     })
     @Query("select e from Event e where e.id = :id")
     Optional<Event> findDetailById(@Param("id") Long id);

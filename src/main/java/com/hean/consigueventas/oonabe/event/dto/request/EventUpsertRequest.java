@@ -2,8 +2,13 @@ package com.hean.consigueventas.oonabe.event.dto.request;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -43,22 +48,27 @@ public record EventUpsertRequest(
         List<@NotBlank(message = "El elemento para traer no puede estar vacio") @Size(max = 180) String> whatToBring,
 
 
-        @Schema(description = "Modalidad del evento.", example = "VIRTUAL")
+        @Schema(description = "Modalidad del evento.", example = "ONLINE")
         @NotNull(message = "La modalidad es obligatoria")
         EventModality modality,
 
 
         @Schema(description = "Precio inicial.", example = "50.00")
         @NotNull(message = "El precio es obligatorio")
+        @DecimalMin(value = "0.0", inclusive = true, message = "El precio no puede ser negativo")
+        @Digits(integer = 8, fraction = 2, message = "El precio admite hasta 8 enteros y 2 decimales")
         BigDecimal priceFrom,
 
 
         @Schema(description = "Moneda.", example = "PEN")
         @NotBlank(message = "La moneda es obligatoria")
+        @Pattern(regexp = "[A-Za-z]{3}", message = "La moneda debe tener exactamente 3 letras")
         String currency,
 
 
         @Schema(description = "Edad mínima permitida.", example = "18")
+        @Min(value = 0, message = "La edad minima no puede ser negativa")
+        @Max(value = 120, message = "La edad minima no puede ser mayor a 120")
         Short minimumAge,
 
 

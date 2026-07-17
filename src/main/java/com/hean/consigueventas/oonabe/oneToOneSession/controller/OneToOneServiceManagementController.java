@@ -96,6 +96,8 @@ public class OneToOneServiceManagementController {
             @ApiResponse(responseCode = "403", description = "No autorizado",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "Sesion no encontrada o no pertenece al especialista",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "La sesion fue modificada por otra solicitud",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public OneToOneServiceResponse updateService(@PathVariable Long id, @Valid @RequestBody OneToOneServiceRequest request) {
@@ -116,6 +118,8 @@ public class OneToOneServiceManagementController {
             @ApiResponse(responseCode = "403", description = "No autorizado",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "Sesion no encontrada o no pertenece al especialista",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "La sesion fue modificada por otra solicitud",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public OneToOneServiceResponse toggleStatus(@PathVariable Long id, @RequestParam PublicationStatus status) {

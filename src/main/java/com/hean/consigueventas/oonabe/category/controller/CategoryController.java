@@ -2,7 +2,7 @@ package com.hean.consigueventas.oonabe.category.controller;
 
 import com.hean.consigueventas.oonabe.category.dto.request.CategoryUpsertRequest;
 import com.hean.consigueventas.oonabe.category.dto.response.CategoryResponse;
-import com.hean.consigueventas.oonabe.category.service.ICategoryService;
+import com.hean.consigueventas.oonabe.category.service.CategoryService;
 import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,9 +22,9 @@ import java.util.List;
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categorías", description = "Catálogo de categorías de eventos.")
 public class CategoryController {
-    private final ICategoryService categoryService;
+    private final CategoryService categoryService;
 
-    public CategoryController(ICategoryService categoryService) {
+    public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
 

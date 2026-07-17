@@ -12,6 +12,7 @@ import org.mapstruct.Mapping;
 public interface EventOccurrenceMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "event", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "meetingLink", ignore = true)

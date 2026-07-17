@@ -26,6 +26,10 @@ public class Event {
     @Column(name = "id")
     private Long id;
 
+    @Version
+    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    private long version;
+
     @Column(name = "title", nullable = false, length = 180)
     private String title;
 
@@ -62,7 +66,6 @@ public class Event {
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency = "EUR";
-//revision
     @Column(name = "minimum_age")
     private Short minimumAge;
 

@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.masterdata.controller;
 
 import com.hean.consigueventas.oonabe.masterdata.dto.response.LocationResponse;
-import com.hean.consigueventas.oonabe.masterdata.service.ILocationService;
+import com.hean.consigueventas.oonabe.masterdata.service.LocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,9 +13,9 @@ import java.util.List;
 @RequestMapping("/api/v1/locations")
 @Tag(name = "Ubicaciones", description = "Ubicaciones físicas activas para eventos y sesiónes.")
 public class LocationController {
-    private final ILocationService locationService;
+    private final LocationService locationService;
 
-    public LocationController(ILocationService locationService) {
+    public LocationController(LocationService locationService) {
         this.locationService = locationService;
     }
 
