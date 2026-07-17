@@ -29,6 +29,7 @@ public interface OneToOneServiceMapper {
     OneToOneServiceCardResponse toCardDto(OneToOneService entity);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "specialist", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "approvedBy", ignore = true)

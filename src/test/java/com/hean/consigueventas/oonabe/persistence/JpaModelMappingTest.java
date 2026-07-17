@@ -5,6 +5,8 @@ import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.content.entity.HomeSection;
 import com.hean.consigueventas.oonabe.event.entity.Event;
+import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
+import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.interaction.entity.Favorite;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
@@ -16,6 +18,8 @@ import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalWork
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +54,25 @@ class JpaModelMappingTest {
         assertEntityTable(WorkTopic.class, "work_topics");
         assertEntityTable(ProfessionalTechnique.class, "professional_techniques");
         assertEntityTable(ProfessionalWorkTopic.class, "professional_work_topics");
+    }
+
+    @Test
+    void mutablePublicationsUseOptimisticLocking() throws NoSuchFieldException {
+        assertThat(Event.class.getDeclaredField("version").getAnnotation(Version.class)).isNotNull();
+        assertThat(EventOccurrence.class.getDeclaredField("version").getAnnotation(Version.class)).isNotNull();
+        assertThat(OneToOneService.class.getDeclaredField("version").getAnnotation(Version.class)).isNotNull();
+    }
+
+    @Test
+    void eventDetailGraphDoesNotJoinElementCollections() throws NoSuchMethodException {
+        EntityGraph graph = EventRepository.class
+                .getMethod("findDetailById", Long.class)
+                .getAnnotation(EntityGraph.class);
+
+        assertThat(graph).isNotNull();
+        assertThat(graph.attributePaths())
+                .doesNotContain("includes", "highlights", "whatToBring")
+                .contains("category", "specialist", "occurrences");
     }
 
     private static void assertEntityTable(Class<?> entityType, String tableName) {

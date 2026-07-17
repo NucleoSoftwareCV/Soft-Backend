@@ -3,6 +3,7 @@ package com.hean.consigueventas.oonabe.event.dto.request;
 import com.hean.consigueventas.oonabe.masterdata.dto.request.LocationUpsertRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -35,4 +36,9 @@ public record EventOccurrenceRequest(
         @Valid
         MeetingLinkUpsertRequest meetingLink
 ) {
+    @AssertTrue(message = "La fecha final debe ser posterior a la fecha de inicio")
+    @Schema(hidden = true)
+    public boolean isDateRangeValid() {
+        return startsAt == null || endsAt == null || endsAt.isAfter(startsAt);
+    }
 }

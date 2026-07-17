@@ -47,11 +47,13 @@ public class RolePromotionService {
     }
 
     @Transactional
-    public PromotionResponseDto evaluatePromotionRequest(Long requestId, String statusStr) {
+    public PromotionResponseDto evaluatePromotionRequest(Long requestId, PromotionStatus newStatus) {
         RolePromotionRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
-        
-        PromotionStatus newStatus = PromotionStatus.valueOf(statusStr.toUpperCase());
+
+        if (newStatus == PromotionStatus.PENDIENTE) {
+            throw new BusinessLogicException("La evaluacion debe aprobar o rechazar la solicitud.");
+        }
         request.setStatus(newStatus);
         
         if (newStatus == PromotionStatus.APROBADO) {

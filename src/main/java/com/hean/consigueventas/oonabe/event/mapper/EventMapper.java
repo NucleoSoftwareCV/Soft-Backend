@@ -23,6 +23,7 @@ import java.util.Comparator;
 public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "approvedBy", ignore = true)
     @Mapping(target = "specialist", ignore = true)
