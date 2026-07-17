@@ -8,6 +8,7 @@ import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.interaction.entity.Favorite;
+import com.hean.consigueventas.oonabe.interaction.entity.ProfessionalFollow;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.payment.entity.Payment;
@@ -18,6 +19,7 @@ import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalWork
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,7 @@ class JpaModelMappingTest {
         assertEntityTable(Payment.class, "payments");
         assertEntityTable(HomeSection.class, "home_sections");
         assertEntityTable(Favorite.class, "favorites");
+        assertEntityTable(ProfessionalFollow.class, "professional_follows");
         assertEntityTable(AuditLog.class, "audit_logs");
     }
 
@@ -73,6 +76,17 @@ class JpaModelMappingTest {
         assertThat(graph.attributePaths())
                 .doesNotContain("includes", "highlights", "whatToBring")
                 .contains("category", "specialist", "occurrences");
+    }
+
+    @Test
+    void professionalFollowPreventsDuplicateRelationships() {
+        Table table = ProfessionalFollow.class.getAnnotation(Table.class);
+
+        assertThat(table.uniqueConstraints())
+                .extracting(UniqueConstraint::name)
+                .contains("uk_professional_follow_user_specialist");
+        assertThat(table.uniqueConstraints()[0].columnNames())
+                .containsExactly("user_id", "specialist_profile_id");
     }
 
     private static void assertEntityTable(Class<?> entityType, String tableName) {
