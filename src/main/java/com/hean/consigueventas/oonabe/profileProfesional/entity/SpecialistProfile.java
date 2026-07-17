@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -42,9 +43,6 @@ public class SpecialistProfile extends AuditableEntity {
     @Column(name = "public_name", nullable = false, length = 150)
     private String publicName;
 
-    @Column(name = "profile_category", nullable = false, length = 30)
-    private String profileCategory = "PROFESIONALES";
-
     @Column(name = "biography", nullable = false, columnDefinition = "TEXT")
     private String biography;
 
@@ -60,17 +58,10 @@ public class SpecialistProfile extends AuditableEntity {
     @Column(name = "website", columnDefinition = "TEXT")
     private String website;
 
-    @Column(name = "phone_number", length = 25)
-    private String phoneNumber;
-
-    //Estado de aprobacion: PENDIENTE, APROBADO, RECHAZADO
-    //SE INICIA EN PENDIENTE
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false, length = 20)
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDIENTE;
 
-    //Estado de publicacion: BORRADOR, PUBLICADO
-    //SE INICIA EN BORRADOR
     @Enumerated(EnumType.STRING)
     @Column(name = "publication_status", nullable = false, length = 20)
     private PublicationStatus publicationStatus = PublicationStatus.BORRADOR;
@@ -85,3 +76,4 @@ public class SpecialistProfile extends AuditableEntity {
     @Column(name = "rejection_reason")
     private String rejectionReason;
 }
+//Cuenta de profesionales

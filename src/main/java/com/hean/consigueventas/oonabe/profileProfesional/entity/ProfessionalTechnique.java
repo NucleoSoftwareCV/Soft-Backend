@@ -19,10 +19,7 @@ import lombok.Setter;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_professional_technique",
-                        columnNames = {
-                                "specialist_profile_id",
-                                "technique_id"
-                        }
+                        columnNames = {"specialist_id", "technique_id"}
                 )
         }
 )
@@ -34,9 +31,8 @@ public class ProfessionalTechnique {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //Antes: specialist_id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "specialist_profile_id", nullable = false)
+    @JoinColumn(name = "specialist_id", nullable = false)
     private SpecialistProfile specialistProfile;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

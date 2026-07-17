@@ -1,7 +1,10 @@
 package com.hean.consigueventas.oonabe.profileProfesional.entity;
 
+import com.hean.consigueventas.oonabe.common.enums.ImageFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,26 +26,27 @@ public class ProfessionalImage {
     @Column(name = "id")
     private Long id;
 
-    //Antes: specialist_id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "specialist_profile_id", nullable = false)
-    private SpecialistProfile specialistProfile;
+    @JoinColumn(name = "specialist_id", nullable = false)
+    private SpecialistProfile specialist;
 
-    //Antes: url
-    @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
-    private String imageUrl;
+    @Column(name = "url", nullable = false, columnDefinition = "TEXT")
+    private String url;
 
-    //Antes: cover
-    //true: es el banner
-    //false: es una imagen de la galeria
-    @Column(name = "is_banner", nullable = false)
-    private boolean banner = false;
+    @Column(name = "alternative_text", length = 180)
+    private String alternativeText;
 
-    //Antes: size_bytes
-    @Column(name = "file_size_bytes")
-    private Integer fileSizeBytes;
+    @Column(name = "cover", nullable = false)
+    private boolean cover;
 
-    // Antes: sort_order
-    @Column(name = "display_order", nullable = false)
-    private Short displayOrder = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "format", length = 10)
+    private ImageFormat format;
+
+    @Column(name = "size_bytes")
+    private Integer sizeBytes;
+
+    @Column(name = "sort_order", nullable = false)
+    private Short sortOrder = 0;
 }
+//Imagen de profesionales
