@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.payment.entity;
 
-import com.hean.consigueventas.oonabe.common.enums.DigitalReceiptStatus;
+import com.hean.consigueventas.oonabe.payment.domain.DigitalReceiptStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

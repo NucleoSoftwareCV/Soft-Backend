@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.payment.entity;
 
-import com.hean.consigueventas.oonabe.common.enums.RefundStatus;
+import com.hean.consigueventas.oonabe.payment.domain.RefundStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

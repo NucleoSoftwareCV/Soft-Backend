@@ -1,6 +1,6 @@
 package com.hean.consigueventas.oonabe.payment.entity;
 
-import com.hean.consigueventas.oonabe.common.enums.PurchaseOrderStatus;
+import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
