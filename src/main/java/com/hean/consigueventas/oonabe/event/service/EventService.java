@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class EventService {
@@ -77,6 +78,7 @@ public class EventService {
     @Transactional
     public CreateEventResponse create(CreateEventUpsertRequest request) {
         Event event = eventMapper.toEntity(request.event());
+        event.setCurrency(request.event().currency().toUpperCase(Locale.ROOT));
 
         Category category = categoryRepository.findById(request.event().categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada con ID: " + request.event().categoryId()));
