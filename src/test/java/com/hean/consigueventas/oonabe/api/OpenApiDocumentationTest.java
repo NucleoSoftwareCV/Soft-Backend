@@ -49,7 +49,8 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}/organizer-events'].get.security").isEmpty())
                 .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.includes").exists())
                 .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.highlights").exists())
-                .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.whatToBring").exists());
+                .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.whatToBring").exists())
+                .andExpect(jsonPath("$.components.schemas.EventOrganizerResponse.properties.whatsappPhone").exists());
     }
 
     @Test

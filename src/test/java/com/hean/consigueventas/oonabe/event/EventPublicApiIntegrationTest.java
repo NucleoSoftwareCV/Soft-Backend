@@ -36,7 +36,8 @@ class EventPublicApiIntegrationTest {
                 .andExpect(jsonPath("$.highlights").isArray())
                 .andExpect(jsonPath("$.highlights[0]").value("Yoga"))
                 .andExpect(jsonPath("$.whatToBring").isArray())
-                .andExpect(jsonPath("$.whatToBring[0]").value("Ropa comoda"));
+                .andExpect(jsonPath("$.whatToBring[0]").value("Ropa comoda"))
+                .andExpect(jsonPath("$.organizer.whatsappPhone").isNotEmpty());
     }
 
     @Test
