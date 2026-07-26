@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.profileProfesional.mapper;
 
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalLanguageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalSocialLinkResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
@@ -54,7 +55,7 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "publicName", source = "profile.publicName")
     @Mapping(target = "profileCategory", source = "profile.profileCategory")
     @Mapping(target = "biography", source = "profile.biography")
-    @Mapping(target = "photoUrl", source = "profile.photoUrl")
+    @Mapping(target = "description", source = "profile.description")    @Mapping(target = "photoUrl", source = "profile.photoUrl")
     @Mapping(target = "bannerUrl", source = "profile.bannerUrl")
     @Mapping(target = "whatsappPhone", source = "profile.whatsappPhone")
     @Mapping(target = "phoneNumber", source = "profile.phoneNumber")
@@ -69,11 +70,13 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "updatedAt", source = "profile.updatedAt")
     @Mapping(target = "workTopics", source = "workTopics")
     @Mapping(target = "techniques", source = "techniques")
+    @Mapping(target = "languages", source = "languages")
     @Mapping(target = "socialLinks", source = "socialLinks")
     SpecialistProfileResponse toResponse(
             SpecialistProfile profile,
             Set<String> workTopics,
             Set<String> techniques,
+            List<ProfessionalLanguageResponse> languages,
             List<ProfessionalSocialLinkResponse> socialLinks
     );
 }

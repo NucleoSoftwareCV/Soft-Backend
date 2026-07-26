@@ -2,13 +2,13 @@ package com.hean.consigueventas.oonabe.persistence;
 
 import com.hean.consigueventas.oonabe.audit.entity.AuditLog;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.interaction.entity.EventFavorite;
+import com.hean.consigueventas.oonabe.interaction.entity.ProfessionalFollow;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.content.entity.HomeSection;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
-import com.hean.consigueventas.oonabe.interaction.entity.Favorite;
-import com.hean.consigueventas.oonabe.interaction.entity.ProfessionalFollow;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.payment.entity.Payment;
@@ -37,7 +37,7 @@ class JpaModelMappingTest {
         assertEntityTable(EventBooking.class, "event_bookings");
         assertEntityTable(Payment.class, "payments");
         assertEntityTable(HomeSection.class, "home_sections");
-        assertEntityTable(Favorite.class, "favorites");
+        assertEntityTable(EventFavorite.class, "favorites");
         assertEntityTable(ProfessionalFollow.class, "professional_follows");
         assertEntityTable(AuditLog.class, "audit_logs");
     }

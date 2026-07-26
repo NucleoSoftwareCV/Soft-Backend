@@ -59,18 +59,29 @@ public class DataSeederOrchestrator {
 
                         MasterDataSeeder.SeedData masterData = masterDataSeeder.seed();
 
-                        SpecialistProfile profileAna = specialistProfileSeeder.seedSpecialist(specUser1,
-                                        "ana-psicologa",
-                                        "Ana Gómez", "Psicóloga clínica con más de 10 años de experiencia.",
-                                        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", "+34600111222",
-                                        "ana@oona.es",
-                                        "https://anagomez.es");
-                        SpecialistProfile profileCarlos = specialistProfileSeeder.seedSpecialist(specUser2,
-                                        "carlos-yoga",
-                                        "Carlos Ruiz", "Instructor certificado de Hatha y Vinyasa Yoga.",
-                                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb", "+34600333444",
-                                        "carlos@oona.es",
-                                        "https://carlosyoga.es");
+                        SpecialistProfile profileAna = specialistProfileSeeder.seedSpecialist(
+                                specUser1,
+                                "ana-psicologa",
+                                "Ana Gómez",
+                                "Psicóloga clínica con más de 10 años de experiencia.",
+                                "Ana acompaña a personas en procesos de bienestar emocional, brindando sesiones orientadas al autoconocimiento, la gestión emocional y el desarrollo personal.",
+                                "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
+                                "+34600111222",
+                                "ana@oona.es",
+                                "https://anagomez.es"
+                        );
+
+                        SpecialistProfile profileCarlos = specialistProfileSeeder.seedSpecialist(
+                                specUser2,
+                                "carlos-yoga",
+                                "Carlos Ruiz",
+                                "Instructor certificado de Hatha y Vinyasa Yoga.",
+                                "Carlos guía prácticas de yoga enfocadas en movimiento consciente, respiración y equilibrio físico-emocional, adaptando cada sesión al nivel de los participantes.",
+                                "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                "+34600333444",
+                                "carlos@oona.es",
+                                "https://carlosyoga.es"
+                        );
 
                         oneToOneDataSeeder.seed(profileAna, profileCarlos, masterData.loc1(), masterData.loc2());
                         eventDataSeeder.seed(

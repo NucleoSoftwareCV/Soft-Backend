@@ -2,14 +2,20 @@ package com.hean.consigueventas.oonabe.profileProfesional.controller;
 
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.ProfessionalLanguageRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.ProfessionalSocialLinkRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfilePartialUpdateRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalLanguageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalSocialLinkResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.service.SpecialistProfileService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -68,18 +74,35 @@ public class SpecialistProfileController {
         );
     }
 
-    //Profesional: actualiza su perfil
+    //Profesional: actualiza TODO el perfil. Requiere enviar todos los campos obligatorios.
     @PutMapping("/me")
     @PreAuthorize("hasRole('PROFESSIONAL')")
     @Operation(
-            summary = "Actualizar mi perfil profesional",
-            description = "Permite al profesional autenticado actualizar los datos de su perfil."
+            summary = "Actualizar todo mi perfil profesional",
+            description = "Actualiza todo el perfil profesional. Debes enviar todos los campos obligatorios del perfil."
     )
     public SpecialistProfileResponse updateMyProfile(
             Authentication authentication,
             @Valid @RequestBody SpecialistProfileRequest request
     ) {
         return specialistProfileService.updateMyProfile(
+                authentication.getName(),
+                request
+        );
+    }
+
+    //Profesional: actualiza SOLO algunos campos. No es necesario enviar todo el perfil.
+    @PatchMapping("/me")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    @Operation(
+            summary = "Actualizar parcialmente mi perfil profesional",
+            description = "Actualiza solo los campos enviados. Los campos que no se envían se mantienen igual."
+    )
+    public SpecialistProfileResponse updateMyProfilePartial(
+            Authentication authentication,
+            @Valid @RequestBody SpecialistProfilePartialUpdateRequest request
+    ) {
+        return specialistProfileService.updateMyProfilePartial(
                 authentication.getName(),
                 request
         );
@@ -152,17 +175,38 @@ public class SpecialistProfileController {
     }
 
     //Público: listar perfiles aprobados y publicados
+    //page: numero de pagina
+    //size: cantidad de elementos por pagina
+    //sort:orden en que traen los datos
+    //En string poner:
+    //id,desc
+    //publicName,asc
+    //createdAt,desc
+    //updatedAt,desc
     @GetMapping
     @Operation(
             summary = "Listar perfiles profesionales públicos",
-            description = "Devuelve perfiles aprobados y publicados, con filtro opcional por categoría."
+            description = "Lista perfiles profesionales aprobados y publicados, permitiendo filtrar por categoría."
     )
     public Page<SpecialistProfileResponse> getPublicProfiles(
+
+            @Parameter(
+                    description = "Categoría del perfil profesional. Si se omite, lista todas las categorías.",
+                    schema = @Schema(
+                            allowableValues = {
+                                    "PROFESIONALES",
+                                    "CENTRO",
+                                    "ORGANIZADOR"
+                            }
+                    )
+            )
             @RequestParam(required = false) String profileCategory,
+
+            @ParameterObject
             @PageableDefault(
-                    size = 12,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
+                    size = 10,
+                    sort = "publicName",
+                    direction = Sort.Direction.ASC
             ) Pageable pageable
     ) {
         return specialistProfileService.getPublicProfiles(
@@ -182,12 +226,18 @@ public class SpecialistProfileController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Listar perfiles profesionales para administración",
-            description = "Permite al administrador listar perfiles y filtrarlos por estado de aprobación y publicación."
+            description = "Permite al administrador listar perfiles profesionales filtrando por estado de aprobación y publicación."
     )
     public Page<SpecialistProfileResponse> getProfilesForAdmin(
             @RequestParam(required = false) ApprovalStatus approvalStatus,
             @RequestParam(required = false) PublicationStatus publicationStatus,
-            Pageable pageable
+
+            @ParameterObject
+            @PageableDefault(
+                    size = 10,
+                    sort = "updatedAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
     ) {
         return specialistProfileService.getProfilesForAdmin(
                 approvalStatus,
@@ -229,16 +279,62 @@ public class SpecialistProfileController {
     @DeleteMapping("/me/social-links/{platform}")
     @PreAuthorize("hasRole('PROFESSIONAL')")
     @Operation(
-            summary = "Eliminar una red social",
-            description = "Elimina una red social del perfil del profesional autenticado."
+            summary = "Eliminar red social",
+            description = "Permite al profesional eliminar una red social registrada."
     )
     public void deleteSocialLink(
             Authentication authentication,
+
+            @Parameter(
+                    description = "Plataforma de red social",
+                    schema = @Schema(
+                            allowableValues = {
+                                    "INSTAGRAM",
+                                    "YOUTUBE",
+                                    "FACEBOOK",
+                                    "TIKTOK"
+                            }
+                    )
+            )
             @PathVariable String platform
     ) {
         specialistProfileService.deleteSocialLink(
                 authentication.getName(),
                 platform
+        );
+    }
+
+    //Profesional: guardar o actualizar un idioma
+    @PostMapping("/me/languages")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    @Operation(
+            summary = "Guardar idioma del profesional",
+            description = "Permite al profesional registrar o actualizar un idioma en su perfil."
+    )
+    public ProfessionalLanguageResponse saveLanguage(
+            Authentication authentication,
+            @Valid @RequestBody ProfessionalLanguageRequest request
+    ) {
+        return specialistProfileService.saveLanguage(
+                authentication.getName(),
+                request
+        );
+    }
+
+    //Profesional: eliminar un idioma
+    @DeleteMapping("/me/languages/{languageId}")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    @Operation(
+            summary = "Eliminar idioma del profesional",
+            description = "Permite al profesional eliminar un idioma registrado en su perfil."
+    )
+    public void deleteLanguage(
+            Authentication authentication,
+            @PathVariable Long languageId
+    ) {
+        specialistProfileService.deleteLanguage(
+                authentication.getName(),
+                languageId
         );
     }
 
