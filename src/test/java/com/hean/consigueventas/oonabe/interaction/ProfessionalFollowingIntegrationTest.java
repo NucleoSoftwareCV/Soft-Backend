@@ -5,6 +5,8 @@ import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.interaction.entity.ProfessionalFollow;
 import com.hean.consigueventas.oonabe.interaction.repository.ProfessionalFollowRepository;
+import com.hean.consigueventas.oonabe.profileCliente.entity.ClientProfile;
+import com.hean.consigueventas.oonabe.profileCliente.repository.ClientProfileRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -48,6 +50,9 @@ class ProfessionalFollowingIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ClientProfileRepository clientProfileRepository;
 
     @Test
     void followIsAuthenticatedAndIdempotent() throws Exception {
@@ -196,11 +201,28 @@ class ProfessionalFollowingIntegrationTest {
         return UserDetailsImpl.build(userRepository.findByUsername(username).orElseThrow());
     }
 
-    private void saveFollow(User follower, SpecialistProfile professional, Instant followedAt) {
+    private void saveFollow(
+            User follower,
+            SpecialistProfile professional,
+            Instant followedAt
+    ) {
+        ClientProfile clientProfile =
+                clientProfileRepository.findByUserId(follower.getId())
+                        .orElseGet(() -> {
+                            ClientProfile newClientProfile = new ClientProfile();
+
+                            newClientProfile.setUser(follower);
+                            newClientProfile.setCommunicationEmail(follower.getEmail());
+
+                            return clientProfileRepository.saveAndFlush(newClientProfile);
+                        });
+
         ProfessionalFollow follow = new ProfessionalFollow();
-        follow.setUser(follower);
+
+        follow.setClientProfile(clientProfile);
         follow.setSpecialistProfile(professional);
         follow.setFollowedAt(followedAt);
+
         followRepository.saveAndFlush(follow);
     }
 }

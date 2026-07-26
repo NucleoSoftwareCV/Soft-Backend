@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,9 +46,13 @@ public class SpecialistProfile extends AuditableEntity {
     @Column(name = "profile_category", nullable = false, length = 30)
     private String profileCategory = "PROFESIONALES";
 
-    @Column(name = "biography", nullable = false, columnDefinition = "TEXT")
+    @Size(max = 255)
+    @Column(name = "biography", length = 255)
     private String biography;
 
+    @Size(max = 5000)
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
     //Medidas exactas:  126x126
     @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;

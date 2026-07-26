@@ -7,20 +7,18 @@ import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.WorkTopicRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.ProfessionalLanguageRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.ProfessionalSocialLinkRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfilePartialUpdateRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalLanguageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalSocialLinkResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalSocialLink;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalTechnique;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalWorkTopic;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.*;
+import com.hean.consigueventas.oonabe.profileProfesional.mapper.ProfessionalLanguageMapper;
 import com.hean.consigueventas.oonabe.profileProfesional.mapper.ProfessionalSocialLinkMapper;
 import com.hean.consigueventas.oonabe.profileProfesional.mapper.SpecialistProfileMapper;
-import com.hean.consigueventas.oonabe.profileProfesional.repository.ProfessionalSocialLinkRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.repository.ProfessionalTechniqueRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.repository.ProfessionalWorkTopicRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.repository.*;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +61,8 @@ public class SpecialistProfileService {
     private final SpecialistProfileMapper specialistProfileMapper;
     private final ProfessionalSocialLinkMapper socialLinkMapper;
     private final LocalImageStorageService localImageStorageService;
+    private final ProfessionalLanguageRepository professionalLanguageRepository;
+    private final ProfessionalLanguageMapper professionalLanguageMapper;
 
     @Transactional
     public SpecialistProfileResponse createProfile(
@@ -161,6 +161,122 @@ public class SpecialistProfileService {
                             request.publicName(),
                             profile.getId()
                     )
+            );
+        }
+
+        markProfileAsPendingReview(profile);
+
+        SpecialistProfile updatedProfile =
+                specialistProfileRepository.save(profile);
+
+        if (request.workTopicIds() != null) {
+            professionalWorkTopicRepository
+                    .deleteBySpecialistProfileId(profile.getId());
+
+            saveWorkTopics(
+                    updatedProfile,
+                    request.workTopicIds()
+            );
+        }
+
+        if (request.techniqueIds() != null) {
+            professionalTechniqueRepository
+                    .deleteBySpecialistProfileId(profile.getId());
+
+            saveTechniques(
+                    updatedProfile,
+                    request.techniqueIds()
+            );
+        }
+
+        return buildResponse(updatedProfile);
+    }
+
+    @Transactional
+    public SpecialistProfileResponse updateMyProfilePartial(
+            String username,
+            SpecialistProfilePartialUpdateRequest request
+    ) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario autenticado no encontrado."
+                        )
+                );
+
+        SpecialistProfile profile =
+                specialistProfileRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Perfil profesional no encontrado."
+                                )
+                        );
+
+        if (request.publicName() != null) {
+            String publicName = requireText(
+                    request.publicName(),
+                    "El nombre público no puede estar vacío."
+            );
+
+            if (!profile.getPublicName().equalsIgnoreCase(publicName)) {
+                profile.setPublicName(publicName);
+                profile.setSlug(
+                        generateUniqueSlugForUpdate(
+                                publicName,
+                                profile.getId()
+                        )
+                );
+            }
+        }
+
+        if (request.profileCategory() != null) {
+            profile.setProfileCategory(
+                    validateProfileCategory(request.profileCategory())
+            );
+        }
+
+        if (request.biography() != null) {
+            profile.setBiography(
+                    requireText(
+                            request.biography(),
+                            "La biografía no puede estar vacía."
+                    )
+            );
+        }
+
+        if (request.description() != null) {
+            profile.setDescription(
+                    requireText(
+                            request.description(),
+                            "La descripción no puede estar vacía."
+                    )
+            );
+        }
+
+        if (request.whatsappPhone() != null) {
+            profile.setWhatsappPhone(
+                    requireText(
+                            request.whatsappPhone(),
+                            "El número de WhatsApp no puede estar vacío."
+                    )
+            );
+        }
+
+        if (request.phoneNumber() != null) {
+            profile.setPhoneNumber(
+                    cleanOptionalText(request.phoneNumber())
+            );
+        }
+
+        if (request.publicEmail() != null) {
+            profile.setPublicEmail(
+                    cleanOptionalText(request.publicEmail())
+            );
+        }
+
+        if (request.website() != null) {
+            profile.setWebsite(
+                    cleanOptionalText(request.website())
             );
         }
 
@@ -499,6 +615,89 @@ public class SpecialistProfileService {
     }
 
     @Transactional
+    public ProfessionalLanguageResponse saveLanguage(
+            String username,
+            ProfessionalLanguageRequest request
+    ) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario autenticado no encontrado."
+                        )
+                );
+
+        SpecialistProfile profile =
+                specialistProfileRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Perfil profesional no encontrado."
+                                )
+                        );
+
+        String languageName = requireText(
+                request.languageName(),
+                "El idioma no puede estar vacío."
+        );
+
+        ProfessionalLanguage language =
+                professionalLanguageRepository
+                        .findBySpecialistProfileIdAndLanguageNameIgnoreCase(
+                                profile.getId(),
+                                languageName
+                        )
+                        .orElseGet(ProfessionalLanguage::new);
+
+        language.setSpecialistProfile(profile);
+        language.setLanguageName(languageName);
+
+        ProfessionalLanguage savedLanguage =
+                professionalLanguageRepository.save(language);
+
+        markProfileAsPendingReview(profile);
+        specialistProfileRepository.save(profile);
+
+        return professionalLanguageMapper.toResponse(savedLanguage);
+    }
+
+    @Transactional
+    public void deleteLanguage(
+            String username,
+            Long languageId
+    ) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario autenticado no encontrado."
+                        )
+                );
+
+        SpecialistProfile profile =
+                specialistProfileRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Perfil profesional no encontrado."
+                                )
+                        );
+
+        ProfessionalLanguage language =
+                professionalLanguageRepository
+                        .findBySpecialistProfileIdAndId(
+                                profile.getId(),
+                                languageId
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Idioma no encontrado."
+                                )
+                        );
+
+        professionalLanguageRepository.delete(language);
+
+        markProfileAsPendingReview(profile);
+        specialistProfileRepository.save(profile);
+    }
+
+    @Transactional
     public SpecialistProfileResponse uploadProfilePhoto(
             String username,
             MultipartFile file
@@ -657,6 +856,15 @@ public class SpecialistProfileService {
                         )
                         .collect(Collectors.toSet());
 
+        List<ProfessionalLanguageResponse> languages =
+                professionalLanguageRepository
+                        .findBySpecialistProfileIdOrderByLanguageNameAsc(
+                                profile.getId()
+                        )
+                        .stream()
+                        .map(professionalLanguageMapper::toResponse)
+                        .toList();
+
         List<ProfessionalSocialLinkResponse> socialLinks =
                 socialLinkRepository
                         .findBySpecialistProfileId(profile.getId())
@@ -678,7 +886,9 @@ public class SpecialistProfileService {
                 profile,
                 workTopics,
                 techniques,
+                languages,
                 socialLinks
+
         );
     }
 
@@ -718,7 +928,16 @@ public class SpecialistProfileService {
                         || profile.getBiography().isBlank()
         ) {
             throw new IllegalStateException(
-                    "Debe completar la biografía antes de publicar."
+                    "Debe completar su biografía antes de publicar."
+            );
+        }
+
+        if (
+                profile.getDescription() == null
+                        || profile.getDescription().isBlank()
+        ) {
+            throw new IllegalStateException(
+                    "Debe completar una descripción antes de publicar."
             );
         }
 
@@ -730,6 +949,25 @@ public class SpecialistProfileService {
                     "Debe registrar un número de WhatsApp antes de publicar."
             );
         }
+    }
+
+    private String requireText(
+            String value,
+            String message
+    ) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+
+        return value.trim();
+    }
+
+    private String cleanOptionalText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 
     private String validateProfileCategory(String profileCategory) {

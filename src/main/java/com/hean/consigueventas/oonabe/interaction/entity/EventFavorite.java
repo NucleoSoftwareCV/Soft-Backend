@@ -1,14 +1,13 @@
 package com.hean.consigueventas.oonabe.interaction.entity;
 
+import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientProfile;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -21,27 +20,17 @@ import java.time.Instant;
 
 @Entity
 @Table(
-        name = "professional_follows",
+        name = "event_favorites",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_professional_follow_client_specialist",
-                        columnNames = {"client_profile_id", "specialist_profile_id"}
-                )
-        },
-        indexes = {
-                @Index(
-                        name = "idx_professional_follow_client_date",
-                        columnList = "client_profile_id, followed_at"
-                ),
-                @Index(
-                        name = "idx_professional_follow_specialist",
-                        columnList = "specialist_profile_id"
+                        name = "uk_event_favorite_client_event",
+                        columnNames = {"client_profile_id", "event_id"}
                 )
         }
 )
 @Getter
 @Setter
-public class ProfessionalFollow {
+public class EventFavorite {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,16 +42,16 @@ public class ProfessionalFollow {
     private ClientProfile clientProfile;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "specialist_profile_id", nullable = false)
-    private SpecialistProfile specialistProfile;
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
-    @Column(name = "followed_at", nullable = false, updatable = false)
-    private Instant followedAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
     @PrePersist
     void prePersist() {
-        if (followedAt == null) {
-            followedAt = Instant.now();
+        if (createdAt == null) {
+            createdAt = Instant.now();
         }
     }
 }

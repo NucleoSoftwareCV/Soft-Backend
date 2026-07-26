@@ -26,8 +26,11 @@ public record SpecialistProfileResponse(
         @Schema(description = "Categoría del perfil")
         String profileCategory,
 
-        @Schema(description = "Biografía o descripción del perfil")
+        @Schema(description = "Biografía del perfil")
         String biography,
+
+        @Schema(description = "Descripción del perfil")
+        String description,
 
         @Schema(description = "URL de la foto principal")
         String photoUrl,
@@ -73,6 +76,9 @@ public record SpecialistProfileResponse(
 
         @Schema(description = "Técnicas asociadas")
         Set<String> techniques,
+
+        @Schema(description = "Idiomas que habla el profesional")
+        List<ProfessionalLanguageResponse> languages,
 
         @Schema(description = "Redes sociales del perfil")
         List<ProfessionalSocialLinkResponse> socialLinks
