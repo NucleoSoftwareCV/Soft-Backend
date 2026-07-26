@@ -1,6 +1,10 @@
 package com.hean.consigueventas.oonabe.oneToOneSession.repository;
 
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -12,6 +16,10 @@ import java.util.Optional;
 public interface OneToOneServiceRepository extends JpaRepository<OneToOneService, Long>, JpaSpecificationExecutor<OneToOneService> {
 
     List<OneToOneService> findBySpecialistId(Long specialistId);
+
+    @Override
+    @EntityGraph(attributePaths = {"specialist"})
+    Page<OneToOneService> findAll(Specification<OneToOneService> spec, Pageable pageable);
 
     Optional<OneToOneService> findBySlug(String slug);
 

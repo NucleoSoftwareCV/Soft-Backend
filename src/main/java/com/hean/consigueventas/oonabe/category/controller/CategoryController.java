@@ -35,6 +35,17 @@ public class CategoryController {
         return categoryService.findActive();
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Listar todas las categorías", description = "Devuelve todas las categorías (activas e inactivas). Solo disponible para administradores.", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista de todas las categorías"),
+            @ApiResponse(responseCode = "403", description = "Requiere rol ADMIN", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    public List<CategoryResponse> findAll() {
+        return categoryService.findAll();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Crear categoría", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))

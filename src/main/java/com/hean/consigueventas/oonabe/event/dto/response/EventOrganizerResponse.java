@@ -14,6 +14,9 @@ public record EventOrganizerResponse(
         String biography,
 
         @Schema(description = "URL de la foto de perfil")
-        String photoUrl
+        String photoUrl,
+
+        @Schema(description = "Numero de WhatsApp publico del organizador", example = "+34600111222")
+        String whatsappPhone
 ) {
 }

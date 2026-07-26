@@ -30,6 +30,13 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> findAll() {
+        return categoryRepository.findAllByOrderByNameAsc().stream()
+                .map(categoryMapper::toDto)
+                .toList();
+    }
+
     @Transactional
     public CategoryResponse create(CategoryUpsertRequest request) {
         if (categoryRepository.existsByNameIgnoreCase(request.name())) {
