@@ -47,6 +47,8 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}/similar'].get.security").isEmpty())
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}/organizer-events'].get.security").isArray())
                 .andExpect(jsonPath("$.paths['/api/v1/events/{id}/organizer-events'].get.security").isEmpty())
+                .andExpect(jsonPath("$.paths['/api/v1/home/event-sections'].get.security").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/home/event-sections'].get.security").isEmpty())
                 .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.includes").exists())
                 .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.highlights").exists())
                 .andExpect(jsonPath("$.components.schemas.EventDetailResponse.properties.whatToBring").exists())

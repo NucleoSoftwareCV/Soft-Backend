@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.specification;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventType;
@@ -21,7 +22,8 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.Locale;
 
 public final class EventSpecification {
 
@@ -36,6 +38,8 @@ public final class EventSpecification {
         }
         if (filter.categoryId() != null) {
             spec = spec.and(hasCategory(filter.categoryId()));
+        } else if (filter.categoryIds() != null && !filter.categoryIds().isEmpty()) {
+            spec = spec.and(hasAnyCategory(filter.categoryIds()));
         }
         if (filter.eventType() != null) {
             spec = spec.and(hasEventType(filter.eventType()));
@@ -44,7 +48,9 @@ public final class EventSpecification {
             spec = spec.and(hasModality(filter.modality()));
         }
         if (hasText(filter.cityName())) {
-            spec = spec.and(hasCity(filter.cityName()));
+            spec = spec.and(Boolean.TRUE.equals(filter.includeOnline())
+                    ? hasCityOrIsOnline(filter.cityName())
+                    : hasCity(filter.cityName()));
         }
         if (filter.minPrice() != null) {
             spec = spec.and(minPrice(filter.minPrice()));
@@ -85,6 +91,10 @@ public final class EventSpecification {
         return (root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId);
     }
 
+    public static Specification<Event> hasAnyCategory(Collection<Long> categoryIds) {
+        return (root, query, cb) -> root.get("category").get("id").in(categoryIds);
+    }
+
     public static Specification<Event> hasSpecialist(Long specialistId) {
         return (root, query, cb) -> cb.equal(root.get("specialist").get("id"), specialistId);
     }
@@ -107,17 +117,15 @@ public final class EventSpecification {
 
     public static Specification<Event> hasCity(String cityName) {
         return (root, query, cb) -> {
-            Subquery<Long> subquery = query.subquery(Long.class);
-            Root<EventOccurrence> occurrence = subquery.from(EventOccurrence.class);
-            Join<EventOccurrence, Location> location = occurrence.join("location", JoinType.INNER);
-            Join<Location, City> city = location.join("city", JoinType.INNER);
+            return cityExists(root, query.subquery(Long.class), cb, cityName);
+        };
+    }
 
-            subquery.select(occurrence.get("id"));
-            subquery.where(
-                    cb.equal(occurrence.get("event"), root),
-                    cb.equal(cb.lower(city.get("name")), cityName.toLowerCase())
-            );
-            return cb.exists(subquery);
+    public static Specification<Event> hasCityOrIsOnline(String cityName) {
+        return (root, query, cb) -> {
+            Predicate inCity = cityExists(root, query.subquery(Long.class), cb, cityName);
+            Predicate online = cb.equal(root.get("modality"), EventModality.ONLINE);
+            return cb.or(inCity, online);
         };
     }
 
@@ -135,11 +143,13 @@ public final class EventSpecification {
             Root<EventOccurrence> occurrence = subquery.from(EventOccurrence.class);
 
             Predicate fromPredicate = dateFrom != null
-                    ? cb.greaterThanOrEqualTo(occurrence.get("startsAt"), dateFrom.atStartOfDay().toInstant(ZoneOffset.UTC))
+                    ? cb.greaterThanOrEqualTo(occurrence.get("startsAt"),
+                            dateFrom.atStartOfDay(TimeConfig.BUSINESS_ZONE).toInstant())
                     : cb.conjunction();
 
             Predicate toPredicate = dateTo != null
-                    ? cb.lessThanOrEqualTo(occurrence.get("startsAt"), dateTo.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC))
+                    ? cb.lessThan(occurrence.get("startsAt"),
+                            dateTo.plusDays(1).atStartOfDay(TimeConfig.BUSINESS_ZONE).toInstant())
                     : cb.conjunction();
 
             subquery.select(occurrence.get("id"));
@@ -175,20 +185,89 @@ public final class EventSpecification {
         return (root, query, cb) -> cb.equal(root.get("isRecurring"), recurring);
     }
 
+    public static Specification<Event> hasProgrammedOccurrenceBetween(Instant fromInclusive, Instant toExclusive) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<EventOccurrence> occurrence = subquery.from(EventOccurrence.class);
+            Predicate toPredicate = toExclusive == null
+                    ? cb.conjunction()
+                    : cb.lessThan(occurrence.get("startsAt"), toExclusive);
+
+            subquery.select(occurrence.get("id"));
+            subquery.where(
+                    cb.equal(occurrence.get("event"), root),
+                    cb.equal(occurrence.get("status"), EventOccurrenceStatus.PROGRAMADA),
+                    cb.greaterThanOrEqualTo(occurrence.get("startsAt"), fromInclusive),
+                    toPredicate
+            );
+            return cb.exists(subquery);
+        };
+    }
+
+    public static Specification<Event> hasProgrammedOccurrenceInCityBetween(
+            String cityName,
+            Instant fromInclusive,
+            Instant toExclusive) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<EventOccurrence> occurrence = subquery.from(EventOccurrence.class);
+            Join<EventOccurrence, Location> location = occurrence.join("location", JoinType.INNER);
+            Join<Location, City> city = location.join("city", JoinType.INNER);
+            Predicate toPredicate = toExclusive == null
+                    ? cb.conjunction()
+                    : cb.lessThan(occurrence.get("startsAt"), toExclusive);
+
+            subquery.select(occurrence.get("id"));
+            subquery.where(
+                    cb.equal(occurrence.get("event"), root),
+                    cb.equal(occurrence.get("status"), EventOccurrenceStatus.PROGRAMADA),
+                    cb.greaterThanOrEqualTo(occurrence.get("startsAt"), fromInclusive),
+                    cb.equal(cb.lower(city.get("name")), cityName.toLowerCase(Locale.ROOT)),
+                    toPredicate
+            );
+            return cb.exists(subquery);
+        };
+    }
+
     public static Specification<Event> orderByNextProgrammedOccurrence(Sort.Direction direction) {
+        return orderByNextProgrammedOccurrence(direction, null);
+    }
+
+    public static Specification<Event> orderByNextProgrammedOccurrence(
+            Sort.Direction direction,
+            Instant notBefore) {
         return (root, query, cb) -> {
             if (!Long.class.equals(query.getResultType()) && !long.class.equals(query.getResultType())) {
                 Subquery<Instant> nextStart = query.subquery(Instant.class);
                 Root<EventOccurrence> occurrence = nextStart.from(EventOccurrence.class);
                 nextStart.select(cb.least(occurrence.<Instant>get("startsAt")));
-                nextStart.where(
-                        cb.equal(occurrence.get("event"), root),
-                        cb.equal(occurrence.get("status"), EventOccurrenceStatus.PROGRAMADA)
-                );
+                Predicate notBeforePredicate = notBefore == null
+                        ? cb.conjunction()
+                        : cb.greaterThanOrEqualTo(occurrence.get("startsAt"), notBefore);
+                nextStart.where(cb.equal(occurrence.get("event"), root),
+                        cb.equal(occurrence.get("status"), EventOccurrenceStatus.PROGRAMADA),
+                        notBeforePredicate);
                 query.orderBy(direction.isAscending() ? cb.asc(nextStart) : cb.desc(nextStart));
             }
             return cb.conjunction();
         };
+    }
+
+    private static Predicate cityExists(
+            Root<Event> event,
+            Subquery<Long> subquery,
+            jakarta.persistence.criteria.CriteriaBuilder cb,
+            String cityName) {
+        Root<EventOccurrence> occurrence = subquery.from(EventOccurrence.class);
+        Join<EventOccurrence, Location> location = occurrence.join("location", JoinType.INNER);
+        Join<Location, City> city = location.join("city", JoinType.INNER);
+
+        subquery.select(occurrence.get("id"));
+        subquery.where(
+                cb.equal(occurrence.get("event"), event),
+                cb.equal(cb.lower(city.get("name")), cityName.toLowerCase(Locale.ROOT))
+        );
+        return cb.exists(subquery);
     }
 
     private static boolean hasText(String value) {

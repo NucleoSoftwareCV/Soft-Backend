@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.common.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.OptimisticLockException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -37,6 +38,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BindException.class)
     public ProblemDetail handleBindingValidation(BindException ex, WebRequest request) {
         return validationProblem(ex.getBindingResult(), request);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintValidation(ConstraintViolationException ex, WebRequest request) {
+        ProblemDetail detail = problem(
+                HttpStatus.BAD_REQUEST,
+                "Solicitud invalida",
+                "Uno o mas parametros no cumplen las reglas de validacion.",
+                "validation-error",
+                request);
+        detail.setProperty("errors", ex.getConstraintViolations().stream()
+                .map(violation -> new FieldViolation(
+                        violation.getPropertyPath().toString(),
+                        violation.getMessage()))
+                .toList());
+        return detail;
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
