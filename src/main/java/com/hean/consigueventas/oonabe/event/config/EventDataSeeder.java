@@ -5,11 +5,15 @@ import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventType;
+import com.hean.consigueventas.oonabe.common.enums.ImageFormat;
+import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.event.entity.Event;
+import com.hean.consigueventas.oonabe.event.entity.EventImage;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.entity.MeetingLink;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
+import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
@@ -17,7 +21,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Component
@@ -26,14 +33,20 @@ public class EventDataSeeder {
     private final EventRepository eventRepository;
     private final EventOccurrenceRepository occurrenceRepository;
     private final MeetingLinkRepository meetingLinkRepository;
+    private final EventImageRepository eventImageRepository;
+    private final Clock clock;
 
     public EventDataSeeder(
             EventRepository eventRepository,
             EventOccurrenceRepository occurrenceRepository,
-            MeetingLinkRepository meetingLinkRepository) {
+            MeetingLinkRepository meetingLinkRepository,
+            EventImageRepository eventImageRepository,
+            Clock clock) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
+        this.eventImageRepository = eventImageRepository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -58,7 +71,7 @@ public class EventDataSeeder {
                 EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna,
                 EventType.TALLER, false);
         seedOccurrence(event1, null,
-                Instant.parse("2026-06-29T12:00:00Z"), Instant.parse("2026-06-29T13:30:00Z"), 20,
+                futureInstant(1, 12, 0), futureInstant(1, 13, 30), 20,
                 "https://zoom.us/j/9876543210?pwd=secretZoomPassword123");
         seedEventDetailSections(event1,
                 List.of("Material de apoyo digital", "Guia basica de porteo ergonomico"),
@@ -72,7 +85,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos,
                 EventType.CLASE, true);
         seedOccurrence(event2, loc1,
-                Instant.parse("2026-06-26T15:00:00Z"), Instant.parse("2026-06-26T16:30:00Z"), 15, null);
+                futureInstant(2, 15, 0), futureInstant(2, 16, 30), 15, null);
         seedEventDetailSections(event2,
                 List.of("Uso de columpios de pilates aereo"),
                 List.of("Movimiento", "Fuerza y flexibilidad"),
@@ -85,7 +98,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos,
                 EventType.CEREMONIA, false);
         seedOccurrence(event3, loc2,
-                Instant.parse("2026-06-26T17:30:00Z"), Instant.parse("2026-06-26T19:00:00Z"), 10, null);
+                futureInstant(3, 17, 30), futureInstant(3, 19, 0), 10, null);
         seedEventDetailSections(event3,
                 List.of(),
                 List.of("Sonido terapeutico", "Experiencia al atardecer"),
@@ -97,8 +110,8 @@ public class EventDataSeeder {
                 "Taller práctico de respiración consciente combinado con la inmersión en tina de hielo. Aprende a dominar tu mente, controlar tu sistema nervioso y potenciar tu sistema inmune.",
                 EventModality.PRESENCIAL, 45.00, "EUR", (short) 18, catHielo, profileAna,
                 EventType.TALLER, false);
-        seedOccurrence(event4, loc2,
-                Instant.parse("2026-06-27T10:00:00Z"), Instant.parse("2026-06-27T12:00:00Z"), 12, null);
+        seedOccurrence(event4, loc1,
+                futureInstant(4, 10, 0), futureInstant(4, 12, 0), 12, null);
         seedEventDetailSections(event4,
                 List.of("Acompanamiento guiado", "Inmersion en hielo"),
                 List.of("Breathwork", "Regulacion del sistema nervioso"),
@@ -111,7 +124,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 15.00, "EUR", (short) 12, catYoga, profileCarlos,
                 EventType.CLASE, true);
         seedOccurrence(event5, loc1,
-                Instant.parse("2026-06-28T09:00:00Z"), Instant.parse("2026-06-28T10:30:00Z"), 25, null);
+                futureInstant(5, 9, 0), futureInstant(5, 10, 30), 25, null);
         seedEventDetailSections(event5,
                 List.of("Material para practicar yoga"),
                 List.of("Yoga"),
@@ -124,7 +137,7 @@ public class EventDataSeeder {
                 EventModality.ONLINE, 15.00, "EUR", (short) 16, catMeditacion, profileAna,
                 EventType.ENCUENTRO_GRUPAL, false);
         seedOccurrence(event6, null,
-                Instant.parse("2026-06-28T18:00:00Z"), Instant.parse("2026-06-28T19:30:00Z"), 50,
+                futureInstant(1, 18, 0), futureInstant(1, 19, 30), 50,
                 "https://zoom.us/j/1112223333?pwd=meditationPass456");
         seedEventDetailSections(event6,
                 List.of("Acceso a la sesion online"),
@@ -138,7 +151,7 @@ public class EventDataSeeder {
                 EventModality.ONLINE, 25.00, "EUR", (short) 18, catNutricion, profileAna,
                 EventType.TALLER, false);
         seedOccurrence(event7, null,
-                Instant.parse("2026-06-30T19:00:00Z"), Instant.parse("2026-06-30T21:00:00Z"), 30,
+                futureInstant(2, 19, 0), futureInstant(2, 21, 0), 30,
                 "https://zoom.us/j/4445556666?pwd=nutritionPass789");
 
         Event event8 = seedEvent(
@@ -147,8 +160,8 @@ public class EventDataSeeder {
                 "Una jornada dedicada al cultivo de la atención plena a través de caminatas conscientes, prácticas de escaneo corporal y meditaciones en grupo en medio de la naturaleza.",
                 EventModality.PRESENCIAL, 60.00, "EUR", (short) 18, catMeditacion, profileCarlos,
                 EventType.RETIRO, false);
-        seedOccurrence(event8, loc3,
-                Instant.parse("2026-07-02T10:00:00Z"), Instant.parse("2026-07-02T17:00:00Z"), 15, null);
+        seedOccurrence(event8, loc1,
+                futureInstant(3, 10, 0), futureInstant(3, 17, 0), 15, null);
 
         Event event9 = seedEvent(
                 "Sesión Especial de Baño de Gongs y Armónicos",
@@ -157,7 +170,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 25.00, "EUR", (short) 16, catSonido, profileCarlos,
                 EventType.CEREMONIA, true);
         seedOccurrence(event9, loc1,
-                Instant.parse("2026-07-03T20:00:00Z"), Instant.parse("2026-07-03T21:30:00Z"), 20, null);
+                futureInstant(4, 20, 0), futureInstant(4, 21, 30), 20, null);
 
         Event event10 = seedEvent(
                 "Yoga Restaurativo para Soltar Tension",
@@ -166,7 +179,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 18.00, "EUR", (short) 14, catYoga, profileAna,
                 EventType.CLASE, false);
         seedOccurrence(event10, loc2,
-                Instant.parse("2026-07-04T09:00:00Z"), Instant.parse("2026-07-04T10:15:00Z"), 18, null);
+                futureInstant(5, 9, 0), futureInstant(5, 10, 15), 18, null);
         seedEventDetailSections(event10,
                 List.of("Bloques y mantas de apoyo"),
                 List.of("Yoga", "Relajacion profunda"),
@@ -179,7 +192,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 22.00, "EUR", (short) 16, catSonido, profileAna,
                 EventType.CEREMONIA, false);
         seedOccurrence(event11, loc2,
-                Instant.parse("2026-07-04T19:00:00Z"), Instant.parse("2026-07-04T20:15:00Z"), 16, null);
+                futureInstant(6, 19, 0), futureInstant(6, 20, 15), 16, null);
         seedEventDetailSections(event11,
                 List.of("Material de relajacion en sala"),
                 List.of("Sonido terapeutico"),
@@ -192,7 +205,7 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 18, catCuerpo, profileCarlos,
                 EventType.CLASE, false);
         seedOccurrence(event12, loc1,
-                Instant.parse("2026-07-05T11:00:00Z"), Instant.parse("2026-07-05T12:15:00Z"), 12, null);
+                futureInstant(7, 11, 0), futureInstant(7, 12, 15), 12, null);
         seedEventDetailSections(event12,
                 List.of("Material de practica"),
                 List.of("Cuerpo y salud", "Movimiento consciente"),
@@ -205,11 +218,25 @@ public class EventDataSeeder {
                 EventModality.PRESENCIAL, 24.00, "EUR", (short) 16, catMovimiento, profileAna,
                 EventType.CLASE, false);
         seedOccurrence(event13, loc3,
-                Instant.parse("2026-07-05T17:00:00Z"), Instant.parse("2026-07-05T18:30:00Z"), 20, null);
+                futureInstant(8, 17, 0), futureInstant(8, 18, 30), 20, null);
         seedEventDetailSections(event13,
                 List.of("Playlist guiada", "Espacio de integracion"),
                 List.of("Movimiento", "Expresion corporal"),
                 List.of("Ropa comoda"));
+
+        seedCover(event1, "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b");
+        seedCover(event2, "https://images.unsplash.com/photo-1518611012118-696072aa579a");
+        seedCover(event3, "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee");
+        seedCover(event4, "https://images.unsplash.com/photo-1591228127791-8e2eaef098d3");
+        seedCover(event5, "https://images.unsplash.com/photo-1506126613408-eca07ce68773");
+        seedCover(event6, "https://images.unsplash.com/photo-1508672019048-805c876b67e2");
+        seedCover(event7, "https://images.unsplash.com/photo-1490645935967-10de6ba17061");
+        seedCover(event8, "https://images.unsplash.com/photo-1441974231531-c6227db76b6e");
+        seedCover(event9, "https://images.unsplash.com/photo-1514525253161-7a46d19cd819");
+        seedCover(event10, "https://images.unsplash.com/photo-1545389336-cf090694435e");
+        seedCover(event11, "https://images.unsplash.com/photo-1511379938547-c1f69419868d");
+        seedCover(event12, "https://images.unsplash.com/photo-1555252333-9f8e92e65df9");
+        seedCover(event13, "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4");
     }
 
     private Event seedEvent(
@@ -354,5 +381,26 @@ public class EventDataSeeder {
                 }
             }
         }
+    }
+
+    private Instant futureInstant(int daysFromToday, int hour, int minute) {
+        return LocalDate.now(clock)
+                .plusDays(daysFromToday)
+                .atTime(LocalTime.of(hour, minute))
+                .atZone(TimeConfig.BUSINESS_ZONE)
+                .toInstant();
+    }
+
+    private void seedCover(Event event, String url) {
+        EventImage image = eventImageRepository
+                .findFirstByEventIdOrderByCoverDescSortOrderAscIdAsc(event.getId())
+                .orElseGet(EventImage::new);
+        image.setEvent(event);
+        image.setUrl(url);
+        image.setAlternativeText(event.getTitle());
+        image.setCover(true);
+        image.setFormat(ImageFormat.JPG);
+        image.setSortOrder((short) 0);
+        eventImageRepository.save(image);
     }
 }

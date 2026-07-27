@@ -45,7 +45,8 @@ public class OpenApiConfig {
                         "/api/v1/one-to-one-services/{id}",
                         "/api/v1/one-to-one-services/slug/{slug}",
                         "/api/v1/events",
-                        "/api/v1/events/{id}"
+                        "/api/v1/events/{id}",
+                        "/api/v1/home/**"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     openApi.setSecurity(java.util.Collections.emptyList());
@@ -86,7 +87,8 @@ public class OpenApiConfig {
                 .pathsToExclude(
                         "/api/v1/auth/**",
                         "/api/v1/categories/**",
-                        "/api/v1/locations/**"
+                        "/api/v1/locations/**",
+                        "/api/v1/home/**"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     if (openApi.getPaths() != null) {

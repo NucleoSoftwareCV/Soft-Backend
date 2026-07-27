@@ -19,10 +19,7 @@ public interface EventRepository extends JpaRepository<Event, Long>,
     @Override
     @EntityGraph(attributePaths = {
             "category",
-            "specialist",
-            "occurrences",
-            "occurrences.location",
-            "occurrences.location.city"
+            "specialist"
     })
     Page<Event> findAll(Specification<Event> spec, Pageable pageable);
 

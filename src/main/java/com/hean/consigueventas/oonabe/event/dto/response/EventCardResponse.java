@@ -42,6 +42,9 @@ public record EventCardResponse(
         @Schema(description = "URL de la foto del organizador")
         String organizerPhotoUrl,
 
+        @Schema(description = "URL de la imagen de portada del evento", nullable = true)
+        String coverImageUrl,
+
         @Schema(description = "Fecha de inicio del primer horario programado")
         Instant startsAt,
 

@@ -52,6 +52,7 @@ public class EventService {
     private final EventOccurrenceMapper occurrenceMapper;
     private final MeetingLinkMapper meetingLinkMapper;
     private final LocationMapper locationMapper;
+    private final EventCardAssembler eventCardAssembler;
 
     public EventService(EventRepository eventRepository,
                         EventOccurrenceRepository occurrenceRepository,
@@ -62,7 +63,8 @@ public class EventService {
                         EventMapper eventMapper,
                         EventOccurrenceMapper occurrenceMapper,
                         MeetingLinkMapper meetingLinkMapper,
-                        LocationMapper locationMapper) {
+                        LocationMapper locationMapper,
+                        EventCardAssembler eventCardAssembler) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
@@ -73,6 +75,7 @@ public class EventService {
         this.occurrenceMapper = occurrenceMapper;
         this.meetingLinkMapper = meetingLinkMapper;
         this.locationMapper = locationMapper;
+        this.eventCardAssembler = eventCardAssembler;
     }
 
     @Transactional
@@ -118,8 +121,7 @@ public class EventService {
         );
         Pageable repositoryPageable = withoutStartsAtSort(pageable);
 
-        return eventRepository.findAll(spec, repositoryPageable)
-                .map(eventMapper::toCardResponse);
+        return eventCardAssembler.toPage(eventRepository.findAll(spec, repositoryPageable));
     }
 
     @Transactional(readOnly = true)
@@ -137,8 +139,7 @@ public class EventService {
                 .and(EventSpecification.hasDifferentSpecialist(event.getSpecialist().getId()))
                 .and(orderByStartsAtIfRequested(pageable));
 
-        return eventRepository.findAll(spec, withoutStartsAtSort(pageable))
-                .map(eventMapper::toCardResponse);
+        return eventCardAssembler.toPage(eventRepository.findAll(spec, withoutStartsAtSort(pageable)));
     }
 
     @Transactional(readOnly = true)
@@ -149,8 +150,7 @@ public class EventService {
                 .and(EventSpecification.hasSpecialist(event.getSpecialist().getId()))
                 .and(orderByStartsAtIfRequested(pageable));
 
-        return eventRepository.findAll(spec, withoutStartsAtSort(pageable))
-                .map(eventMapper::toCardResponse);
+        return eventCardAssembler.toPage(eventRepository.findAll(spec, withoutStartsAtSort(pageable)));
     }
 
     private Event getEventOrThrow(Long id) {

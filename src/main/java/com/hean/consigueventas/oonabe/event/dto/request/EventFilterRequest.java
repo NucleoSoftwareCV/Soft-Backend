@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Parametros opcionales de filtro para el listado publico de eventos.
@@ -25,6 +26,9 @@ public record EventFilterRequest(
         @Schema(description = "ID de la categoria")
         Long categoryId,
 
+        @Schema(description = "IDs de categorias combinadas con OR")
+        List<Long> categoryIds,
+
         @Schema(description = "Tipo de experiencia")
         EventType eventType,
 
@@ -33,6 +37,9 @@ public record EventFilterRequest(
 
         @Schema(description = "Nombre de la ciudad (para eventos presenciales)")
         String cityName,
+
+        @Schema(description = "Incluye eventos online cuando se filtra por ciudad")
+        Boolean includeOnline,
 
         @Schema(description = "Precio minimo. Usa 0 para filtrar eventos gratuitos")
         @DecimalMin(value = "0.0", inclusive = true, message = "El precio minimo no puede ser negativo")
@@ -79,5 +86,11 @@ public record EventFilterRequest(
         @Schema(hidden = true)
         public boolean isPriceRangeValid() {
                 return minPrice == null || maxPrice == null || maxPrice.compareTo(minPrice) >= 0;
+        }
+
+        @AssertTrue(message = "Usa categoryId o categoryIds, pero no ambos")
+        @Schema(hidden = true)
+        public boolean isCategoryFilterValid() {
+                return categoryId == null || categoryIds == null || categoryIds.isEmpty();
         }
 }

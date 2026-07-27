@@ -10,6 +10,7 @@ import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import org.mapstruct.AfterMapping;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -18,6 +19,7 @@ import org.mapstruct.Named;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {EventOccurrenceMapper.class})
 public interface EventMapper {
@@ -61,47 +63,53 @@ public interface EventMapper {
 
     EventOrganizerResponse toOrganizerResponse(SpecialistProfile specialist);
 
-    @Mapping(target = "categoryId", source = "category.id")
-    @Mapping(target = "categoryName", source = "category.name")
-    @Mapping(target = "organizerId", source = "specialist.id")
-    @Mapping(target = "organizerName", source = "specialist.publicName")
-    @Mapping(target = "organizerPhotoUrl", source = "specialist.photoUrl")
-    @Mapping(target = "startsAt", source = ".", qualifiedByName = "nextStartsAt")
-    @Mapping(target = "endsAt", source = ".", qualifiedByName = "nextEndsAt")
-    @Mapping(target = "cityName", source = ".", qualifiedByName = "nextCityName")
-    @Mapping(target = "isRecurring", source = "recurring")
-    EventCardResponse toCardResponse(Event event);
+    @Mapping(target = "categoryId", source = "event.category.id")
+    @Mapping(target = "categoryName", source = "event.category.name")
+    @Mapping(target = "organizerId", source = "event.specialist.id")
+    @Mapping(target = "organizerName", source = "event.specialist.publicName")
+    @Mapping(target = "organizerPhotoUrl", source = "event.specialist.photoUrl")
+    @Mapping(target = "coverImageUrl", source = "coverImageUrl")
+    @Mapping(target = "startsAt", source = "occurrences", qualifiedByName = "nextStartsAt")
+    @Mapping(target = "endsAt", source = "occurrences", qualifiedByName = "nextEndsAt")
+    @Mapping(target = "cityName", source = "occurrences", qualifiedByName = "nextCityName")
+    @Mapping(target = "isRecurring", source = "event.recurring")
+    EventCardResponse toCardResponse(
+            Event event,
+            String coverImageUrl,
+            List<EventOccurrence> occurrences,
+            @Context Instant notBefore);
 
     @Named("nextStartsAt")
-    default Instant nextStartsAt(Event event) {
-        EventOccurrence occurrence = nextOccurrence(event);
+    default Instant nextStartsAt(List<EventOccurrence> occurrences, @Context Instant notBefore) {
+        EventOccurrence occurrence = nextOccurrence(occurrences, notBefore);
         return occurrence == null ? null : occurrence.getStartsAt();
     }
 
     @Named("nextEndsAt")
-    default Instant nextEndsAt(Event event) {
-        EventOccurrence occurrence = nextOccurrence(event);
+    default Instant nextEndsAt(List<EventOccurrence> occurrences, @Context Instant notBefore) {
+        EventOccurrence occurrence = nextOccurrence(occurrences, notBefore);
         return occurrence == null ? null : occurrence.getEndsAt();
     }
 
     @Named("nextCityName")
-    default String nextCityName(Event event) {
-        EventOccurrence occurrence = nextOccurrence(event);
+    default String nextCityName(List<EventOccurrence> occurrences, @Context Instant notBefore) {
+        EventOccurrence occurrence = nextOccurrence(occurrences, notBefore);
         if (occurrence == null || occurrence.getLocation() == null || occurrence.getLocation().getCity() == null) {
             return null;
         }
         return occurrence.getLocation().getCity().getName();
     }
 
-    default EventOccurrence nextOccurrence(Event event) {
-        if (event == null || event.getOccurrences() == null || event.getOccurrences().isEmpty()) {
+    default EventOccurrence nextOccurrence(List<EventOccurrence> occurrences, Instant notBefore) {
+        if (occurrences == null || occurrences.isEmpty()) {
             return null;
         }
 
-        return event.getOccurrences().stream()
+        return occurrences.stream()
                 .filter(occurrence -> occurrence.getStatus() == EventOccurrenceStatus.PROGRAMADA)
+                .filter(occurrence -> notBefore == null || !occurrence.getStartsAt().isBefore(notBefore))
                 .min(Comparator.comparing(EventOccurrence::getStartsAt))
-                .orElse(event.getOccurrences().getFirst());
+                .orElse(null);
     }
 
 }
