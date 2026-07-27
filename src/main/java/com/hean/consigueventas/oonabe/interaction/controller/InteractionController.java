@@ -7,6 +7,7 @@ import com.hean.consigueventas.oonabe.interaction.dto.response.ProfessionalFollo
 import com.hean.consigueventas.oonabe.interaction.service.InteractionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import java.util.List;
         name = "Interacciones",
         description = "Gestión de eventos favoritos y profesionales seguidos por el cliente."
 )
+@SecurityRequirement(name = "bearerAuth")
 public class InteractionController {
 
     private final InteractionService interactionService;

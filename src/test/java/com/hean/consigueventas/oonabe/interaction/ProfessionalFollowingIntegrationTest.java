@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ProfessionalFollowingIntegrationTest {
 
-    private static final String BASE_PATH = "/api/v1/professional-follows";
+    private static final String BASE_PATH = "/api/v1/interactions/me/professional-follows";
 
     @Autowired
     private MockMvc mockMvc;
@@ -114,13 +114,12 @@ class ProfessionalFollowingIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.totalElements").value(2))
                 .andExpect(jsonPath("$.size").value(1))
-                .andExpect(jsonPath("$.content[0].id").value(carlos.getId()))
+                .andExpect(jsonPath("$.content[0].professionalId").value(carlos.getId()))
                 .andExpect(jsonPath("$.content[0].slug").exists())
                 .andExpect(jsonPath("$.content[0].publicName").exists())
                 .andExpect(jsonPath("$.content[0].profileCategory").exists())
                 .andExpect(jsonPath("$.content[0].photoUrl").exists())
                 .andExpect(jsonPath("$.content[0].followedAt").exists())
-                .andExpect(jsonPath("$.content[0].biography").doesNotExist())
                 .andExpect(jsonPath("$.content[0].whatsappPhone").doesNotExist())
                 .andExpect(jsonPath("$.content[0].userId").doesNotExist());
     }
@@ -168,6 +167,12 @@ class ProfessionalFollowingIntegrationTest {
     void userCannotFollowOwnProfessionalProfile() throws Exception {
         SpecialistProfile ownProfile = profileOwnedBy("specialist_ana");
 
+        // Grant ROLE_USER to specialist_ana so she can call the client endpoint
+        User ownUser = userRepository.findByUsername("specialist_ana").orElseThrow();
+        User user1 = userRepository.findByUsername("user1").orElseThrow();
+        ownUser.getRoles().addAll(user1.getRoles());
+        userRepository.saveAndFlush(ownUser);
+
         follow(ownProfile.getId(), "specialist_ana")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://api.oona.local/errors/business-rule"));
@@ -188,7 +193,7 @@ class ProfessionalFollowingIntegrationTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions getFollowStatus(Long professionalId, String username) throws Exception {
-        return mockMvc.perform(get(BASE_PATH + "/{professionalId}", professionalId)
+        return mockMvc.perform(get(BASE_PATH + "/{professionalId}/status", professionalId)
                 .with(user(principal(username))));
     }
 

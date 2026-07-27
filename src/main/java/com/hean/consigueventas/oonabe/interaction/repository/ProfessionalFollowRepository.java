@@ -12,8 +12,9 @@ import java.util.Optional;
 public interface ProfessionalFollowRepository
         extends JpaRepository<ProfessionalFollow, Long> {
 
+    @org.springframework.data.jpa.repository.Query("SELECT pf FROM ProfessionalFollow pf WHERE pf.clientProfile.id = :clientProfileId AND pf.specialistProfile.publicationStatus = com.hean.consigueventas.oonabe.common.enums.PublicationStatus.PUBLICADO")
     Page<ProfessionalFollow> findByClientProfileId(
-            Long clientProfileId,
+            @org.springframework.data.repository.query.Param("clientProfileId") Long clientProfileId,
             Pageable pageable
     );
 

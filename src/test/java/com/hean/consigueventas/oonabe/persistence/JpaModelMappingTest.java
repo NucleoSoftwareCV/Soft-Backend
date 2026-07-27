@@ -37,7 +37,7 @@ class JpaModelMappingTest {
         assertEntityTable(EventBooking.class, "event_bookings");
         assertEntityTable(Payment.class, "payments");
         assertEntityTable(HomeSection.class, "home_sections");
-        assertEntityTable(EventFavorite.class, "favorites");
+        assertEntityTable(EventFavorite.class, "event_favorites");
         assertEntityTable(ProfessionalFollow.class, "professional_follows");
         assertEntityTable(AuditLog.class, "audit_logs");
     }
@@ -69,13 +69,13 @@ class JpaModelMappingTest {
     @Test
     void eventDetailGraphDoesNotJoinElementCollections() throws NoSuchMethodException {
         EntityGraph graph = EventRepository.class
-                .getMethod("findDetailById", Long.class)
-                .getAnnotation(EntityGraph.class);
+            .getMethod("findDetailById", Long.class)
+            .getAnnotation(EntityGraph.class);
 
         assertThat(graph).isNotNull();
         assertThat(graph.attributePaths())
-                .doesNotContain("includes", "highlights", "whatToBring")
-                .contains("category", "specialist", "occurrences");
+            .doesNotContain("includes", "highlights", "whatToBring")
+            .contains("category", "specialist", "occurrences");
     }
 
     @Test
@@ -83,10 +83,10 @@ class JpaModelMappingTest {
         Table table = ProfessionalFollow.class.getAnnotation(Table.class);
 
         assertThat(table.uniqueConstraints())
-                .extracting(UniqueConstraint::name)
-                .contains("uk_professional_follow_user_specialist");
+            .extracting(UniqueConstraint::name)
+            .contains("uk_professional_follow_client_specialist");
         assertThat(table.uniqueConstraints()[0].columnNames())
-                .containsExactly("user_id", "specialist_profile_id");
+            .containsExactly("client_profile_id", "specialist_profile_id");
     }
 
     private static void assertEntityTable(Class<?> entityType, String tableName) {

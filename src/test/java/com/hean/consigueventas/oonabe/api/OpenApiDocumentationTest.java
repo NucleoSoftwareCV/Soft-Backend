@@ -82,9 +82,9 @@ class OpenApiDocumentationTest {
     void protectedOpenApiDocumentsProfessionalFollowing() throws Exception {
         mockMvc.perform(get("/v3/api-docs/protected"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths['/api/v1/professional-follows'].get.security[0].bearerAuth").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/professional-follows/{professionalId}'].put.security[0].bearerAuth").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/professional-follows/{professionalId}'].delete.security[0].bearerAuth").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/professional-follows/{professionalId}'].get.security[0].bearerAuth").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows/{professionalId}'].put.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows/{professionalId}'].delete.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows/{professionalId}/status'].get.security[0].bearerAuth").exists());
     }
 }

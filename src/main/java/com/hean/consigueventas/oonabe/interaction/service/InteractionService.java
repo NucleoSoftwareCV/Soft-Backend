@@ -3,6 +3,7 @@ package com.hean.consigueventas.oonabe.interaction.service;
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
+import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.interaction.dto.response.EventFavoriteResponse;
@@ -146,7 +147,7 @@ public class InteractionService {
                 specialistProfile.getUser() != null
                         && specialistProfile.getUser().getId().equals(user.getId())
         ) {
-            throw new IllegalStateException(
+            throw new BusinessLogicException(
                     "No puedes seguir tu propio perfil profesional."
             );
         }
