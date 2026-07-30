@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -83,11 +84,11 @@ public class InteractionService {
             Long eventId
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
-
-        eventFavoriteRepository.deleteByClientProfileIdAndEventId(
-                clientProfile.getId(),
-                eventId
+        findClientProfile(user).ifPresent(clientProfile ->
+                eventFavoriteRepository.deleteByClientProfileIdAndEventId(
+                        clientProfile.getId(),
+                        eventId
+                )
         );
 
         return new EventFavoriteStatusResponse(
@@ -102,13 +103,14 @@ public class InteractionService {
             Long eventId
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
-
-        boolean favorite =
-                eventFavoriteRepository.existsByClientProfileIdAndEventId(
-                        clientProfile.getId(),
-                        eventId
-                );
+        boolean favorite = findClientProfile(user)
+                .map(clientProfile ->
+                        eventFavoriteRepository.existsByClientProfileIdAndEventId(
+                                clientProfile.getId(),
+                                eventId
+                        )
+                )
+                .orElse(false);
 
         return new EventFavoriteStatusResponse(
                 eventId,
@@ -121,15 +123,17 @@ public class InteractionService {
             String username
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
-
-        return eventFavoriteRepository
-                .findByClientProfileIdOrderByCreatedAtDesc(
-                        clientProfile.getId()
+        return findClientProfile(user)
+                .map(clientProfile ->
+                        eventFavoriteRepository
+                                .findByClientProfileIdOrderByCreatedAtDesc(
+                                        clientProfile.getId()
+                                )
+                                .stream()
+                                .map(interactionMapper::toEventFavoriteResponse)
+                                .toList()
                 )
-                .stream()
-                .map(interactionMapper::toEventFavoriteResponse)
-                .toList();
+                .orElseGet(List::of);
     }
 
     @Transactional
@@ -181,13 +185,13 @@ public class InteractionService {
             Long professionalId
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
-
-        professionalFollowRepository
-                .deleteByClientProfileIdAndSpecialistProfileId(
-                        clientProfile.getId(),
-                        professionalId
-                );
+        findClientProfile(user).ifPresent(clientProfile ->
+                professionalFollowRepository
+                        .deleteByClientProfileIdAndSpecialistProfileId(
+                                clientProfile.getId(),
+                                professionalId
+                        )
+        );
 
         return buildProfessionalFollowStatus(
                 professionalId,
@@ -201,16 +205,18 @@ public class InteractionService {
             Long professionalId
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
 
         getPublicSpecialistProfile(professionalId);
 
-        boolean following =
-                professionalFollowRepository
-                        .existsByClientProfileIdAndSpecialistProfileId(
-                                clientProfile.getId(),
-                                professionalId
-                        );
+        boolean following = findClientProfile(user)
+                .map(clientProfile ->
+                        professionalFollowRepository
+                                .existsByClientProfileIdAndSpecialistProfileId(
+                                        clientProfile.getId(),
+                                        professionalId
+                                )
+                )
+                .orElse(false);
 
         return buildProfessionalFollowStatus(
                 professionalId,
@@ -224,14 +230,16 @@ public class InteractionService {
             Pageable pageable
     ) {
         User user = getUserByUsername(username);
-        ClientProfile clientProfile = getOrCreateClientProfile(user);
-
-        return professionalFollowRepository
-                .findByClientProfileId(
-                        clientProfile.getId(),
-                        pageable
+        return findClientProfile(user)
+                .map(clientProfile ->
+                        professionalFollowRepository
+                                .findByClientProfileId(
+                                        clientProfile.getId(),
+                                        pageable
+                                )
+                                .map(interactionMapper::toFollowedProfessionalResponse)
                 )
-                .map(interactionMapper::toFollowedProfessionalResponse);
+                .orElseGet(() -> Page.empty(pageable));
     }
 
     private User getUserByUsername(String username) {
@@ -253,6 +261,10 @@ public class InteractionService {
 
                     return clientProfileRepository.save(clientProfile);
                 });
+    }
+
+    private Optional<ClientProfile> findClientProfile(User user) {
+        return clientProfileRepository.findByUserId(user.getId());
     }
 
     private SpecialistProfile getPublicSpecialistProfile(

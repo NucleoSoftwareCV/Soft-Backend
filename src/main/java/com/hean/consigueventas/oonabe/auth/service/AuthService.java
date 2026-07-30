@@ -141,7 +141,10 @@ public class AuthService {
                 .map(RefreshToken::getUser)
                 .map(user -> {
                     String token = jwtUtils.generateTokenFromUsername(user.getUsername());
-                    return new TokenRefreshResponse(token, requestRefreshToken);
+                    Set<String> roles = user.getRoles().stream()
+                            .map(role -> role.getName().replace("ROLE_", ""))
+                            .collect(Collectors.toSet());
+                    return new TokenRefreshResponse(token, requestRefreshToken, roles);
                 })
                 .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "El refresh token no existe."));
     }

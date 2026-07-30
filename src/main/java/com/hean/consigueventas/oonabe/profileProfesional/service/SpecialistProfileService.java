@@ -92,6 +92,10 @@ public class SpecialistProfileService {
         profile.setProfileCategory(
                 validateProfileCategory(request.profileCategory())
         );
+        profile.setApprovalStatus(ApprovalStatus.APROBADO);
+        profile.setPublicationStatus(PublicationStatus.BORRADOR);
+        profile.setApprovedAt(Instant.now());
+        profile.setRejectionReason(null);
 
         SpecialistProfile savedProfile =
                 specialistProfileRepository.save(profile);
@@ -164,7 +168,7 @@ public class SpecialistProfileService {
             );
         }
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -280,7 +284,7 @@ public class SpecialistProfileService {
             );
         }
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -566,7 +570,7 @@ public class SpecialistProfileService {
         ProfessionalSocialLink savedSocialLink =
                 socialLinkRepository.save(socialLink);
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
         specialistProfileRepository.save(profile);
 
         return socialLinkMapper.toResponse(savedSocialLink);
@@ -610,7 +614,7 @@ public class SpecialistProfileService {
 
         socialLinkRepository.delete(socialLink);
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
         specialistProfileRepository.save(profile);
     }
 
@@ -653,7 +657,7 @@ public class SpecialistProfileService {
         ProfessionalLanguage savedLanguage =
                 professionalLanguageRepository.save(language);
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
         specialistProfileRepository.save(profile);
 
         return professionalLanguageMapper.toResponse(savedLanguage);
@@ -693,7 +697,7 @@ public class SpecialistProfileService {
 
         professionalLanguageRepository.delete(language);
 
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
         specialistProfileRepository.save(profile);
     }
 
@@ -725,7 +729,7 @@ public class SpecialistProfileService {
         );
 
         profile.setPhotoUrl(photoUrl);
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -761,7 +765,7 @@ public class SpecialistProfileService {
         );
 
         profile.setBannerUrl(bannerUrl);
-        markProfileAsPendingReview(profile);
+        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -892,13 +896,10 @@ public class SpecialistProfileService {
         );
     }
 
-    private void markProfileAsPendingReview(
+    private void markProfileAsDraft(
             SpecialistProfile profile
     ) {
-        profile.setApprovalStatus(ApprovalStatus.PENDIENTE);
         profile.setPublicationStatus(PublicationStatus.BORRADOR);
-        profile.setApprovedBy(null);
-        profile.setApprovedAt(null);
         profile.setRejectionReason(null);
     }
 

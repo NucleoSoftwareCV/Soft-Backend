@@ -187,6 +187,26 @@ class ProfessionalFollowingIntegrationTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
     }
 
+    @Test
+    void emptyInteractionListsDoNotCreateAClientProfileInReadOnlyRequests() throws Exception {
+        User userWithoutProfile = userRepository.findByUsername("user2").orElseThrow();
+
+        assertThat(clientProfileRepository.findByUserId(userWithoutProfile.getId())).isEmpty();
+
+        mockMvc.perform(get(BASE_PATH)
+                        .with(user(principal("user2"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+
+        mockMvc.perform(get("/api/v1/interactions/me/event-favorites")
+                        .with(user(principal("user2"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        assertThat(clientProfileRepository.findByUserId(userWithoutProfile.getId())).isEmpty();
+    }
+
     private org.springframework.test.web.servlet.ResultActions follow(Long professionalId, String username) throws Exception {
         return mockMvc.perform(put(BASE_PATH + "/{professionalId}", professionalId)
                 .with(user(principal(username))));

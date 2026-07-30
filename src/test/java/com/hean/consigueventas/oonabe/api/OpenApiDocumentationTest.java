@@ -89,4 +89,14 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows/{professionalId}'].delete.security[0].bearerAuth").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/interactions/me/professional-follows/{professionalId}/status'].get.security[0].bearerAuth").exists());
     }
+
+    @Test
+    void protectedOpenApiDocumentsProfessionalApplications() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/protected"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/professional-applications/me'].put.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/professional-applications/me'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/admin/professional-applications'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/admin/professional-applications/{id}/decision'].patch.security[0].bearerAuth").exists());
+    }
 }
