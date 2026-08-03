@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessLogicException.class)
     public ProblemDetail handleBusiness(BusinessLogicException ex, WebRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "Regla de negocio invalida", ex.getMessage(), "business-rule", request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "Solicitud invalida", ex.getMessage(), "invalid-argument", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -83,6 +89,16 @@ public class GlobalExceptionHandler {
                 "Conflicto de actualizacion",
                 "El recurso fue modificado por otra solicitud. Recarga los datos e intenta nuevamente.",
                 "concurrent-update",
+                request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex, WebRequest request) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "No se pudo guardar la informacion",
+                "Hay datos relacionados incompatibles o duplicados. Recarga la pagina e intenta nuevamente.",
+                "data-integrity",
                 request);
     }
 

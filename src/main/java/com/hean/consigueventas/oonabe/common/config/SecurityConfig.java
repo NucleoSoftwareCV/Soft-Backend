@@ -2,11 +2,13 @@ package com.hean.consigueventas.oonabe.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hean.consigueventas.oonabe.auth.security.AuthTokenFilter;
+import com.hean.consigueventas.oonabe.auth.security.AuthRateLimitFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,16 +40,19 @@ import java.util.List;
 public class SecurityConfig {
 
     private final AuthTokenFilter authTokenFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
             AuthTokenFilter authTokenFilter,
+            AuthRateLimitFilter authRateLimitFilter,
             UserDetailsService userDetailsService,
             ObjectMapper objectMapper,
             @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
         this.authTokenFilter = authTokenFilter;
+        this.authRateLimitFilter = authRateLimitFilter;
         this.userDetailsService = userDetailsService;
         this.objectMapper = objectMapper;
         this.allowedOrigins = allowedOrigins;
@@ -59,7 +64,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/v1/auth/admin/login", "/error", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/event-occurrences/public", "/api/v1/event-occurrences/public/**").permitAll()
@@ -67,10 +72,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/cities/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/techniques/active", "/api/v1/techniques/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/images/profile-images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/specialist-profiles","/api/v1/specialist-profiles/slug/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/events",
+                                "/api/v1/events/{id:\\d+}",
+                                "/api/v1/events/{id:\\d+}/similar",
+                                "/api/v1/events/{id:\\d+}/organizer-events").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
@@ -94,9 +104,19 @@ public class SecurityConfig {
                                 "forbidden"))
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<AuthRateLimitFilter> authRateLimitFilterRegistration(
+            AuthRateLimitFilter filter) {
+        FilterRegistrationBean<AuthRateLimitFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean

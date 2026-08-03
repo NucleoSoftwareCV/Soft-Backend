@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.profileProfesional.service;
 
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
@@ -30,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -106,6 +108,41 @@ public class SpecialistProfileService {
         return buildResponse(savedProfile);
     }
 
+    /**
+     * Crea un perfil profesional mínimo para un usuario recién aprobado, si todavía no tiene uno.
+     * Pensado para invocarse automáticamente al aprobar una solicitud profesional, reutilizando los
+     * datos ya declarados en esa solicitud (nombre, WhatsApp) en vez de dejar al usuario sin perfil
+     * hasta que complete manualmente el formulario de creación.
+     */
+    @Transactional
+    public void createMinimalProfileIfMissing(
+            User user,
+            String publicName,
+            String whatsappPhone
+    ) {
+        if (specialistProfileRepository.findByUserId(user.getId()).isPresent()) {
+            return;
+        }
+
+        SpecialistProfile profile = new SpecialistProfile();
+        profile.setUser(user);
+        profile.setPublicName(publicName);
+        profile.setSlug(generateUniqueSlug(publicName));
+        profile.setProfileCategory("PROFESIONALES");
+        // Keep automatic profiles compatible with databases created from the
+        // previous schema, where these optional columns were NOT NULL.
+        profile.setBiography("");
+        profile.setPhotoUrl("");
+        profile.setWhatsappPhone(
+                whatsappPhone != null && !whatsappPhone.isBlank() ? whatsappPhone.trim() : ""
+        );
+        profile.setApprovalStatus(ApprovalStatus.APROBADO);
+        profile.setPublicationStatus(PublicationStatus.BORRADOR);
+        profile.setApprovedAt(Instant.now());
+
+        specialistProfileRepository.save(profile);
+    }
+
     @Transactional(readOnly = true)
     public SpecialistProfileResponse getMyProfile(String username) {
         User user = userRepository.findByUsername(username)
@@ -167,8 +204,6 @@ public class SpecialistProfileService {
                     )
             );
         }
-
-        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -240,21 +275,11 @@ public class SpecialistProfileService {
         }
 
         if (request.biography() != null) {
-            profile.setBiography(
-                    requireText(
-                            request.biography(),
-                            "La biografía no puede estar vacía."
-                    )
-            );
+            profile.setBiography(request.biography().trim());
         }
 
         if (request.description() != null) {
-            profile.setDescription(
-                    requireText(
-                            request.description(),
-                            "La descripción no puede estar vacía."
-                    )
-            );
+            profile.setDescription(request.description().trim());
         }
 
         if (request.whatsappPhone() != null) {
@@ -283,8 +308,6 @@ public class SpecialistProfileService {
                     cleanOptionalText(request.website())
             );
         }
-
-        markProfileAsDraft(profile);
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
@@ -400,7 +423,7 @@ public class SpecialistProfileService {
                         );
 
         if (profile.getApprovalStatus() != ApprovalStatus.APROBADO) {
-            throw new IllegalStateException(
+            throw new BusinessLogicException(
                     "El perfil debe estar aprobado antes de publicarse."
             );
         }
@@ -906,49 +929,26 @@ public class SpecialistProfileService {
     private void validateProfileReadyToPublish(
             SpecialistProfile profile
     ) {
-        if (
-                profile.getPhotoUrl() == null
-                        || profile.getPhotoUrl().isBlank()
-        ) {
-            throw new IllegalStateException(
-                    "Debe subir una foto de perfil antes de publicar."
+        List<String> missingRequirements = new ArrayList<>();
+
+        addMissing(missingRequirements, profile.getPhotoUrl(), "foto de perfil");
+        addMissing(missingRequirements, profile.getBannerUrl(), "banner");
+        addMissing(missingRequirements, profile.getBiography(), "biografía");
+        addMissing(missingRequirements, profile.getDescription(), "descripción");
+        addMissing(missingRequirements, profile.getWhatsappPhone(), "número de WhatsApp");
+
+        if (!missingRequirements.isEmpty()) {
+            throw new BusinessLogicException(
+                    "No se puede publicar el perfil. Completa: "
+                            + String.join(", ", missingRequirements)
+                            + "."
             );
         }
+    }
 
-        if (
-                profile.getBannerUrl() == null
-                        || profile.getBannerUrl().isBlank()
-        ) {
-            throw new IllegalStateException(
-                    "Debe subir un banner antes de publicar."
-            );
-        }
-
-        if (
-                profile.getBiography() == null
-                        || profile.getBiography().isBlank()
-        ) {
-            throw new IllegalStateException(
-                    "Debe completar su biografía antes de publicar."
-            );
-        }
-
-        if (
-                profile.getDescription() == null
-                        || profile.getDescription().isBlank()
-        ) {
-            throw new IllegalStateException(
-                    "Debe completar una descripción antes de publicar."
-            );
-        }
-
-        if (
-                profile.getWhatsappPhone() == null
-                        || profile.getWhatsappPhone().isBlank()
-        ) {
-            throw new IllegalStateException(
-                    "Debe registrar un número de WhatsApp antes de publicar."
-            );
+    private void addMissing(List<String> missingRequirements, String value, String label) {
+        if (value == null || value.isBlank()) {
+            missingRequirements.add(label);
         }
     }
 

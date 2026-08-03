@@ -37,6 +37,19 @@ public interface EventMapper {
     @Mapping(target = "recurring", ignore = true)
     Event toEntity(EventUpsertRequest request);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "approvedBy", ignore = true)
+    @Mapping(target = "specialist", ignore = true)
+    @Mapping(target = "occurrences", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "eventType", ignore = true)
+    @Mapping(target = "recurring", ignore = true)
+    void updateEntity(EventUpsertRequest request, @MappingTarget Event event);
+
     @AfterMapping
     default void ensureDetailCollections(@MappingTarget Event event) {
         if (event.getIncludes() == null) {

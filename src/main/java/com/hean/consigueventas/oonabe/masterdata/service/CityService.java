@@ -49,4 +49,66 @@ public class CityService {
                 .map(cityMapper::toAdminDto)
                 .toList();
     }
+
+    // Admin: crear una ciudad
+    @Transactional
+    public CityAdminDTO createCity(CityAdminDTO cityAdminDTO) {
+        String name = cityAdminDTO.name().trim();
+        String province = cityAdminDTO.province() != null ? cityAdminDTO.province().trim() : null;
+
+        // Validar duplicado por nombre y provincia
+        if (cityRepository.findByNameAndProvince(name, province).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Ya existe una ciudad con el nombre: " + name +
+                    (province != null ? " en la provincia: " + province : "")
+            );
+        }
+
+        City city = cityMapper.toEntity(cityAdminDTO);
+        city.setName(name);
+        city.setProvince(province);
+        city.setIsActive(true); // por defecto activa al crear
+
+        City saved = cityRepository.save(city);
+        return cityMapper.toAdminDto(saved);
+    }
+
+    // Admin: actualizar una ciudad
+    @Transactional
+    public CityAdminDTO updateCity(Long id, CityAdminDTO cityAdminDTO) {
+        City existingCity = cityRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Ciudad no encontrada con ID: " + id)
+                );
+
+        String name = cityAdminDTO.name().trim();
+        String province = cityAdminDTO.province() != null ? cityAdminDTO.province().trim() : null;
+
+        // Validar duplicado excluyéndose a sí misma
+        cityRepository.findByNameAndProvince(name, province).ifPresent(c -> {
+            if (!c.getId().equals(id)) {
+                throw new IllegalArgumentException(
+                        "Ya existe otra ciudad con el nombre: " + name +
+                        (province != null ? " en la provincia: " + province : "")
+                );
+            }
+        });
+
+        cityMapper.updateEntityFromDto(cityAdminDTO, existingCity);
+        existingCity.setName(name);
+        existingCity.setProvince(province);
+
+        City updated = cityRepository.save(existingCity);
+        return cityMapper.toAdminDto(updated);
+    }
+
+    // Admin: eliminar físicamente una ciudad
+    @Transactional
+    public void deleteCity(Long id) {
+        City city = cityRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Ciudad no encontrada con ID: " + id)
+                );
+        cityRepository.delete(city);
+    }
 }

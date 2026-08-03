@@ -94,6 +94,22 @@ public class OneToOneDataSeeder {
                 Set.of("Autoestima", "Bienestar"), Set.of("Terapia"));
     }
 
+    @Transactional
+    public void seedProfessionalDemo(SpecialistProfile profile, Location location) {
+        seedOneToOneService(
+                profile,
+                "Sesion demo de bienestar integral",
+                "Sesion individual de demostracion para probar el portal profesional.",
+                60,
+                SessionModality.PRESENCIAL,
+                location,
+                55.00,
+                "EUR",
+                PublicationStatus.PUBLICADO,
+                Set.of("Bienestar"),
+                Set.of("Terapia"));
+    }
+
     private void seedOneToOneService(
             SpecialistProfile specialist,
             String title,

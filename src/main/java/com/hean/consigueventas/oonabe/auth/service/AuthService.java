@@ -19,6 +19,7 @@ import com.hean.consigueventas.oonabe.user.service.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,10 +64,26 @@ public class AuthService {
 
     @Transactional
     public JwtResponse login(LoginRequest request) {
+        return authenticate(request, false);
+    }
+
+    @Transactional
+    public JwtResponse adminLogin(LoginRequest request) {
+        return authenticate(request, true);
+    }
+
+    private JwtResponse authenticate(LoginRequest request, boolean adminLogin) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password()));
-        String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+
+        if (adminLogin != isAdmin) {
+            throw new AccessDeniedException("Acceso no permitido para este portal.");
+        }
+
+        String jwt = jwtUtils.generateJwtToken(authentication);
         Set<String> roles = userDetails.getAuthorities().stream()
                 .map(authority -> authority.getAuthority().replace("ROLE_", ""))
                 .collect(Collectors.toSet());
@@ -97,6 +114,9 @@ public class AuthService {
 
         if (!user.isActive()) {
             throw new BadCredentialsException("El usuario esta inactivo.");
+        }
+        if (user.getRoles().stream().anyMatch(role -> "ROLE_ADMIN".equals(role.getName()))) {
+            throw new AccessDeniedException("Acceso no permitido para este portal.");
         }
 
         String jwt = jwtUtils.generateTokenFromUsername(user.getUsername());

@@ -35,8 +35,8 @@ public class DataSeederOrchestrator {
                         // Hashes de contraseñas de fuerza 12 conservados (raw -> hash):
                         // User1? -> $2a$12$Lg.NO/N371FWxM4Q8zLMD.ZRtyKFhZx0DdkF.pYhP5lEo8ui0T9VG
                         // User2! -> $2a$12$zfWqThYYydUBgUQ2/FGa4Oi3YMweIzonj5IMfGGskAX9igSxWDgIC
-                        // Admin1@ -> $2a$12$uFHu/zucqODXZtn00Nra0.59lyGs7NrO5DuybsYiDEfn6mnSIvuuO
-                        // Admin2# -> $2a$12$dLiLeyi2f51pBxHHEc1A5.q51Fe9aI/LFKABnZK1wrfS0EQU7cJBO
+                        // Admin1@ -> $2a$12$CH2unS7WzVgwZb4NbpX/2esOGl3lqrQmnLXWOTA0B3jnisLAVrYnm
+                        // Admin2# -> $2a$12$iEPmSb9Wf9moCU1kxmbVMelRk0fLZB9oEE/fq/VmVcXpos3VkfREG
                         userSeeder.seedUser("user1", "user1@oona.es",
                                         "$2a$12$Lg.NO/N371FWxM4Q8zLMD.ZRtyKFhZx0DdkF.pYhP5lEo8ui0T9VG",
                                         Set.of(roleUser));
@@ -44,10 +44,10 @@ public class DataSeederOrchestrator {
                                         "$2a$12$zfWqThYYydUBgUQ2/FGa4Oi3YMweIzonj5IMfGGskAX9igSxWDgIC",
                                         Set.of(roleUser));
                         userSeeder.seedUser("admin_main1", "admin1@oona.es",
-                                        "$2a$12$uFHu/zucqODXZtn00Nra0.59lyGs7NrO5DuybsYiDEfn6mnSIvuuO",
+                                        "$2a$12$CH2unS7WzVgwZb4NbpX/2esOGl3lqrQmnLXWOTA0B3jnisLAVrYnm",
                                         Set.of(roleAdmin));
                         userSeeder.seedUser("admin_main2", "admin2@oona.es",
-                                        "$2a$12$dLiLeyi2f51pBxHHEc1A5.q51Fe9aI/LFKABnZK1wrfS0EQU7cJBO",
+                                        "$2a$12$iEPmSb9Wf9moCU1kxmbVMelRk0fLZB9oEE/fq/VmVcXpos3VkfREG",
                                         Set.of(roleAdmin));
 
                         User specUser1 = userSeeder.seedUser("specialist_ana", "ana@oona.es",
@@ -56,6 +56,11 @@ public class DataSeederOrchestrator {
                         User specUser2 = userSeeder.seedUser("specialist_carlos", "carlos@oona.es",
                                         "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G",
                                         Set.of(roleProfessional));
+                        User professionalDemo = userSeeder.seedUser(
+                                        "professional_demo",
+                                        "professional_demo@oona.es",
+                                        "$2a$12$3dFC2CgiIe6MloOVucl8BO/5llaccXtRPNqZXYUA/chcUoyxJd3vW",
+                                        Set.of(roleUser, roleProfessional));
 
                         MasterDataSeeder.SeedData masterData = masterDataSeeder.seed();
 
@@ -83,7 +88,20 @@ public class DataSeederOrchestrator {
                                 "https://carlosyoga.es"
                         );
 
+                        SpecialistProfile demoProfile = specialistProfileSeeder.seedSpecialist(
+                                professionalDemo,
+                                "profesional-demo-oona",
+                                "Profesional Demo Oona",
+                                "Perfil publicado para validar el portal profesional.",
+                                "Cuenta de demostracion con eventos y sesiones reales asociados.",
+                                "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
+                                "+34600999888",
+                                "professional_demo@oona.es",
+                                "https://oona.es"
+                        );
+
                         oneToOneDataSeeder.seed(profileAna, profileCarlos, masterData.loc1(), masterData.loc2());
+                        oneToOneDataSeeder.seedProfessionalDemo(demoProfile, masterData.loc1());
                         eventDataSeeder.seed(
                                         masterData.catCuerpo(),
                                         masterData.catMovimiento(),
@@ -97,6 +115,10 @@ public class DataSeederOrchestrator {
                                         masterData.loc3(),
                                         profileAna,
                                         profileCarlos);
+                        eventDataSeeder.seedProfessionalDemo(
+                                        masterData.catYoga(),
+                                        masterData.loc1(),
+                                        demoProfile);
                 };
         }
 }

@@ -9,10 +9,13 @@ import com.hean.consigueventas.oonabe.auth.service.AuthService;
 import com.hean.consigueventas.oonabe.auth.service.RefreshTokenService;
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfilePartialUpdateRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
+import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.service.SpecialistProfileService;
 import com.hean.consigueventas.oonabe.professionalApplication.dto.request.ProfessionalApplicationDecisionRequest;
 import com.hean.consigueventas.oonabe.professionalApplication.dto.request.ProfessionalApplicationRequest;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -73,6 +77,9 @@ class ProfessionalApplicationIntegrationTest {
 
     @Autowired
     private SpecialistProfileService specialistProfileService;
+
+    @Autowired
+    private SpecialistProfileRepository specialistProfileRepository;
 
     @Test
     void unauthenticatedUserCannotCreateOrReadApplication() throws Exception {
@@ -168,6 +175,14 @@ class ProfessionalApplicationIntegrationTest {
                 .extracting(Role::getName)
                 .contains(Role.ROLE_PROFESSIONAL);
 
+        var automaticProfile = specialistProfileRepository
+                .findByUserId(approvedUser.getId())
+                .orElseThrow();
+        assertThat(automaticProfile.getApprovalStatus()).isEqualTo(ApprovalStatus.APROBADO);
+        assertThat(automaticProfile.getPublicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+        assertThat(automaticProfile.getBiography()).isEmpty();
+        assertThat(automaticProfile.getPhotoUrl()).isEmpty();
+
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(approvedUser.getId());
         TokenRefreshResponse refreshed = authService.refreshToken(
                 new TokenRefreshRequest(refreshToken.getToken())
@@ -210,15 +225,88 @@ class ProfessionalApplicationIntegrationTest {
                 Set.of()
         );
 
-        SpecialistProfileResponse created =
-                specialistProfileService.createProfile("user1", profileRequest);
-        assertThat(created.approvalStatus()).isEqualTo(ApprovalStatus.APROBADO);
-        assertThat(created.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
-
         SpecialistProfileResponse updated =
                 specialistProfileService.updateMyProfile("user1", profileRequest);
         assertThat(updated.approvalStatus()).isEqualTo(ApprovalStatus.APROBADO);
         assertThat(updated.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+    }
+
+    @Test
+    void incompleteDraftCanBeEditedAndPublishExplainsEveryMissingRequirement() throws Exception {
+        Long applicationId = createApplicationAndGetId("user1");
+        decide(applicationId, ProfessionalApplicationStatus.APROBADO, null)
+                .andExpect(status().isOk());
+
+        SpecialistProfilePartialUpdateRequest draftUpdate =
+                new SpecialistProfilePartialUpdateRequest(
+                        "Usuario Uno Actualizado",
+                        null,
+                        "",
+                        "",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        SpecialistProfileResponse updated =
+                specialistProfileService.updateMyProfilePartial("user1", draftUpdate);
+
+        assertThat(updated.publicName()).isEqualTo("Usuario Uno Actualizado");
+        assertThat(updated.biography()).isEmpty();
+        assertThat(updated.description()).isEmpty();
+        assertThat(updated.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+
+        assertThatThrownBy(() -> specialistProfileService.publishMyProfile("user1"))
+                .isInstanceOf(BusinessLogicException.class)
+                .hasMessageContaining("foto de perfil")
+                .hasMessageContaining("banner")
+                .hasMessageContaining("biografía")
+                .hasMessageContaining("descripción");
+
+        mockMvc.perform(patch("/api/v1/specialist-profiles/me/publish")
+                        .with(user("user1").roles("PROFESSIONAL")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "No se puede publicar el perfil. Completa: foto de perfil, banner, biografía, descripción."
+                ));
+
+        mockMvc.perform(patch("/api/v1/specialist-profiles/me")
+                        .with(user("user1").roles("PROFESSIONAL"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"whatsappPhone\":\"+51 92803719599\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("whatsappPhone"));
+    }
+
+    @Test
+    void editingPublishedProfileKeepsItVisible() {
+        SpecialistProfilePartialUpdateRequest request =
+                new SpecialistProfilePartialUpdateRequest(
+                        null,
+                        null,
+                        "Biografia actualizada sin ocultar el perfil.",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        SpecialistProfileResponse updated =
+                specialistProfileService.updateMyProfilePartial(
+                        "professional_demo",
+                        request
+                );
+
+        assertThat(updated.publicationStatus())
+                .isEqualTo(PublicationStatus.PUBLICADO);
+        assertThat(updated.biography())
+                .isEqualTo("Biografia actualizada sin ocultar el perfil.");
     }
 
     private org.springframework.test.web.servlet.ResultActions saveApplication(

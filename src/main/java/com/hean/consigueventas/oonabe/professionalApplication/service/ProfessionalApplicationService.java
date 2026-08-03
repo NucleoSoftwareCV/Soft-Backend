@@ -11,6 +11,7 @@ import com.hean.consigueventas.oonabe.professionalApplication.entity.Professiona
 import com.hean.consigueventas.oonabe.professionalApplication.enums.ProfessionalApplicationStatus;
 import com.hean.consigueventas.oonabe.professionalApplication.mapper.ProfessionalApplicationMapper;
 import com.hean.consigueventas.oonabe.professionalApplication.repository.ProfessionalApplicationRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.service.SpecialistProfileService;
 import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.RoleRepository;
@@ -31,18 +32,21 @@ public class ProfessionalApplicationService {
     private final RoleRepository roleRepository;
     private final CityRepository cityRepository;
     private final ProfessionalApplicationMapper mapper;
+    private final SpecialistProfileService specialistProfileService;
 
     public ProfessionalApplicationService(
             ProfessionalApplicationRepository applicationRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
             CityRepository cityRepository,
-            ProfessionalApplicationMapper mapper) {
+            ProfessionalApplicationMapper mapper,
+            SpecialistProfileService specialistProfileService) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.cityRepository = cityRepository;
         this.mapper = mapper;
+        this.specialistProfileService = specialistProfileService;
     }
 
     @Transactional
@@ -118,6 +122,10 @@ public class ProfessionalApplicationService {
         if (request.status() == ProfessionalApplicationStatus.APROBADO) {
             application.setRejectionReason(null);
             grantProfessionalRole(application.getUser());
+            specialistProfileService.createMinimalProfileIfMissing(
+                    application.getUser(),
+                    application.getFullName(),
+                    application.getWhatsappPhone());
         } else {
             application.setRejectionReason(request.rejectionReason().trim());
         }

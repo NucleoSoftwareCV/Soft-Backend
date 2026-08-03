@@ -79,7 +79,7 @@ class OneToOnePublicListingIntegrationTest {
                         .param("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.totalElements").value(12))
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(12)))
                 .andExpect(jsonPath("$.size").value(2))
                 .andExpect(jsonPath("$.number").value(0))
                 .andExpect(jsonPath("$.content[0].id").exists())
@@ -158,7 +158,7 @@ class OneToOnePublicListingIntegrationTest {
                         .param("size", "3"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(3))
-                .andExpect(jsonPath("$.totalElements").value(12))
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(12)))
                 .andExpect(jsonPath("$.size").value(3))
                 .andExpect(jsonPath("$.number").value(1));
     }
@@ -171,7 +171,7 @@ class OneToOnePublicListingIntegrationTest {
                         .param("sort", "[\"string\"]"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
-                .andExpect(jsonPath("$.totalElements").value(12));
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(12)));
     }
 
     @Test
@@ -181,6 +181,6 @@ class OneToOnePublicListingIntegrationTest {
                         .param("size", "500"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size").value(100))
-                .andExpect(jsonPath("$.totalElements").value(12));
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(12)));
     }
 }

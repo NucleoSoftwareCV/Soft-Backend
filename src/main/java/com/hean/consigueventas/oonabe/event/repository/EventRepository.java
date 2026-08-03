@@ -16,6 +16,9 @@ public interface EventRepository extends JpaRepository<Event, Long>,
         JpaSpecificationExecutor<Event> {
     Optional<Event> findByTitle(String title);
 
+    @EntityGraph(attributePaths = {"category", "specialist"})
+    Page<Event> findBySpecialistUserId(Long userId, Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = {
             "category",

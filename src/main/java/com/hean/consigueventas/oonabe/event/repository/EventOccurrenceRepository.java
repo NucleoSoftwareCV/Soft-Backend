@@ -8,12 +8,20 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence, Long> {
 
     boolean existsByEventId(Long eventId);
 
     java.util.Optional<EventOccurrence> findFirstByEventId(Long eventId);
+
+    @EntityGraph(attributePaths = {"event", "event.specialist", "event.specialist.user", "location", "location.city", "meetingLink"})
+    @Query("select occurrence from EventOccurrence occurrence where occurrence.id = :id")
+    Optional<EventOccurrence> findManagementById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"location", "location.city", "meetingLink"})
+    List<EventOccurrence> findByEventIdOrderByStartsAtAsc(Long eventId);
 
     @EntityGraph(attributePaths = {"location", "location.city"})
     @Query("""

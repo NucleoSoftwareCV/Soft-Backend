@@ -52,6 +52,9 @@ CLAUDE.local.md
 *.xls
 *.inspect.ndjson
 
+# Runtime uploaded media
+/images/
+
 # Local DB backups
 outputs/**/*.sql
 *.dump

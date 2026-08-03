@@ -102,7 +102,7 @@ class CategoryAdminIntegrationTest {
         userRepository.save(adminUser);
 
         // Login as admin
-        String loginResponse = mockMvc.perform(post("/api/auth/login")
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
