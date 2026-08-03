@@ -37,7 +37,7 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("public")
                 .pathsToMatch(
-                        "/api/v1/auth/**",
+                        "/api/auth/**",
                         "/api/v1/categories/**",
                         "/api/v1/locations/**",
                         "/api/v1/cities/**",
@@ -48,6 +48,7 @@ public class OpenApiConfig {
                         "/api/v1/events/{id}",
                         "/api/v1/home/**"
                 )
+                .pathsToExclude("/api/v1/auth/admin/**")
                 .addOpenApiCustomizer(openApi -> {
                     openApi.setSecurity(java.util.Collections.emptyList());
                     if (openApi.getPaths() != null) {
@@ -85,13 +86,17 @@ public class OpenApiConfig {
                 .group("protected")
                 .pathsToMatch("/api/**")
                 .pathsToExclude(
-                        "/api/v1/auth/**",
+                        "/api/auth/**",
                         "/api/v1/categories/**",
                         "/api/v1/locations/**",
                         "/api/v1/home/**"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     if (openApi.getPaths() != null) {
+                        var adminLogin = openApi.getPaths().get("/api/v1/auth/admin/login");
+                        if (adminLogin != null && adminLogin.getPost() != null) {
+                            adminLogin.getPost().setSecurity(java.util.Collections.emptyList());
+                        }
                         openApi.getPaths().forEach((path, pathItem) -> {
                             if (path.startsWith("/api/v1/one-to-one-services")) {
                                 if (!path.equals("/api/v1/one-to-one-services/my-services")) {
@@ -99,7 +104,12 @@ public class OpenApiConfig {
                                 }
                             }
                             if (path.startsWith("/api/v1/events")) {
-                                pathItem.setGet(null);
+                                if (path.equals("/api/v1/events")
+                                        || path.equals("/api/v1/events/{id}")
+                                        || path.equals("/api/v1/events/{id}/similar")
+                                        || path.equals("/api/v1/events/{id}/organizer-events")) {
+                                    pathItem.setGet(null);
+                                }
                             }
                         });
                     }

@@ -239,6 +239,33 @@ public class EventDataSeeder {
         seedCover(event13, "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4");
     }
 
+    @Transactional
+    public void seedProfessionalDemo(
+            Category category,
+            Location location,
+            SpecialistProfile profile) {
+        Event event = seedEvent(
+                "Encuentro demo de bienestar consciente",
+                "Evento publicado para probar la gestion desde el portal profesional.",
+                "Encuentro practico de demostracion con movimiento suave, respiracion y cierre consciente.",
+                EventModality.PRESENCIAL,
+                35.00,
+                "EUR",
+                (short) 18,
+                category,
+                profile,
+                EventType.TALLER,
+                false);
+        seedOccurrence(
+                event,
+                location,
+                futureInstant(10, 18, 0),
+                futureInstant(10, 20, 0),
+                18,
+                null);
+        seedCover(event, "https://images.unsplash.com/photo-1506126613408-eca07ce68773");
+    }
+
     private Event seedEvent(
             String title,
             String summary,

@@ -7,9 +7,14 @@ import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.event.dto.request.CreateEventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
+import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceRequest;
+import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceStatusUpdateRequest;
+import com.hean.consigueventas.oonabe.event.dto.request.EventStatusUpdateRequest;
+import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.CreateEventResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventManagementResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -37,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 public class EventService {
@@ -79,7 +85,7 @@ public class EventService {
     }
 
     @Transactional
-    public CreateEventResponse create(CreateEventUpsertRequest request) {
+    public CreateEventResponse create(CreateEventUpsertRequest request, Long userId, boolean admin) {
         Event event = eventMapper.toEntity(request.event());
         event.setCurrency(request.event().currency().toUpperCase(Locale.ROOT));
 
@@ -87,21 +93,14 @@ public class EventService {
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada con ID: " + request.event().categoryId()));
         event.setCategory(category);
 
-        SpecialistProfile specialist = specialistProfileRepository.findById(request.event().specialistId())
-                .orElseThrow(() -> new ResourceNotFoundException("Especialista no encontrado con ID: " + request.event().specialistId()));
+        SpecialistProfile specialist = resolveManagedSpecialist(request.event().specialistId(), userId, admin);
         event.setSpecialist(specialist);
 
         Event savedEvent = eventRepository.save(event);
         EventOccurrence occurrence = occurrenceMapper.toEntity(request.occurrence());
         occurrence.setEvent(savedEvent);
-
-        if (request.event().modality() == EventModality.ONLINE) {
-            processOnlineEvent(occurrence, request);
-        } else if (request.event().modality() == EventModality.PRESENCIAL) {
-            processInPersonEvent(occurrence, request);
-        }
-
-        EventOccurrence savedOccurrence = occurrenceRepository.save(occurrence);
+        configureOccurrence(occurrence, savedEvent, request.occurrence());
+        EventOccurrence savedOccurrence = persistOccurrence(occurrence);
         EventResponse eventResponse = eventMapper.toResponse(savedEvent);
         EventOccurrenceResponse occurrenceResponse = occurrenceMapper.toResponse(savedOccurrence);
 
@@ -110,6 +109,86 @@ public class EventService {
                 occurrenceResponse,
                 "Evento creado exitosamente"
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EventManagementResponse> getMyEvents(Long userId, Pageable pageable) {
+        return eventRepository.findBySpecialistUserId(userId, pageable)
+                .map(this::toManagementResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public EventManagementResponse getManagementEvent(Long id, Long userId, boolean admin) {
+        return toManagementResponse(getManagedEvent(id, userId, admin));
+    }
+
+    @Transactional
+    public EventManagementResponse updateEvent(
+            Long id,
+            EventUpsertRequest request,
+            Long userId,
+            boolean admin) {
+        Event event = getManagedEvent(id, userId, admin);
+        eventMapper.updateEntity(request, event);
+        event.setCurrency(request.currency().toUpperCase(Locale.ROOT));
+        event.setCategory(categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Categoria no encontrada con ID: " + request.categoryId())));
+        if (admin && !event.getSpecialist().getId().equals(request.specialistId())) {
+            event.setSpecialist(specialistProfileRepository.findById(request.specialistId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Especialista no encontrado con ID: " + request.specialistId())));
+        }
+        return toManagementResponse(eventRepository.save(event));
+    }
+
+    @Transactional
+    public EventManagementResponse updateEventStatus(
+            Long id,
+            EventStatusUpdateRequest request,
+            Long userId,
+            boolean admin) {
+        Event event = getManagedEvent(id, userId, admin);
+        event.setStatus(request.status());
+        return toManagementResponse(eventRepository.save(event));
+    }
+
+    @Transactional
+    public EventOccurrenceResponse addOccurrence(
+            Long eventId,
+            EventOccurrenceRequest request,
+            Long userId,
+            boolean admin) {
+        Event event = getManagedEvent(eventId, userId, admin);
+        EventOccurrence occurrence = occurrenceMapper.toEntity(request);
+        occurrence.setEvent(event);
+        configureOccurrence(occurrence, event, request);
+        return occurrenceMapper.toResponse(persistOccurrence(occurrence));
+    }
+
+    @Transactional
+    public EventOccurrenceResponse updateOccurrence(
+            Long occurrenceId,
+            EventOccurrenceRequest request,
+            Long userId,
+            boolean admin) {
+        EventOccurrence occurrence = getManagedOccurrence(occurrenceId, userId, admin);
+        occurrence.setStartsAt(request.startsAt());
+        occurrence.setEndsAt(request.endsAt());
+        occurrence.setCapacity(request.capacity());
+        configureOccurrence(occurrence, occurrence.getEvent(), request);
+        return occurrenceMapper.toResponse(persistOccurrence(occurrence));
+    }
+
+    @Transactional
+    public EventOccurrenceResponse updateOccurrenceStatus(
+            Long occurrenceId,
+            EventOccurrenceStatusUpdateRequest request,
+            Long userId,
+            boolean admin) {
+        EventOccurrence occurrence = getManagedOccurrence(occurrenceId, userId, admin);
+        occurrence.setStatus(request.status());
+        return occurrenceMapper.toResponse(occurrenceRepository.save(occurrence));
     }
 
     @Transactional(readOnly = true)
@@ -158,6 +237,90 @@ public class EventService {
                 .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con ID: " + id));
     }
 
+    private Event getManagedEvent(Long id, Long userId, boolean admin) {
+        Event event = eventRepository.findDetailById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con ID: " + id));
+        if (!admin && !event.getSpecialist().getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("No puedes gestionar eventos de otro profesional.");
+        }
+        return event;
+    }
+
+    private EventOccurrence getManagedOccurrence(Long id, Long userId, boolean admin) {
+        EventOccurrence occurrence = occurrenceRepository.findManagementById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ocurrencia no encontrada con ID: " + id));
+        if (!admin && !occurrence.getEvent().getSpecialist().getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("No puedes gestionar ocurrencias de otro profesional.");
+        }
+        return occurrence;
+    }
+
+    private SpecialistProfile resolveManagedSpecialist(Long requestedId, Long userId, boolean admin) {
+        if (admin) {
+            return specialistProfileRepository.findById(requestedId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Especialista no encontrado con ID: " + requestedId));
+        }
+        SpecialistProfile specialist = specialistProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El usuario autenticado no tiene perfil profesional."));
+        if (!specialist.getId().equals(requestedId)) {
+            throw new AccessDeniedException("No puedes crear eventos para otro profesional.");
+        }
+        return specialist;
+    }
+
+    private EventManagementResponse toManagementResponse(Event event) {
+        List<EventOccurrenceResponse> occurrences = occurrenceRepository
+                .findByEventIdOrderByStartsAtAsc(event.getId())
+                .stream()
+                .map(occurrenceMapper::toResponse)
+                .toList();
+        return new EventManagementResponse(
+                eventMapper.toDetailResponse(event),
+                event.getStatus(),
+                event.getSpecialist().getId(),
+                occurrences);
+    }
+
+    private void configureOccurrence(
+            EventOccurrence occurrence,
+            Event event,
+            EventOccurrenceRequest request) {
+        occurrence.setLocation(null);
+        occurrence.setMeetingLink(null);
+        if (event.getModality() == EventModality.ONLINE) {
+            if (request.meetingLink() == null) {
+                throw new BusinessLogicException(
+                        "Los datos de la reunion son obligatorios para eventos online.");
+            }
+            MeetingLink link = meetingLinkMapper.toEntity(request.meetingLink());
+            link.setEventOccurrence(occurrence);
+            occurrence.setMeetingLink(link);
+        } else {
+            if (request.location() == null) {
+                throw new BusinessLogicException(
+                        "Los datos de la ubicacion son obligatorios para eventos presenciales.");
+            }
+            Location location = locationMapper.toEntity(request.location());
+            occurrence.setLocation(locationRepository.save(location));
+        }
+    }
+
+    private EventOccurrence persistOccurrence(EventOccurrence occurrence) {
+        MeetingLink link = occurrence.getMeetingLink();
+        if (link == null) {
+            return occurrenceRepository.save(occurrence);
+        }
+
+        occurrence.setMeetingLink(null);
+        EventOccurrence saved = occurrenceRepository.save(occurrence);
+        link.setEventOccurrence(saved);
+        MeetingLink savedLink = meetingLinkRepository.save(link);
+        saved.setMeetingLink(savedLink);
+        return occurrenceRepository.save(saved);
+    }
+
     private Specification<Event> orderByStartsAtIfRequested(Pageable pageable) {
         Sort.Order startsAtOrder = startsAtOrder(pageable);
         return startsAtOrder == null
@@ -182,25 +345,4 @@ public class EventService {
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
 
-    private void processOnlineEvent(EventOccurrence occurrence, CreateEventUpsertRequest request) {
-        if (request.occurrence().meetingLink() == null) {
-            throw new BusinessLogicException("Los datos de la reunion son obligatorios para eventos online.");
-        }
-
-        MeetingLink link = meetingLinkMapper.toEntity(request.occurrence().meetingLink());
-        link.setEventOccurrence(occurrence);
-
-        meetingLinkRepository.save(link);
-        occurrence.setMeetingLink(link);
-    }
-
-    private void processInPersonEvent(EventOccurrence occurrence, CreateEventUpsertRequest request) {
-        if (request.occurrence().location() == null) {
-            throw new BusinessLogicException("Los datos de la ubicacion son obligatorios para eventos presenciales.");
-        }
-
-        Location location = locationMapper.toEntity(request.occurrence().location());
-        locationRepository.save(location);
-        occurrence.setLocation(location);
-    }
 }

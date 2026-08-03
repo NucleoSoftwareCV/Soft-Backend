@@ -164,6 +164,46 @@ class AuthFlowIntegrationTest {
     }
 
     @Test
+    void adminLoginOnlyAcceptsAdministrativeAccounts() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/admin/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin1@oona.es",
+                                  "password": "Admin1@"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
+                .andExpect(jsonPath("$.token", not("")));
+
+        mockMvc.perform(post("/api/v1/auth/admin/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "user1@oona.es",
+                                  "password": "User1?"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("No tienes permisos para realizar esta accion."));
+    }
+
+    @Test
+    void publicLoginRejectsAdministrativeAccounts() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin1@oona.es",
+                                  "password": "Admin1@"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("No tienes permisos para realizar esta accion."));
+    }
+
+    @Test
     void protectedEndpointWithoutJwtReturnsUnauthorizedOrForbidden() throws Exception {
         mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isUnauthorized());

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.profileProfesional.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.Set;
@@ -19,10 +20,16 @@ public record SpecialistProfilePartialUpdateRequest(
         @Size(max = 5000, message = "La descripción no puede superar los 5000 caracteres")
         String description,
 
-        @Size(max = 25, message = "El número de WhatsApp no puede superar los 25 caracteres")
+        @Pattern(
+                regexp = "^$|^\\+[0-9]{2} ?[0-9]{9}$",
+                message = "WhatsApp debe incluir el prefijo internacional y exactamente 9 dígitos, por ejemplo +51 928037195"
+        )
         String whatsappPhone,
 
-        @Size(max = 25, message = "El número celular no puede superar los 25 caracteres")
+        @Pattern(
+                regexp = "^$|^[0-9]{9}$",
+                message = "El teléfono debe contener exactamente 9 dígitos"
+        )
         String phoneNumber,
 
         @Email(message = "El correo electrónico no es válido")

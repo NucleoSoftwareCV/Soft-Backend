@@ -27,6 +27,7 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
                 .andExpect(jsonPath("$.paths['/api/auth/login'].post.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/auth/google'].post.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/admin/login'].post.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/categories'].get.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/event-occurrences'].get.summary").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/cities'].get.summary").exists())
@@ -98,5 +99,31 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/professional-applications/me'].get.security[0].bearerAuth").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/professional-applications'].get.security[0].bearerAuth").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/professional-applications/{id}/decision'].patch.security[0].bearerAuth").exists());
+    }
+
+    @Test
+    void protectedOpenApiDocumentsProfessionalEventManagement() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/protected"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/events/my-events'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}/management'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}'].put.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}/status'].patch.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/events/{id}/occurrences'].post.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/event-occurrences/{id}'].put.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/event-occurrences/{id}/status'].patch.security[0].bearerAuth").exists());
+    }
+
+    @Test
+    void protectedOpenApiDocumentsErpLoginOutsidePublicGroup() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/protected"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/admin/login'].post.summary").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/admin/login'].post.security").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/admin/login'].post.security").isEmpty());
+
+        mockMvc.perform(get("/v3/api-docs/public"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/admin/login']").doesNotExist());
     }
 }

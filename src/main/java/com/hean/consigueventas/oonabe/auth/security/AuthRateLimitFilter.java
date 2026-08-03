@@ -63,9 +63,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return false;
         }
         String path = request.getRequestURI();
-        return path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/auth/register")
-                || path.equals("/api/v1/auth/refresh-token");
+        return path.equals("/api/auth/login")
+                || path.equals("/api/auth/register")
+                || path.equals("/api/auth/refresh-token")
+                || path.equals("/api/v1/auth/admin/login");
     }
 
     private String clientKey(HttpServletRequest request) {
