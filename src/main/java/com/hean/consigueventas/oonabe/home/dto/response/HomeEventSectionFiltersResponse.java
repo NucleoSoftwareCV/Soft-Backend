@@ -1,6 +1,5 @@
 package com.hean.consigueventas.oonabe.home.dto.response;
 
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -12,7 +11,7 @@ public record HomeEventSectionFiltersResponse(
         List<Long> categoryIds,
 
         @Schema(description = "Tipo de experiencia")
-        EventType eventType,
+        Long experienceTypeId,
 
         @Schema(description = "Fecha inicial inclusiva")
         LocalDate dateFrom,

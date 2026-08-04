@@ -33,6 +33,7 @@ class EventRequestValidationTest {
                 (short) 121,
                 false,
                 1L,
+                1L,
                 1L);
 
         assertThat(validator.validate(request))

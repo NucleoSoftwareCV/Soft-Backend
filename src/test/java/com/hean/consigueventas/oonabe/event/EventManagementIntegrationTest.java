@@ -6,6 +6,7 @@ import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
+import com.hean.consigueventas.oonabe.experienceType.repository.ExperienceTypeRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
@@ -45,6 +46,9 @@ class EventManagementIntegrationTest {
     private CategoryRepository categoryRepository;
 
     @Autowired
+    private ExperienceTypeRepository experienceTypeRepository;
+
+    @Autowired
     private SpecialistProfileRepository specialistProfileRepository;
 
     @Autowired
@@ -57,6 +61,7 @@ class EventManagementIntegrationTest {
                 .orElseThrow()
                 .getId();
         Long categoryId = categoryRepository.findByActiveTrueOrderByNameAsc().getFirst().getId();
+        Long experienceTypeId = experienceTypeRepository.findByActiveTrueOrderByNameAsc().getFirst().getId();
 
         MvcResult creationResult = mockMvc.perform(post("/api/v1/events")
                         .with(user(professional))
@@ -76,6 +81,7 @@ class EventManagementIntegrationTest {
                                     "minimumAge": 18,
                                     "featured": false,
                                     "categoryId": %d,
+                                    "experienceTypeId": %d,
                                     "specialistId": %d
                                   },
                                   "occurrence": {
@@ -89,7 +95,7 @@ class EventManagementIntegrationTest {
                                     }
                                   }
                                 }
-                                """.formatted(categoryId, specialistId)))
+                                """.formatted(categoryId, experienceTypeId, specialistId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.event.id").isNumber())
                 .andExpect(jsonPath("$.occurrence.meetingLink.meetingUrl")

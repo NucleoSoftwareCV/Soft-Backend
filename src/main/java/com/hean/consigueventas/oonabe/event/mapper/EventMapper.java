@@ -33,7 +33,7 @@ public interface EventMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "eventType", ignore = true)
+    @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
     Event toEntity(EventUpsertRequest request);
 
@@ -46,7 +46,7 @@ public interface EventMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "eventType", ignore = true)
+    @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
     void updateEntity(EventUpsertRequest request, @MappingTarget Event event);
 
@@ -65,12 +65,17 @@ public interface EventMapper {
 
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "experienceTypeId", source = "experienceType.id")
+    @Mapping(target = "eventType", source = "experienceType.name")
+    @Mapping(target = "experienceTypeSlug", source = "experienceType.slug")
     EventResponse toResponse(Event event);
 
     @Mapping(target = "organizer", source = "specialist")
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
-    @Mapping(target = "eventType", source = "eventType")
+    @Mapping(target = "experienceTypeId", source = "experienceType.id")
+    @Mapping(target = "eventType", source = "experienceType.name")
+    @Mapping(target = "experienceTypeSlug", source = "experienceType.slug")
     @Mapping(target = "isRecurring", source = "recurring")
     EventDetailResponse toDetailResponse(Event event);
 
@@ -78,6 +83,9 @@ public interface EventMapper {
 
     @Mapping(target = "categoryId", source = "event.category.id")
     @Mapping(target = "categoryName", source = "event.category.name")
+    @Mapping(target = "experienceTypeId", source = "event.experienceType.id")
+    @Mapping(target = "eventType", source = "event.experienceType.name")
+    @Mapping(target = "experienceTypeSlug", source = "event.experienceType.slug")
     @Mapping(target = "organizerId", source = "event.specialist.id")
     @Mapping(target = "organizerName", source = "event.specialist.publicName")
     @Mapping(target = "organizerPhotoUrl", source = "event.specialist.photoUrl")

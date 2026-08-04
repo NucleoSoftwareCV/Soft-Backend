@@ -3,12 +3,12 @@ package com.hean.consigueventas.oonabe.home.service;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.service.EventCardAssembler;
 import com.hean.consigueventas.oonabe.event.specification.EventSpecification;
+import com.hean.consigueventas.oonabe.experienceType.repository.ExperienceTypeRepository;
 import com.hean.consigueventas.oonabe.home.dto.response.HomeEventSectionFiltersResponse;
 import com.hean.consigueventas.oonabe.home.dto.response.HomeEventSectionKey;
 import com.hean.consigueventas.oonabe.home.dto.response.HomeEventSectionResponse;
@@ -41,6 +41,7 @@ public class HomeEventSectionService {
 
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
+    private final ExperienceTypeRepository experienceTypeRepository;
     private final EventCardAssembler eventCardAssembler;
     private final HomeEventCardMapper homeEventCardMapper;
     private final Clock clock;
@@ -48,11 +49,13 @@ public class HomeEventSectionService {
     public HomeEventSectionService(
             EventRepository eventRepository,
             CategoryRepository categoryRepository,
+            ExperienceTypeRepository experienceTypeRepository,
             EventCardAssembler eventCardAssembler,
             HomeEventCardMapper homeEventCardMapper,
             Clock clock) {
         this.eventRepository = eventRepository;
         this.categoryRepository = categoryRepository;
+        this.experienceTypeRepository = experienceTypeRepository;
         this.eventCardAssembler = eventCardAssembler;
         this.homeEventCardMapper = homeEventCardMapper;
         this.clock = clock;
@@ -119,24 +122,14 @@ public class HomeEventSectionService {
             ));
         }
 
-        addIfNotEmpty(sections, queryTypeSection(
-                HomeEventSectionKey.WORKSHOPS,
-                "Talleres para vivir algo diferente",
-                EventType.TALLER,
-                today,
-                cityName,
-                now,
-                limit
-        ));
-        addIfNotEmpty(sections, queryTypeSection(
-                HomeEventSectionKey.RETREATS,
-                "Retiros e inmersiones",
-                EventType.RETIRO,
-                today,
-                cityName,
-                now,
-                limit
-        ));
+        findActiveExperienceTypeId("talleres").ifPresent(typeId ->
+                addIfNotEmpty(sections, queryTypeSection(
+                        HomeEventSectionKey.WORKSHOPS, "Talleres para vivir algo diferente",
+                        typeId, today, cityName, now, limit)));
+        findActiveExperienceTypeId("retiros").ifPresent(typeId ->
+                addIfNotEmpty(sections, queryTypeSection(
+                        HomeEventSectionKey.RETREATS, "Retiros e inmersiones",
+                        typeId, today, cityName, now, limit)));
 
         return new HomeEventSectionsResponse(cityName, List.copyOf(sections));
     }
@@ -162,7 +155,7 @@ public class HomeEventSectionService {
     private HomeEventSectionResponse queryTypeSection(
             HomeEventSectionKey key,
             String title,
-            EventType eventType,
+            Long experienceTypeId,
             LocalDate today,
             String cityName,
             Instant now,
@@ -170,9 +163,9 @@ public class HomeEventSectionService {
         return querySection(
                 key,
                 title,
-                filters(List.of(), eventType, new HomeDateRanges.DateRange(today, null), cityName),
+                filters(List.of(), experienceTypeId, new HomeDateRanges.DateRange(today, null), cityName),
                 baseSpecification(cityName, now, null)
-                        .and(EventSpecification.hasEventType(eventType)),
+                        .and(EventSpecification.hasExperienceType(experienceTypeId)),
                 limit
         );
     }
@@ -227,12 +220,12 @@ public class HomeEventSectionService {
 
     private HomeEventSectionFiltersResponse filters(
             List<Long> categoryIds,
-            EventType eventType,
+            Long experienceTypeId,
             HomeDateRanges.DateRange range,
             String cityName) {
         return new HomeEventSectionFiltersResponse(
                 categoryIds,
-                eventType,
+                experienceTypeId,
                 range.from(),
                 range.to(),
                 cityName,
@@ -243,6 +236,10 @@ public class HomeEventSectionService {
     private Optional<Long> findActiveCategoryId(String slug) {
         return categoryRepository.findBySlugAndActiveTrue(slug)
                 .map(category -> category.getId());
+    }
+
+    private Optional<Long> findActiveExperienceTypeId(String slug) {
+        return experienceTypeRepository.findBySlugAndActiveTrue(slug).map(type -> type.getId());
     }
 
     private void addIfNotEmpty(

@@ -3,7 +3,7 @@ package com.hean.consigueventas.oonabe.event.entity;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import jakarta.persistence.*;
@@ -76,9 +76,9 @@ public class Event {
     @Column(name = "featured", nullable = false)
     private boolean featured;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", length = 25)
-    private EventType eventType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "experience_type_id")
+    private ExperienceType experienceType;
 
     @Column(name = "is_recurring", nullable = false)
     private boolean isRecurring = false;

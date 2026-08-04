@@ -1,7 +1,6 @@
 package com.hean.consigueventas.oonabe.event.dto.request;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
@@ -30,7 +29,7 @@ public record EventFilterRequest(
         List<Long> categoryIds,
 
         @Schema(description = "Tipo de experiencia")
-        EventType eventType,
+        Long experienceTypeId,
 
         @Schema(description = "Modalidad del evento (ONLINE o PRESENCIAL)")
         EventModality modality,

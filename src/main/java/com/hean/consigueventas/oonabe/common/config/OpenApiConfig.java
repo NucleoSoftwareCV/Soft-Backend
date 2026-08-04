@@ -38,7 +38,8 @@ public class OpenApiConfig {
                 .group("public")
                 .pathsToMatch(
                         "/api/auth/**",
-                        "/api/v1/categories/**",
+                        "/api/v1/categories",
+                        "/api/v1/experience-types",
                         "/api/v1/locations/**",
                         "/api/v1/cities/**",
                         "/api/v1/one-to-one-services",
@@ -60,6 +61,18 @@ public class OpenApiConfig {
                                 pathItem.setDelete(null);
                             }
                             if (path.startsWith("/api/v1/events")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                            if (path.equals("/api/v1/experience-types")) {
+                                pathItem.setPost(null);
+                                pathItem.setPut(null);
+                                pathItem.setPatch(null);
+                                pathItem.setDelete(null);
+                            }
+                            if (path.equals("/api/v1/categories")) {
                                 pathItem.setPost(null);
                                 pathItem.setPut(null);
                                 pathItem.setPatch(null);
@@ -87,7 +100,6 @@ public class OpenApiConfig {
                 .pathsToMatch("/api/**")
                 .pathsToExclude(
                         "/api/auth/**",
-                        "/api/v1/categories/**",
                         "/api/v1/locations/**",
                         "/api/v1/home/**"
                 )
@@ -98,6 +110,12 @@ public class OpenApiConfig {
                             adminLogin.getPost().setSecurity(java.util.Collections.emptyList());
                         }
                         openApi.getPaths().forEach((path, pathItem) -> {
+                            if (path.equals("/api/v1/experience-types")) {
+                                pathItem.setGet(null);
+                            }
+                            if (path.equals("/api/v1/categories")) {
+                                pathItem.setGet(null);
+                            }
                             if (path.startsWith("/api/v1/one-to-one-services")) {
                                 if (!path.equals("/api/v1/one-to-one-services/my-services")) {
                                     pathItem.setGet(null);

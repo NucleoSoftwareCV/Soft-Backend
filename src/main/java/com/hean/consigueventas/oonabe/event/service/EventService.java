@@ -27,6 +27,8 @@ import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.event.specification.EventSpecification;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
+import com.hean.consigueventas.oonabe.experienceType.repository.ExperienceTypeRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
@@ -52,6 +54,7 @@ public class EventService {
     private final MeetingLinkRepository meetingLinkRepository;
     private final LocationRepository locationRepository;
     private final CategoryRepository categoryRepository;
+    private final ExperienceTypeRepository experienceTypeRepository;
     private final SpecialistProfileRepository specialistProfileRepository;
 
     private final EventMapper eventMapper;
@@ -65,6 +68,7 @@ public class EventService {
                         MeetingLinkRepository meetingLinkRepository,
                         LocationRepository locationRepository,
                         CategoryRepository categoryRepository,
+                        ExperienceTypeRepository experienceTypeRepository,
                         SpecialistProfileRepository specialistProfileRepository,
                         EventMapper eventMapper,
                         EventOccurrenceMapper occurrenceMapper,
@@ -76,6 +80,7 @@ public class EventService {
         this.meetingLinkRepository = meetingLinkRepository;
         this.locationRepository = locationRepository;
         this.categoryRepository = categoryRepository;
+        this.experienceTypeRepository = experienceTypeRepository;
         this.specialistProfileRepository = specialistProfileRepository;
         this.eventMapper = eventMapper;
         this.occurrenceMapper = occurrenceMapper;
@@ -89,9 +94,8 @@ public class EventService {
         Event event = eventMapper.toEntity(request.event());
         event.setCurrency(request.event().currency().toUpperCase(Locale.ROOT));
 
-        Category category = categoryRepository.findById(request.event().categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada con ID: " + request.event().categoryId()));
-        event.setCategory(category);
+        event.setCategory(resolveActiveCategory(request.event().categoryId()));
+        event.setExperienceType(resolveActiveExperienceType(request.event().experienceTypeId()));
 
         SpecialistProfile specialist = resolveManagedSpecialist(request.event().specialistId(), userId, admin);
         event.setSpecialist(specialist);
@@ -131,9 +135,8 @@ public class EventService {
         Event event = getManagedEvent(id, userId, admin);
         eventMapper.updateEntity(request, event);
         event.setCurrency(request.currency().toUpperCase(Locale.ROOT));
-        event.setCategory(categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Categoria no encontrada con ID: " + request.categoryId())));
+        event.setCategory(resolveActiveCategory(request.categoryId()));
+        event.setExperienceType(resolveActiveExperienceType(request.experienceTypeId()));
         if (admin && !event.getSpecialist().getId().equals(request.specialistId())) {
             event.setSpecialist(specialistProfileRepository.findById(request.specialistId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -268,6 +271,26 @@ public class EventService {
             throw new AccessDeniedException("No puedes crear eventos para otro profesional.");
         }
         return specialist;
+    }
+
+    private ExperienceType resolveActiveExperienceType(Long id) {
+        ExperienceType type = experienceTypeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Tipo de experiencia no encontrado con ID: " + id));
+        if (!type.isActive()) {
+            throw new BusinessLogicException("El tipo de experiencia seleccionado esta inactivo.");
+        }
+        return type;
+    }
+
+    private Category resolveActiveCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Categoria no encontrada con ID: " + id));
+        if (!category.isActive()) {
+            throw new BusinessLogicException("La categoria seleccionada esta inactiva.");
+        }
+        return category;
     }
 
     private EventManagementResponse toManagementResponse(Event event) {

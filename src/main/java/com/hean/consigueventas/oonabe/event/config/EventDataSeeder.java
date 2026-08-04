@@ -4,7 +4,6 @@ import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.common.enums.ImageFormat;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -15,6 +14,8 @@ import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
+import com.hean.consigueventas.oonabe.experienceType.repository.ExperienceTypeRepository;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,7 @@ public class EventDataSeeder {
     private final EventOccurrenceRepository occurrenceRepository;
     private final MeetingLinkRepository meetingLinkRepository;
     private final EventImageRepository eventImageRepository;
+    private final ExperienceTypeRepository experienceTypeRepository;
     private final Clock clock;
 
     public EventDataSeeder(
@@ -41,11 +43,13 @@ public class EventDataSeeder {
             EventOccurrenceRepository occurrenceRepository,
             MeetingLinkRepository meetingLinkRepository,
             EventImageRepository eventImageRepository,
+            ExperienceTypeRepository experienceTypeRepository,
             Clock clock) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
         this.eventImageRepository = eventImageRepository;
+        this.experienceTypeRepository = experienceTypeRepository;
         this.clock = clock;
     }
 
@@ -69,7 +73,7 @@ public class EventDataSeeder {
                 "Aprende las opciones más frescas para portear a tu bebé cuando hace calor.",
                 "Taller de porteo ergonómico edición verano. En este taller veremos las opciones más frescas para portear a tu bebé cuando hace calor. Si estás embarazada es el mejor momento para informarte.",
                 EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna,
-                EventType.TALLER, false);
+                "talleres", false);
         seedOccurrence(event1, null,
                 futureInstant(1, 12, 0), futureInstant(1, 13, 30), 20,
                 "https://zoom.us/j/9876543210?pwd=secretZoomPassword123");
@@ -83,7 +87,7 @@ public class EventDataSeeder {
                 "Una experiencia de pilates en suspensión para trabajar fuerza y flexibilidad.",
                 "Descubre los beneficios del pilates aéreo trabajando con columpios especiales. Una clase que desafía tu equilibrio y fortalece todo tu core de forma divertida y segura.",
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos,
-                EventType.CLASE, true);
+                "clases", true);
         seedOccurrence(event2, loc1,
                 futureInstant(2, 15, 0), futureInstant(2, 16, 30), 15, null);
         seedEventDetailSections(event2,
@@ -96,7 +100,7 @@ public class EventDataSeeder {
                 "Meditación vibracional flotando sobre el agua durante la puesta de sol.",
                 "Una experiencia única que combina el equilibrio y la relajación del Paddle Surf con las vibraciones armónicas de los cuencos tibetanos y gongs al atardecer.",
                 EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos,
-                EventType.CEREMONIA, false);
+                "ceremonias", false);
         seedOccurrence(event3, loc2,
                 futureInstant(3, 17, 30), futureInstant(3, 19, 0), 10, null);
         seedEventDetailSections(event3,
@@ -109,7 +113,7 @@ public class EventDataSeeder {
                 "Aprende técnicas avanzadas de respiración y sumérgete en tina de hielo.",
                 "Taller práctico de respiración consciente combinado con la inmersión en tina de hielo. Aprende a dominar tu mente, controlar tu sistema nervioso y potenciar tu sistema inmune.",
                 EventModality.PRESENCIAL, 45.00, "EUR", (short) 18, catHielo, profileAna,
-                EventType.TALLER, false);
+                "talleres", false);
         seedOccurrence(event4, loc1,
                 futureInstant(4, 10, 0), futureInstant(4, 12, 0), 12, null);
         seedEventDetailSections(event4,
@@ -122,7 +126,7 @@ public class EventDataSeeder {
                 "Práctica fluida y dinámica de Vinyasa Yoga conectando respiración y movimiento en la playa.",
                 "Disfruta de una sesión de Yoga Vinyasa al aire libre. Fluiremos de postura a postura guiados por la respiración para revitalizar el cuerpo y calmar la mente en un entorno natural.",
                 EventModality.PRESENCIAL, 15.00, "EUR", (short) 12, catYoga, profileCarlos,
-                EventType.CLASE, true);
+                "clases", true);
         seedOccurrence(event5, loc1,
                 futureInstant(5, 9, 0), futureInstant(5, 10, 30), 25, null);
         seedEventDetailSections(event5,
@@ -135,7 +139,7 @@ public class EventDataSeeder {
                 "Aprende las bases teóricas y prácticas para establecer una práctica de meditación diaria.",
                 "En este encuentro online aprenderás el origen, los beneficios científicos y las técnicas fundamentales de la meditación trascendental para reducir el ruido mental.",
                 EventModality.ONLINE, 15.00, "EUR", (short) 16, catMeditacion, profileAna,
-                EventType.ENCUENTRO_GRUPAL, false);
+                "encuentros-grupales", false);
         seedOccurrence(event6, null,
                 futureInstant(1, 18, 0), futureInstant(1, 19, 30), 50,
                 "https://zoom.us/j/1112223333?pwd=meditationPass456");
@@ -149,7 +153,7 @@ public class EventDataSeeder {
                 "Organiza tus comidas de la semana comiendo sano, rico y de forma balanceada.",
                 "Aprende a planificar un menú saludable y a cocinar en un solo bloque de tiempo (batch cooking) con recetas sencillas y nutritivas para toda la semana.",
                 EventModality.ONLINE, 25.00, "EUR", (short) 18, catNutricion, profileAna,
-                EventType.TALLER, false);
+                "talleres", false);
         seedOccurrence(event7, null,
                 futureInstant(2, 19, 0), futureInstant(2, 21, 0), 30,
                 "https://zoom.us/j/4445556666?pwd=nutritionPass789");
@@ -159,7 +163,7 @@ public class EventDataSeeder {
                 "Un día entero de desconexión y presencia plena en el parque del Retiro.",
                 "Una jornada dedicada al cultivo de la atención plena a través de caminatas conscientes, prácticas de escaneo corporal y meditaciones en grupo en medio de la naturaleza.",
                 EventModality.PRESENCIAL, 60.00, "EUR", (short) 18, catMeditacion, profileCarlos,
-                EventType.RETIRO, false);
+                "retiros", false);
         seedOccurrence(event8, loc1,
                 futureInstant(3, 10, 0), futureInstant(3, 17, 0), 15, null);
 
@@ -168,7 +172,7 @@ public class EventDataSeeder {
                 "Relajación profunda a través del sonido sagrado y las vibraciones del gong.",
                 "Sumérgete en un océano de vibraciones terapéuticas. Los gongs y los cuencos de cuarzo te guiarán a un estado meditativo profundo para restaurar tu energía vital.",
                 EventModality.PRESENCIAL, 25.00, "EUR", (short) 16, catSonido, profileCarlos,
-                EventType.CEREMONIA, true);
+                "ceremonias", true);
         seedOccurrence(event9, loc1,
                 futureInstant(4, 20, 0), futureInstant(4, 21, 30), 20, null);
 
@@ -177,7 +181,7 @@ public class EventDataSeeder {
                 "Practica suave de yoga restaurativo para relajar cuerpo y mente.",
                 "Una sesion pausada con posturas sostenidas, respiracion consciente y cierre meditativo para liberar tension acumulada.",
                 EventModality.PRESENCIAL, 18.00, "EUR", (short) 14, catYoga, profileAna,
-                EventType.CLASE, false);
+                "clases", false);
         seedOccurrence(event10, loc2,
                 futureInstant(5, 9, 0), futureInstant(5, 10, 15), 18, null);
         seedEventDetailSections(event10,
@@ -190,7 +194,7 @@ public class EventDataSeeder {
                 "Experiencia de sonido meditativo para descanso y claridad.",
                 "Encuentro de escucha profunda con cuencos de cuarzo, respiracion guiada y relajacion corporal.",
                 EventModality.PRESENCIAL, 22.00, "EUR", (short) 16, catSonido, profileAna,
-                EventType.CEREMONIA, false);
+                "ceremonias", false);
         seedOccurrence(event11, loc2,
                 futureInstant(6, 19, 0), futureInstant(6, 20, 15), 16, null);
         seedEventDetailSections(event11,
@@ -203,7 +207,7 @@ public class EventDataSeeder {
                 "Clase suave para reconectar con el cuerpo despues del embarazo.",
                 "Practicaremos movilidad, respiracion y ejercicios conscientes para recuperar confianza corporal de forma segura.",
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 18, catCuerpo, profileCarlos,
-                EventType.CLASE, false);
+                "clases", false);
         seedOccurrence(event12, loc1,
                 futureInstant(7, 11, 0), futureInstant(7, 12, 15), 12, null);
         seedEventDetailSections(event12,
@@ -216,7 +220,7 @@ public class EventDataSeeder {
                 "Movimiento guiado para desbloquear tension and activar vitalidad.",
                 "Una experiencia de movimiento libre con pautas sencillas para conectar con ritmo, respiracion y presencia.",
                 EventModality.PRESENCIAL, 24.00, "EUR", (short) 16, catMovimiento, profileAna,
-                EventType.CLASE, false);
+                "clases", false);
         seedOccurrence(event13, loc3,
                 futureInstant(8, 17, 0), futureInstant(8, 18, 30), 20, null);
         seedEventDetailSections(event13,
@@ -254,7 +258,7 @@ public class EventDataSeeder {
                 (short) 18,
                 category,
                 profile,
-                EventType.TALLER,
+                "talleres",
                 false);
         seedOccurrence(
                 event,
@@ -276,9 +280,12 @@ public class EventDataSeeder {
             Short minimumAge,
             Category category,
             SpecialistProfile specialist,
-            EventType eventType,
+            String experienceTypeSlug,
             boolean isRecurring) {
         Event event = eventRepository.findByTitle(title).orElse(null);
+        ExperienceType experienceType = experienceTypeRepository.findBySlug(experienceTypeSlug)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Tipo de experiencia no sembrado: " + experienceTypeSlug));
         BigDecimal targetPrice = BigDecimal.valueOf(price);
         if (event == null) {
             Event newEvent = new Event();
@@ -291,7 +298,7 @@ public class EventDataSeeder {
             newEvent.setMinimumAge(minimumAge);
             newEvent.setStatus(EventStatus.PUBLICADO);
             newEvent.setFeatured(true);
-            newEvent.setEventType(eventType);
+            newEvent.setExperienceType(experienceType);
             newEvent.setRecurring(isRecurring);
             newEvent.setCategory(category);
             newEvent.setSpecialist(specialist);
@@ -305,7 +312,11 @@ public class EventDataSeeder {
             if (!currency.equals(event.getCurrency())) { event.setCurrency(currency); changed = true; }
             if (!minimumAge.equals(event.getMinimumAge())) { event.setMinimumAge(minimumAge); changed = true; }
             if (event.getStatus() != EventStatus.PUBLICADO) { event.setStatus(EventStatus.PUBLICADO); changed = true; }
-            if (eventType != event.getEventType()) { event.setEventType(eventType); changed = true; }
+            if (event.getExperienceType() == null
+                    || !experienceType.getId().equals(event.getExperienceType().getId())) {
+                event.setExperienceType(experienceType);
+                changed = true;
+            }
             if (isRecurring != event.isRecurring()) { event.setRecurring(isRecurring); changed = true; }
             if (category != null && (event.getCategory() == null || !category.getId().equals(event.getCategory().getId()))) { event.setCategory(category); changed = true; }
             if (specialist != null && (event.getSpecialist() == null || !specialist.getId().equals(event.getSpecialist().getId()))) { event.setSpecialist(specialist); changed = true; }

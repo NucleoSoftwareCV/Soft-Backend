@@ -1,7 +1,6 @@
 package com.hean.consigueventas.oonabe.interaction.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -29,7 +28,7 @@ public record EventFavoriteResponse(
         EventModality modality,
 
         @Schema(description = "Tipo de evento")
-        EventType eventType,
+        String eventType,
 
         @Schema(description = "Precio base del evento")
         BigDecimal priceFrom,
