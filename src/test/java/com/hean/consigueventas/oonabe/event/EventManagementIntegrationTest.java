@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.event;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -44,6 +47,9 @@ class EventManagementIntegrationTest {
     @Autowired
     private SpecialistProfileRepository specialistProfileRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
     void professionalCreatesOnlineEventWithItsFirstOccurrence() throws Exception {
         UserDetailsImpl professional = principal("specialist_ana");
@@ -52,7 +58,7 @@ class EventManagementIntegrationTest {
                 .getId();
         Long categoryId = categoryRepository.findByActiveTrueOrderByNameAsc().getFirst().getId();
 
-        mockMvc.perform(post("/api/v1/events")
+        MvcResult creationResult = mockMvc.perform(post("/api/v1/events")
                         .with(user(professional))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -87,6 +93,21 @@ class EventManagementIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.event.id").isNumber())
                 .andExpect(jsonPath("$.occurrence.meetingLink.meetingUrl")
+                        .value("https://meet.google.com/abc-defg-hij"))
+                .andReturn();
+
+        JsonNode creationResponse = objectMapper.readTree(creationResult.getResponse().getContentAsString());
+        long eventId = creationResponse.path("event").path("id").asLong();
+
+        mockMvc.perform(get("/api/v1/events/{id}/management", eventId)
+                        .with(user(professional)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.event.description")
+                        .value("Comprueba que el enlace se persiste despues de la ocurrencia."))
+                .andExpect(jsonPath("$.occurrences[0].startsAt").value("2030-08-05T15:00:00Z"))
+                .andExpect(jsonPath("$.occurrences[0].endsAt").value("2030-08-05T17:00:00Z"))
+                .andExpect(jsonPath("$.occurrences[0].capacity").value(12))
+                .andExpect(jsonPath("$.occurrences[0].meetingLink.meetingUrl")
                         .value("https://meet.google.com/abc-defg-hij"));
     }
 

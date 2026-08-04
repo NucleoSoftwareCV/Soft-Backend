@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -112,6 +113,19 @@ class OneToOneManagementIntegrationTest {
                 .andExpect(jsonPath("$.status").value(PublicationStatus.OCULTO.name()));
     }
 
+    @Test
+    void professionalCanListOwnServicesWithPublicPresentationData() throws Exception {
+        OneToOneService ownedService = serviceForSpecialist("specialist_ana");
+
+        mockMvc.perform(get("/api/v1/one-to-one-services/my-services")
+                        .with(user(principal("specialist_ana"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.hasItem(ownedService.getId().intValue())))
+                .andExpect(jsonPath("$[0].imageUrl").exists())
+                .andExpect(jsonPath("$[0].specialistPhotoUrl").exists())
+                .andExpect(jsonPath("$[0].specialistWhatsappPhone").exists());
+    }
+
     private UserDetailsImpl principal(String username) {
         User user = userRepository.findByUsername(username).orElseThrow();
         return UserDetailsImpl.build(user);
@@ -120,7 +134,7 @@ class OneToOneManagementIntegrationTest {
     private OneToOneService serviceForSpecialist(String username) {
         User user = userRepository.findByUsername(username).orElseThrow();
         SpecialistProfile specialist = specialistProfileRepository.findByUserId(user.getId()).orElseThrow();
-        return serviceRepository.findBySpecialistId(specialist.getId()).stream()
+        return serviceRepository.findBySpecialistIdOrderByCreatedAtDesc(specialist.getId()).stream()
                 .findFirst()
                 .orElseThrow();
     }
