@@ -87,7 +87,13 @@ public class MasterDataSeeder {
     }
 
     private void seedCategory(String name, String description) {
-        Category category = categoryRepository.findByName(name).orElse(null);
+        String targetSlug = name.toLowerCase()
+                .replace("ñ", "n")
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        Category category = categoryRepository.findByNameIgnoreCase(name)
+                .or(() -> categoryRepository.findBySlug(targetSlug))
+                .orElse(null);
         if (category == null) {
             Category newCategory = new Category();
             newCategory.setName(name);
@@ -96,6 +102,10 @@ public class MasterDataSeeder {
             categoryRepository.save(newCategory);
         } else {
             boolean changed = false;
+            if (!name.equals(category.getName())) {
+                category.setName(name);
+                changed = true;
+            }
             if (!description.equals(category.getDescription())) {
                 category.setDescription(description);
                 changed = true;

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.MeetingLinkUpsertRequest;
@@ -33,6 +34,7 @@ class EventRequestValidationTest {
                 (short) 121,
                 false,
                 1L,
+                EventPaymentMethod.WHATSAPP,
                 1L);
 
         assertThat(validator.validate(request))

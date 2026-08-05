@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.event.dto.request.CreateEventUpsertRequest
 import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.EventStatusUpdateRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAttendeeDto;
 import com.hean.consigueventas.oonabe.event.dto.response.CreateEventResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventManagementResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -148,6 +150,19 @@ public class EventManagementController {
             @AuthenticationPrincipal UserDetailsImpl principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(eventService.addOccurrence(id, request, principal.getId(), isAdmin(principal)));
+    }
+
+    @GetMapping("/occurrences/{occurrenceId}/attendees")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSIONAL')")
+    @Operation(
+            summary = "Listar participantes de una ocurrencia",
+            description = "Retorna la lista de asistentes registrados para una fecha/sesión específica del evento.",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+    )
+    public List<EventOccurrenceAttendeeDto> getOccurrenceAttendees(
+            @PathVariable Long occurrenceId,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        return eventService.getOccurrenceAttendees(occurrenceId, principal.getId(), isAdmin(principal));
     }
 
     private boolean isAdmin(UserDetailsImpl principal) {

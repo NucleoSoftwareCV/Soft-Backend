@@ -15,6 +15,14 @@ public class PaymentProcessRequestDto {
     private String yapePhoneNumber;
     private String yapeOtp;
 
+    public void setYapePhone(String yapePhone) {
+        this.yapePhoneNumber = yapePhone;
+    }
+
+    public String getYapePhone() {
+        return this.yapePhoneNumber;
+    }
+
     // Campos simulados para TARJETA
     private String cardNumber;
     private String cardHolder;

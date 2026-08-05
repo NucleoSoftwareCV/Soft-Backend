@@ -61,6 +61,9 @@ public interface EventMapper {
         if (event.getWhatToBring() == null) {
             event.setWhatToBring(new ArrayList<>());
         }
+        if (event.getPaymentMethod() == null) {
+            event.setPaymentMethod(com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod.WHATSAPP);
+        }
     }
 
     @Mapping(target = "categoryId", source = "category.id")

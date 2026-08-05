@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import com.hean.consigueventas.oonabe.common.enums.EventType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -48,6 +49,9 @@ public record EventDetailResponse(
 
         @Schema(description = "ID de la categoría")
         Long categoryId,
+
+        @Schema(description = "Método de pago del evento")
+        EventPaymentMethod paymentMethod,
 
         @Schema(description = "Nombre de la categoría")
         String categoryName,

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.request;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -79,6 +80,9 @@ public record EventUpsertRequest(
         @Schema(description = "Categoría del evento.")
         @NotNull(message = "La categoría es obligatoria")
         Long categoryId,
+
+        @Schema(description = "Método de pago del evento (WHATSAPP o ONLINE).", example = "WHATSAPP")
+        EventPaymentMethod paymentMethod,
 
         @Schema(description = "ID del especialista / organizador.", example = "1")
         @NotNull(message = "El ID del especialista es obligatorio")

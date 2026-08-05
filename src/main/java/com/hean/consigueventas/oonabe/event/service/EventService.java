@@ -23,6 +23,9 @@ import com.hean.consigueventas.oonabe.event.entity.MeetingLink;
 import com.hean.consigueventas.oonabe.event.mapper.EventMapper;
 import com.hean.consigueventas.oonabe.event.mapper.EventOccurrenceMapper;
 import com.hean.consigueventas.oonabe.event.mapper.MeetingLinkMapper;
+import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
+import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAttendeeDto;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
@@ -53,6 +56,7 @@ public class EventService {
     private final LocationRepository locationRepository;
     private final CategoryRepository categoryRepository;
     private final SpecialistProfileRepository specialistProfileRepository;
+    private final EventAttendeeRepository eventAttendeeRepository;
 
     private final EventMapper eventMapper;
     private final EventOccurrenceMapper occurrenceMapper;
@@ -70,7 +74,8 @@ public class EventService {
                         EventOccurrenceMapper occurrenceMapper,
                         MeetingLinkMapper meetingLinkMapper,
                         LocationMapper locationMapper,
-                        EventCardAssembler eventCardAssembler) {
+                        EventCardAssembler eventCardAssembler,
+                        EventAttendeeRepository eventAttendeeRepository) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
@@ -82,6 +87,7 @@ public class EventService {
         this.meetingLinkMapper = meetingLinkMapper;
         this.locationMapper = locationMapper;
         this.eventCardAssembler = eventCardAssembler;
+        this.eventAttendeeRepository = eventAttendeeRepository;
     }
 
     @Transactional
@@ -189,6 +195,30 @@ public class EventService {
         EventOccurrence occurrence = getManagedOccurrence(occurrenceId, userId, admin);
         occurrence.setStatus(request.status());
         return occurrenceMapper.toResponse(occurrenceRepository.save(occurrence));
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventOccurrenceAttendeeDto> getOccurrenceAttendees(Long occurrenceId, Long userId, boolean admin) {
+        getManagedOccurrence(occurrenceId, userId, admin); // validates ownership
+        List<EventAttendee> attendees = eventAttendeeRepository.findByOccurrenceId(occurrenceId);
+        return attendees.stream().map(a -> {
+            var booking = a.getEventBooking();
+            var customer = booking.getCustomer();
+            var user = customer.getUser();
+            return new EventOccurrenceAttendeeDto(
+                    a.getId(),
+                    a.getAttendeeName(),
+                    a.getAttendeeEmail(),
+                    a.getAttendeePhone(),
+                    a.getAttendanceStatus(),
+                    booking.getCode(),
+                    booking.getStatus(),
+                    booking.getCreatedAt(),
+                    customer.getFirstNames() + " " + customer.getLastNames(),
+                    user.getEmail(),
+                    customer.getPhone()
+            );
+        }).toList();
     }
 
     @Transactional(readOnly = true)

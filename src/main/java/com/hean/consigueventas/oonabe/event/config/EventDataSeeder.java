@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventType;
+import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import com.hean.consigueventas.oonabe.common.enums.ImageFormat;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -295,9 +296,12 @@ public class EventDataSeeder {
             newEvent.setRecurring(isRecurring);
             newEvent.setCategory(category);
             newEvent.setSpecialist(specialist);
+            newEvent.setPaymentMethod(modality == EventModality.ONLINE ? EventPaymentMethod.ONLINE : EventPaymentMethod.WHATSAPP);
             return eventRepository.save(newEvent);
         } else {
             boolean changed = false;
+            EventPaymentMethod targetPaymentMethod = modality == EventModality.ONLINE ? EventPaymentMethod.ONLINE : EventPaymentMethod.WHATSAPP;
+            if (event.getPaymentMethod() != targetPaymentMethod) { event.setPaymentMethod(targetPaymentMethod); changed = true; }
             if (!summary.equals(event.getSummary())) { event.setSummary(summary); changed = true; }
             if (!description.equals(event.getDescription())) { event.setDescription(description); changed = true; }
             if (modality != event.getModality()) { event.setModality(modality); changed = true; }
