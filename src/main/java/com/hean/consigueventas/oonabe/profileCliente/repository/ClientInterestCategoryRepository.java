@@ -17,5 +17,7 @@ public interface ClientInterestCategoryRepository
             Long categoryId
     );
 
+    boolean existsByCategoryId(Long categoryId);
+
     void deleteByClientProfileId(Long clientProfileId);
 }

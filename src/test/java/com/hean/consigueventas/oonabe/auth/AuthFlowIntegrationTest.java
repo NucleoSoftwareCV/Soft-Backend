@@ -270,7 +270,8 @@ class AuthFlowIntegrationTest {
                         .content("""
                                 {
                                   "name": "Solo Admin",
-                                  "description": "No debe crearse con rol USER"
+                                  "description": "No debe crearse con rol USER",
+                                  "emoji": "\uD83D\uDD12"
                                 }
                                 """))
                 .andExpect(status().isForbidden());

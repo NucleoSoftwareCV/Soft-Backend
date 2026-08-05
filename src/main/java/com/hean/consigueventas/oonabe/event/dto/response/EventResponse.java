@@ -45,6 +45,12 @@ public record EventResponse(
         @Schema(description = "Nombre de la categoría")
         String categoryName,
 
+        Long experienceTypeId,
+
+        String eventType,
+
+        String experienceTypeSlug,
+
         @Schema(description = "Fecha de creación")
         Instant createdAt,
 

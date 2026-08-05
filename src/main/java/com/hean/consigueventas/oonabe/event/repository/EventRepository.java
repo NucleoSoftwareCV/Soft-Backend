@@ -14,6 +14,9 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long>,
         JpaSpecificationExecutor<Event> {
+    boolean existsByCategoryId(Long categoryId);
+
+    boolean existsByExperienceTypeId(Long experienceTypeId);
     Optional<Event> findByTitle(String title);
 
     @EntityGraph(attributePaths = {"category", "specialist"})

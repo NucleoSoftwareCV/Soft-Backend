@@ -85,6 +85,7 @@ class OneToOnePublicListingIntegrationTest {
                 .andExpect(jsonPath("$.content[0].id").exists())
                 .andExpect(jsonPath("$.content[0].title").exists())
                 .andExpect(jsonPath("$.content[0].specialistName").exists())
+                .andExpect(jsonPath("$.content[0].specialistPhotoUrl").exists())
                 .andExpect(jsonPath("$.content[0].price").exists())
                 .andExpect(jsonPath("$.content[0].currency").exists())
                 .andExpect(jsonPath("$.content[0].durationMinutes").exists())
@@ -140,7 +141,10 @@ class OneToOnePublicListingIntegrationTest {
         mockMvc.perform(get("/api/v1/one-to-one-services/{id}", serviceId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(serviceId))
-                .andExpect(jsonPath("$.description").exists());
+                .andExpect(jsonPath("$.description").exists())
+                .andExpect(jsonPath("$.imageUrl").exists())
+                .andExpect(jsonPath("$.specialistPhotoUrl").exists())
+                .andExpect(jsonPath("$.specialistWhatsappPhone").exists());
     }
 
     @Test

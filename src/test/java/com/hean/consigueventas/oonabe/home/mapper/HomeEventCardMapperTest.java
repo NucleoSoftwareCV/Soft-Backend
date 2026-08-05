@@ -1,7 +1,6 @@
 package com.hean.consigueventas.oonabe.home.mapper;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.home.dto.response.HomeEventCardResponse;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,9 @@ class HomeEventCardMapperTest {
                 Instant.parse("2026-08-01T10:00:00Z"),
                 Instant.parse("2026-08-01T11:00:00Z"),
                 null,
-                EventType.CLASE,
+                30L,
+                "Clases",
+                "clases",
                 true
         );
 

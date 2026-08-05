@@ -70,7 +70,7 @@ public class OneToOneSessionService {
     @Transactional(readOnly = true)
     public List<OneToOneServiceResponse> getMyServices(Long userId) {
         SpecialistProfile specialist = getSpecialistByUserId(userId);
-        return serviceRepository.findBySpecialistId(specialist.getId())
+        return serviceRepository.findBySpecialistIdOrderByCreatedAtDesc(specialist.getId())
                 .stream()
                 .map(serviceMapper::toDto)
                 .toList();

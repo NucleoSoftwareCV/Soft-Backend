@@ -35,6 +35,7 @@ class EventRequestValidationTest {
                 false,
                 1L,
                 EventPaymentMethod.WHATSAPP,
+                1L,
                 1L);
 
         assertThat(validator.validate(request))

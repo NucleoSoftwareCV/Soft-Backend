@@ -15,12 +15,14 @@ import java.util.Optional;
 @Repository
 public interface OneToOneServiceRepository extends JpaRepository<OneToOneService, Long>, JpaSpecificationExecutor<OneToOneService> {
 
-    List<OneToOneService> findBySpecialistId(Long specialistId);
+    @EntityGraph(attributePaths = {"specialist", "location", "workTopics", "techniques"})
+    List<OneToOneService> findBySpecialistIdOrderByCreatedAtDesc(Long specialistId);
 
     @Override
     @EntityGraph(attributePaths = {"specialist"})
     Page<OneToOneService> findAll(Specification<OneToOneService> spec, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"specialist", "location", "workTopics", "techniques"})
     Optional<OneToOneService> findBySlug(String slug);
 
     boolean existsBySlug(String slug);

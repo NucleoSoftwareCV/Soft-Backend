@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.common.config;
 
 import com.hean.consigueventas.oonabe.event.config.EventDataSeeder;
+import com.hean.consigueventas.oonabe.experienceType.config.ExperienceTypeSeeder;
 import com.hean.consigueventas.oonabe.masterdata.config.MasterDataSeeder;
 import com.hean.consigueventas.oonabe.oneToOneSession.config.OneToOneDataSeeder;
 import com.hean.consigueventas.oonabe.profileProfesional.config.SpecialistProfileSeeder;
@@ -24,9 +25,11 @@ public class DataSeederOrchestrator {
                         UserSeeder userSeeder,
                         SpecialistProfileSeeder specialistProfileSeeder,
                         MasterDataSeeder masterDataSeeder,
+                        ExperienceTypeSeeder experienceTypeSeeder,
                         OneToOneDataSeeder oneToOneDataSeeder,
                         EventDataSeeder eventDataSeeder) {
                 return args -> {
+                        experienceTypeSeeder.seed();
                         Role roleUser = userSeeder.seedRole(Role.ROLE_USER, "Usuario final");
                         Role roleAdmin = userSeeder.seedRole(Role.ROLE_ADMIN, "Administrador del sistema");
                         Role roleProfessional = userSeeder.seedRole(Role.ROLE_PROFESSIONAL,
