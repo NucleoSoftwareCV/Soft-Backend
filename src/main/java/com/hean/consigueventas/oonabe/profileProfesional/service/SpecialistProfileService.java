@@ -468,9 +468,32 @@ public class SpecialistProfileService {
             String profileCategory,
             Pageable pageable
     ) {
+        return getPublicProfiles(profileCategory, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SpecialistProfileResponse> getPublicProfiles(
+            String profileCategory,
+            String search,
+            Pageable pageable
+    ) {
         Page<SpecialistProfile> profiles;
 
-        if (profileCategory == null || profileCategory.isBlank()) {
+        if (search != null && !search.isBlank()) {
+            String normalizedCategory = profileCategory == null || profileCategory.isBlank()
+                    ? null
+                    : validateProfileCategory(profileCategory);
+
+            profiles =
+                    specialistProfileRepository
+                            .searchPublicProfiles(
+                                    normalizedCategory,
+                                    ApprovalStatus.APROBADO,
+                                    PublicationStatus.PUBLICADO,
+                                    search.trim(),
+                                    pageable
+                            );
+        } else if (profileCategory == null || profileCategory.isBlank()) {
             profiles =
                     specialistProfileRepository
                             .findByApprovalStatusAndPublicationStatus(

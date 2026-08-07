@@ -7,6 +7,7 @@ import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import jakarta.persistence.criteria.Join;
@@ -74,11 +75,21 @@ public final class EventSpecification {
     }
 
     public static Specification<Event> isPublished() {
-        return (root, query, cb) -> cb.and(
-                cb.equal(root.get("status"), EventStatus.PUBLICADO),
-                cb.isTrue(root.get("category").get("active")),
-                cb.isTrue(root.get("experienceType").get("active"))
-        );
+        return (root, query, cb) -> {
+            // LEFT JOIN explicito: eventos creados antes del catalogo de tipos de
+            // experiencia pueden tener experience_type_id nulo. Un path traversal
+            // simple (root.get("experienceType")) genera un INNER JOIN implicito
+            // que los excluiria por completo del listado publico.
+            Join<Event, ExperienceType> experienceType = root.join("experienceType", JoinType.LEFT);
+            return cb.and(
+                    cb.equal(root.get("status"), EventStatus.PUBLICADO),
+                    cb.isTrue(root.get("category").get("active")),
+                    cb.or(
+                            cb.isNull(experienceType.get("id")),
+                            cb.isTrue(experienceType.get("active"))
+                    )
+            );
+        };
     }
 
     public static Specification<Event> titleOrSummaryContains(String text) {

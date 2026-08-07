@@ -202,6 +202,9 @@ public class SpecialistProfileController {
             )
             @RequestParam(required = false) String profileCategory,
 
+            @Parameter(description = "Busqueda por texto libre en nombre publico o biografia")
+            @RequestParam(required = false) String search,
+
             @ParameterObject
             @PageableDefault(
                     size = 10,
@@ -211,6 +214,7 @@ public class SpecialistProfileController {
     ) {
         return specialistProfileService.getPublicProfiles(
                 profileCategory,
+                search,
                 pageable
         );
     }

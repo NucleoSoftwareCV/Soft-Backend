@@ -357,4 +357,35 @@ public class PaymentService {
 
         return dto;
     }
+
+    @Transactional(readOnly = true)
+    public List<MyBookingResponseDto> getMyBookings(Long userId) {
+        return eventBookingRepository.findByCustomer_User_IdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toMyBookingResponse)
+                .toList();
+    }
+
+    private MyBookingResponseDto toMyBookingResponse(EventBooking booking) {
+        EventOccurrence occurrence = booking.getOccurrence();
+        Event event = occurrence.getEvent();
+
+        MyBookingResponseDto dto = new MyBookingResponseDto();
+        dto.setCode(booking.getCode());
+        dto.setStatus(booking.getStatus());
+        dto.setQuantity(booking.getQuantity());
+        dto.setTotalAmount(booking.getTotalAmount());
+        dto.setCurrency(booking.getCurrency());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setEventId(event.getId());
+        dto.setEventTitle(event.getTitle());
+        dto.setOccurrenceStartsAt(occurrence.getStartsAt());
+        dto.setModality(event.getModality());
+        if (occurrence.getLocation() != null) {
+            dto.setLocationName(occurrence.getLocation().getName());
+            dto.setCityName(occurrence.getLocation().getCity() != null
+                    ? occurrence.getLocation().getCity().getName()
+                    : null);
+        }
+        return dto;
+    }
 }
