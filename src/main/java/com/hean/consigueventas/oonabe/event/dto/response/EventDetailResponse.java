@@ -1,7 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
+import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -49,6 +49,9 @@ public record EventDetailResponse(
         @Schema(description = "ID de la categoría")
         Long categoryId,
 
+        @Schema(description = "Método de pago del evento")
+        EventPaymentMethod paymentMethod,
+
         @Schema(description = "Nombre de la categoría")
         String categoryName,
 
@@ -59,7 +62,11 @@ public record EventDetailResponse(
         List<EventOccurrenceResponse> occurrences,
 
         @Schema(description = "Tipo de experiencia (TALLER, RETIRO, CLASE, etc.)")
-        EventType eventType,
+        Long experienceTypeId,
+
+        String eventType,
+
+        String experienceTypeSlug,
 
         @Schema(description = "¿Es recurrente?")
         Boolean isRecurring,

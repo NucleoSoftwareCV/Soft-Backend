@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,5 +84,13 @@ public class CategoryController {
     })
     public CategoryResponse toggleStatus(@PathVariable Long id) {
         return categoryService.toggleStatus(id);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Eliminar una categoria sin relaciones", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    public void delete(@PathVariable Long id) {
+        categoryService.delete(id);
     }
 }

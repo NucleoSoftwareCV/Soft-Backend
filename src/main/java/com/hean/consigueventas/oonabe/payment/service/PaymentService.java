@@ -24,6 +24,12 @@ import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.user.repository.TemporaryCustomerProfileRepository;
+import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
+import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
+import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
+import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
+import com.hean.consigueventas.oonabe.common.enums.AttendanceStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +55,8 @@ public class PaymentService {
     private final EventOccurrenceRepository eventOccurrenceRepository;
     private final EventRepository eventRepository;
     private final OneToOneServiceRepository oneToOneServiceRepository;
+    private final EventBookingRepository eventBookingRepository;
+    private final EventAttendeeRepository eventAttendeeRepository;
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
@@ -105,6 +113,53 @@ public class PaymentService {
 
             item.setTotalAmount(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             item = purchaseOrderItemRepository.save(item);
+
+            if (item.getItemType() == PurchaseItemType.EVENTO) {
+                EventOccurrence occurrence = eventOccurrenceRepository.findById(item.getReferenceId()).orElse(null);
+                if (occurrence != null) {
+                    if (occurrence.getReservedSpots() + item.getQuantity() > occurrence.getCapacity()) {
+                        throw new BusinessLogicException("No hay suficientes plazas disponibles para la sesión elegida.");
+                    }
+                    occurrence.setReservedSpots(occurrence.getReservedSpots() + item.getQuantity());
+                    eventOccurrenceRepository.save(occurrence);
+
+                    EventBooking booking = new EventBooking();
+                    booking.setCode("BKG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+                    booking.setOrderItem(item);
+                    booking.setCustomer(customer);
+                    booking.setOccurrence(occurrence);
+                    booking.setQuantity(item.getQuantity());
+                    booking.setUnitPrice(item.getUnitPrice());
+                    booking.setTotalAmount(item.getTotalAmount());
+                    booking.setCurrency(order.getCurrency());
+                    booking.setStatus(BookingStatus.PENDIENTE);
+                    booking.setCreatedAt(Instant.now());
+                    eventBookingRepository.save(booking);
+
+                    if (itemDto.getAttendees() != null && !itemDto.getAttendees().isEmpty()) {
+                        for (com.hean.consigueventas.oonabe.payment.dto.AttendeeDto attendeeDto : itemDto.getAttendees()) {
+                            EventAttendee attendee = new EventAttendee();
+                            attendee.setEventBooking(booking);
+                            attendee.setAttendeeName(attendeeDto.getName() + " " + (attendeeDto.getLastName() != null ? attendeeDto.getLastName() : ""));
+                            attendee.setAttendeeEmail(attendeeDto.getEmail());
+                            attendee.setAttendanceStatus(AttendanceStatus.PENDIENTE);
+                            attendee.setRegisteredBy(customer.getUser());
+                            attendee.setRegisteredAt(Instant.now());
+                            eventAttendeeRepository.save(attendee);
+                        }
+                    } else {
+                        EventAttendee attendee = new EventAttendee();
+                        attendee.setEventBooking(booking);
+                        attendee.setAttendeeName(customer.getFirstNames() + " " + customer.getLastNames());
+                        attendee.setAttendeeEmail(customer.getUser().getEmail());
+                        attendee.setAttendeePhone(customer.getPhone());
+                        attendee.setAttendanceStatus(AttendanceStatus.PENDIENTE);
+                        attendee.setRegisteredBy(customer.getUser());
+                        attendee.setRegisteredAt(Instant.now());
+                        eventAttendeeRepository.save(attendee);
+                    }
+                }
+            }
 
             totalSubtotal = totalSubtotal.add(item.getTotalAmount());
 
@@ -202,6 +257,18 @@ public class PaymentService {
                     .filter(i -> i.getOrder().getId().equals(order.getId()))
                     .toList();
 
+            for (PurchaseOrderItem item : items) {
+                if (item.getItemType() == PurchaseItemType.EVENTO) {
+                    List<EventBooking> bookings = eventBookingRepository.findAll().stream()
+                            .filter(b -> b.getOrderItem() != null && b.getOrderItem().getId().equals(item.getId()))
+                            .toList();
+                    for (EventBooking booking : bookings) {
+                        booking.setStatus(BookingStatus.CONFIRMADA);
+                        eventBookingRepository.save(booking);
+                    }
+                }
+            }
+
             StringBuilder descBuilder = new StringBuilder("Compra en Oona:\n");
             for (PurchaseOrderItem item : items) {
                 descBuilder.append("- ").append(item.getQuantity()).append("x ").append(item.getDescription()).append("\n");
@@ -288,6 +355,37 @@ public class PaymentService {
         dto.setCurrency(receipt.getCurrency());
         dto.setIssuedAt(receipt.getIssuedAt());
 
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyBookingResponseDto> getMyBookings(Long userId) {
+        return eventBookingRepository.findByCustomer_User_IdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toMyBookingResponse)
+                .toList();
+    }
+
+    private MyBookingResponseDto toMyBookingResponse(EventBooking booking) {
+        EventOccurrence occurrence = booking.getOccurrence();
+        Event event = occurrence.getEvent();
+
+        MyBookingResponseDto dto = new MyBookingResponseDto();
+        dto.setCode(booking.getCode());
+        dto.setStatus(booking.getStatus());
+        dto.setQuantity(booking.getQuantity());
+        dto.setTotalAmount(booking.getTotalAmount());
+        dto.setCurrency(booking.getCurrency());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setEventId(event.getId());
+        dto.setEventTitle(event.getTitle());
+        dto.setOccurrenceStartsAt(occurrence.getStartsAt());
+        dto.setModality(event.getModality());
+        if (occurrence.getLocation() != null) {
+            dto.setLocationName(occurrence.getLocation().getName());
+            dto.setCityName(occurrence.getLocation().getCity() != null
+                    ? occurrence.getLocation().getCity().getName()
+                    : null);
+        }
         return dto;
     }
 }

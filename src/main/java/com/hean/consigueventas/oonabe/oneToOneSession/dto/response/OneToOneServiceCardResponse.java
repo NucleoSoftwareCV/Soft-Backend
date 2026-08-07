@@ -15,6 +15,9 @@ public record OneToOneServiceCardResponse(
         @Schema(description = "Nombre publico del especialista.", example = "Ana Gomez")
         String specialistName,
 
+        @Schema(description = "URL de la foto publica del especialista.")
+        String specialistPhotoUrl,
+
         @Schema(description = "Precio.", example = "40.00")
         BigDecimal price,
 

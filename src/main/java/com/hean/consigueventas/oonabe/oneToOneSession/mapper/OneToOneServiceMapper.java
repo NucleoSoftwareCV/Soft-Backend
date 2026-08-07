@@ -18,6 +18,8 @@ public interface OneToOneServiceMapper {
 
     @Mapping(target = "specialistId", source = "specialist.id")
     @Mapping(target = "specialistName", source = "specialist.publicName")
+    @Mapping(target = "specialistPhotoUrl", source = "specialist.photoUrl")
+    @Mapping(target = "specialistWhatsappPhone", source = "specialist.whatsappPhone")
     @Mapping(target = "locationId", source = "location.id")
     @Mapping(target = "locationName", source = "location.name")
     @Mapping(target = "workTopics", source = "workTopics", qualifiedByName = "mapWorkTopics")
@@ -26,6 +28,7 @@ public interface OneToOneServiceMapper {
     OneToOneServiceResponse toDto(OneToOneService entity);
 
     @Mapping(target = "specialistName", source = "specialist.publicName")
+    @Mapping(target = "specialistPhotoUrl", source = "specialist.photoUrl")
     OneToOneServiceCardResponse toCardDto(OneToOneService entity);
 
     @Mapping(target = "id", ignore = true)

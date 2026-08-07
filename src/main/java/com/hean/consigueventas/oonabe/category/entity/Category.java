@@ -11,6 +11,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.text.Normalizer;
+import java.util.Locale;
+
 @Entity
 @Table(name = "categories")
 @Getter
@@ -18,30 +21,30 @@ import lombok.Setter;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Column(name = "name", nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(name = "slug", nullable = false, unique = true, length = 120)
+    @Column(nullable = false, unique = true, length = 120)
     private String slug;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(length = 500)
     private String description;
 
-    @Column(name = "image_url", columnDefinition = "TEXT")
-    private String imageUrl;
+    @Column(length = 16)
+    private String emoji;
 
-    @Column(name = "active", nullable = false)
+    @Column(nullable = false)
     private boolean active = true;
 
     @PrePersist
-    void prePersist() {
-        if (slug == null || slug.isBlank()) {
-            slug = name == null ? null : name.toLowerCase()
-                    .replace("ñ", "n")
+    void normalizeSlug() {
+        if (slug == null && name != null) {
+            slug = Normalizer.normalize(name, Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "")
+                    .toLowerCase(Locale.ROOT)
                     .replaceAll("[^a-z0-9]+", "-")
                     .replaceAll("(^-|-$)", "");
         }

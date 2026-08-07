@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/payments/checkout")
 @Tag(name = "Payments & Checkout", description = "Endpoints para checkout, simulación de pasarela de pagos y comprobantes digitales.")
@@ -98,5 +100,16 @@ public class PaymentController {
         }
 
         return paymentService.getDigitalReceipt(orderCode);
+    }
+
+    @GetMapping("/bookings/me")
+    @Operation(summary = "Listar mis reservas de eventos", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponse(responseCode = "200", description = "Reservas del usuario autenticado")
+    public List<MyBookingResponseDto> getMyBookings() {
+        Long userId = SecurityUtils.getAuthenticatedUserId();
+        if (userId == null) {
+            throw new BusinessLogicException("Debe estar autenticado para ver sus reservas");
+        }
+        return paymentService.getMyBookings(userId);
     }
 }

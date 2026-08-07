@@ -37,19 +37,20 @@ public class MasterDataSeeder {
 
     @Transactional
     public SeedData seed() {
-        seedCategory("Yoga", "Practicas de yoga y bienestar corporal.");
-        seedCategory("Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.");
-        seedCategory("Arte y Creatividad", "Actividades creativas para expresion y bienestar.");
-        seedCategory("Movimiento", "Experiencias de movimiento consciente.");
-        seedCategory("Deporte", "Actividades fisicas orientadas al bienestar.");
-        seedCategory("Meditacion y Mindfulness", "Practicas de atencion plena y meditacion.");
-        seedCategory("Sonido y Vibracion", "Experiencias de sonido, vibracion y relajacion.");
-        seedCategory("Espiritualidad y Energia", "Practicas energeticas y espirituales.");
-        seedCategory("Nutricion y Cocina", "Experiencias de alimentacion consciente.");
-        seedCategory("Psicologia", "Acompanamiento psicologico y bienestar emocional.");
-        seedCategory("Cuerpo y Salud", "Practicas centradas en salud corporal integral.");
-        seedCategory("Maternidad y Familia", "Experiencias de bienestar para la maternidad y la familia.");
-        seedCategory("Emprendimiento", "Experiencias para emprender con bienestar y proposito.");
+        boolean createDefaultCategories = categoryRepository.count() == 0;
+        seedCategory("Yoga", "Practicas de yoga y bienestar corporal.", "🧘", createDefaultCategories);
+        seedCategory("Hielo y Breathwork", "Experiencias de respiracion consciente y exposicion al frio.", "🧊", createDefaultCategories);
+        seedCategory("Arte y Creatividad", "Actividades creativas para expresion y bienestar.", "🎨", createDefaultCategories);
+        seedCategory("Movimiento", "Experiencias de movimiento consciente.", "🏃", createDefaultCategories);
+        seedCategory("Deporte", "Actividades fisicas orientadas al bienestar.", "💪", createDefaultCategories);
+        seedCategory("Meditacion y Mindfulness", "Practicas de atencion plena y meditacion.", "🧠", createDefaultCategories);
+        seedCategory("Sonido y Vibracion", "Experiencias de sonido, vibracion y relajacion.", "🎵", createDefaultCategories);
+        seedCategory("Espiritualidad y Energia", "Practicas energeticas y espirituales.", "✨", createDefaultCategories);
+        seedCategory("Nutricion y Cocina", "Experiencias de alimentacion consciente.", "🥗", createDefaultCategories);
+        seedCategory("Psicologia", "Acompanamiento psicologico y bienestar emocional.", "🌱", createDefaultCategories);
+        seedCategory("Cuerpo y Salud", "Practicas centradas en salud corporal integral.", "💆", createDefaultCategories);
+        seedCategory("Maternidad y Familia", "Experiencias de bienestar para la maternidad y la familia.", "🤰", createDefaultCategories);
+        seedCategory("Emprendimiento", "Experiencias para emprender con bienestar y proposito.", "🚀", createDefaultCategories);
 
         seedCity("Madrid", "Madrid");
         seedCity("Barcelona", "Barcelona");
@@ -73,41 +74,63 @@ public class MasterDataSeeder {
         seedTechnique("Yoga", true);
 
         return new SeedData(
-                categoryRepository.findByName("Cuerpo y Salud").orElse(null),
-                categoryRepository.findByName("Movimiento").orElse(null),
-                categoryRepository.findByName("Sonido y Vibracion").orElse(null),
-                categoryRepository.findByName("Hielo y Breathwork").orElse(null),
-                categoryRepository.findByName("Yoga").orElse(null),
-                categoryRepository.findByName("Meditacion y Mindfulness").orElse(null),
-                categoryRepository.findByName("Nutricion y Cocina").orElse(null),
+                categoryRepository.findBySlug("cuerpo-y-salud").orElse(null),
+                categoryRepository.findBySlug("movimiento").orElse(null),
+                categoryRepository.findBySlug("sonido-y-vibracion").orElse(null),
+                categoryRepository.findBySlug("hielo-y-breathwork").orElse(null),
+                categoryRepository.findBySlug("yoga").orElse(null),
+                categoryRepository.findBySlug("meditacion-y-mindfulness").orElse(null),
+                categoryRepository.findBySlug("nutricion-y-cocina").orElse(null),
                 loc1,
                 loc2,
                 loc3
         );
     }
 
-    private void seedCategory(String name, String description) {
-        Category category = categoryRepository.findByName(name).orElse(null);
+    private void seedCategory(String name, String description, String emoji, boolean createIfMissing) {
+        String stableSlug = slugify(name);
+        Category category = categoryRepository.findBySlug(stableSlug)
+                .orElseGet(() -> categoryRepository.findByDescription(description).orElse(null));
         if (category == null) {
+            if (!createIfMissing) {
+                return;
+            }
             Category newCategory = new Category();
             newCategory.setName(name);
             newCategory.setDescription(description);
+            newCategory.setEmoji(emoji);
             newCategory.setActive(true);
             categoryRepository.save(newCategory);
         } else {
             boolean changed = false;
+            if (!name.equals(category.getName())) {
+                category.setName(name);
+                changed = true;
+            }
             if (!description.equals(category.getDescription())) {
                 category.setDescription(description);
                 changed = true;
             }
-            if (!category.isActive()) {
-                category.setActive(true);
+            if (!stableSlug.equals(category.getSlug())) {
+                category.setSlug(stableSlug);
+                changed = true;
+            }
+            if (category.getEmoji() == null || category.getEmoji().isBlank()) {
+                category.setEmoji(emoji);
                 changed = true;
             }
             if (changed) {
                 categoryRepository.save(category);
             }
         }
+    }
+
+    private String slugify(String value) {
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
     }
 
     private Location seedLocation(

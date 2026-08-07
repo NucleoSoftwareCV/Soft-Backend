@@ -19,6 +19,12 @@ public record OneToOneServiceResponse(
         @Schema(description = "Nombre público del especialista.")
         String specialistName,
 
+        @Schema(description = "Foto publica del especialista.")
+        String specialistPhotoUrl,
+
+        @Schema(description = "WhatsApp publico del especialista.")
+        String specialistWhatsappPhone,
+
         @Schema(description = "Identificador de texto amigable para la URL (enlace legible). Ejemplo: 'terapia-psicologica'.")
         String slug,
 
@@ -27,6 +33,9 @@ public record OneToOneServiceResponse(
 
         @Schema(description = "Descripción detallada.")
         String description,
+
+        @Schema(description = "Imagen principal de la sesion.")
+        String imageUrl,
 
         @Schema(description = "Duración en minutos.")
         Integer durationMinutes,

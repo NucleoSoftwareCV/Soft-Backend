@@ -4,10 +4,10 @@ import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
 import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import jakarta.persistence.criteria.Join;
@@ -41,8 +41,8 @@ public final class EventSpecification {
         } else if (filter.categoryIds() != null && !filter.categoryIds().isEmpty()) {
             spec = spec.and(hasAnyCategory(filter.categoryIds()));
         }
-        if (filter.eventType() != null) {
-            spec = spec.and(hasEventType(filter.eventType()));
+        if (filter.experienceTypeId() != null) {
+            spec = spec.and(hasExperienceType(filter.experienceTypeId()));
         }
         if (filter.modality() != null) {
             spec = spec.and(hasModality(filter.modality()));
@@ -75,7 +75,21 @@ public final class EventSpecification {
     }
 
     public static Specification<Event> isPublished() {
-        return (root, query, cb) -> cb.equal(root.get("status"), EventStatus.PUBLICADO);
+        return (root, query, cb) -> {
+            // LEFT JOIN explicito: eventos creados antes del catalogo de tipos de
+            // experiencia pueden tener experience_type_id nulo. Un path traversal
+            // simple (root.get("experienceType")) genera un INNER JOIN implicito
+            // que los excluiria por completo del listado publico.
+            Join<Event, ExperienceType> experienceType = root.join("experienceType", JoinType.LEFT);
+            return cb.and(
+                    cb.equal(root.get("status"), EventStatus.PUBLICADO),
+                    cb.isTrue(root.get("category").get("active")),
+                    cb.or(
+                            cb.isNull(experienceType.get("id")),
+                            cb.isTrue(experienceType.get("active"))
+                    )
+            );
+        };
     }
 
     public static Specification<Event> titleOrSummaryContains(String text) {
@@ -107,8 +121,12 @@ public final class EventSpecification {
         return (root, query, cb) -> cb.notEqual(root.get("id"), eventId);
     }
 
-    public static Specification<Event> hasEventType(EventType eventType) {
-        return (root, query, cb) -> cb.equal(root.get("eventType"), eventType);
+    public static Specification<Event> hasExperienceType(Long experienceTypeId) {
+        return (root, query, cb) -> cb.equal(root.get("experienceType").get("id"), experienceTypeId);
+    }
+
+    public static Specification<Event> hasExperienceTypeSlug(String slug) {
+        return (root, query, cb) -> cb.equal(root.get("experienceType").get("slug"), slug);
     }
 
     public static Specification<Event> hasModality(EventModality modality) {

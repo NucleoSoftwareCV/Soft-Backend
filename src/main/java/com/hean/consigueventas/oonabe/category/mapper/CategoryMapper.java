@@ -9,11 +9,11 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
+    @Mapping(target = "deletable", constant = "false")
     CategoryResponse toDto(Category category);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "imageUrl", ignore = true)
     @Mapping(target = "active", ignore = true)
     Category toEntity(CategoryUpsertRequest dto);
 }

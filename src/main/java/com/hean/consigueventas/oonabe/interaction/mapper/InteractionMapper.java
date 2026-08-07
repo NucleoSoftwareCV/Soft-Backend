@@ -23,7 +23,7 @@ public class InteractionMapper {
                 event.getSummary(),
                 event.getCategory().getName(),
                 event.getModality(),
-                event.getEventType(),
+                event.getExperienceType() == null ? null : event.getExperienceType().getName(),
                 event.getPriceFrom(),
                 event.getCurrency(),
                 eventFavorite.getCreatedAt()

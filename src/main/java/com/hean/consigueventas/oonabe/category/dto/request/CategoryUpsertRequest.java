@@ -11,5 +11,9 @@ public record CategoryUpsertRequest(
         String name,
         @Schema(description = "Descripcion breve.", example = "Practicas de yoga y bienestar corporal.")
         @Size(max = 500)
-        String description) {
+        String description,
+        @Schema(description = "Emoji que representa visualmente la categoria.", example = "🧘")
+        @NotBlank(message = "El emoji es obligatorio")
+        @Size(max = 16, message = "El emoji no puede superar los 16 caracteres")
+        String emoji) {
 }

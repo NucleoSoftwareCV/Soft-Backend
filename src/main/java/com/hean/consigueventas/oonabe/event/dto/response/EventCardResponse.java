@@ -1,7 +1,6 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
-import com.hean.consigueventas.oonabe.common.enums.EventType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -54,8 +53,14 @@ public record EventCardResponse(
         @Schema(description = "Ciudad (para eventos presenciales)")
         String cityName,
 
-        @Schema(description = "Tipo de experiencia (TALLER, RETIRO, CLASE, etc.)")
-        EventType eventType,
+        @Schema(description = "ID del tipo de experiencia configurado en el catalogo")
+        Long experienceTypeId,
+
+        @Schema(description = "Nombre publico del tipo de experiencia", example = "Talleres")
+        String eventType,
+
+        @Schema(description = "Slug del tipo de experiencia", example = "talleres")
+        String experienceTypeSlug,
 
         @Schema(description = "¿Es recurrente?")
         Boolean isRecurring

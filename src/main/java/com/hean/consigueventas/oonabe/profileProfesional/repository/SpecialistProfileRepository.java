@@ -6,6 +6,8 @@ import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfil
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -60,6 +62,26 @@ public interface SpecialistProfileRepository
     //Filtrar perfiles publicados - borradores
     Page<SpecialistProfile> findByPublicationStatus(
             PublicationStatus publicationStatus,
+            Pageable pageable
+    );
+
+    //Buscar perfiles publicos por texto libre (nombre publico o biografia),
+    //opcionalmente filtrando por categoria de perfil
+    @Query("""
+            SELECT p FROM SpecialistProfile p
+            WHERE p.approvalStatus = :approvalStatus
+              AND p.publicationStatus = :publicationStatus
+              AND (:profileCategory IS NULL OR LOWER(p.profileCategory) = LOWER(:profileCategory))
+              AND (
+                LOWER(p.publicName) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(p.biography) LIKE LOWER(CONCAT('%', :search, '%'))
+              )
+            """)
+    Page<SpecialistProfile> searchPublicProfiles(
+            @Param("profileCategory") String profileCategory,
+            @Param("approvalStatus") ApprovalStatus approvalStatus,
+            @Param("publicationStatus") PublicationStatus publicationStatus,
+            @Param("search") String search,
             Pageable pageable
     );
 }

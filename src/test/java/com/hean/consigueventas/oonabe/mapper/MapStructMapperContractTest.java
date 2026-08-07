@@ -36,15 +36,20 @@ class MapStructMapperContractTest {
         Category category = new Category();
         category.setId(5L);
         category.setName("Yoga");
+        category.setSlug("yoga");
         category.setDescription("Bienestar corporal");
+        category.setEmoji("🧘");
         category.setActive(true);
 
         CategoryResponse dto = categoryMapper.toDto(category);
-        Category entity = categoryMapper.toEntity(new CategoryUpsertRequest("Pilates", "Control corporal"));
+        Category entity = categoryMapper.toEntity(new CategoryUpsertRequest(
+                "Pilates", "Control corporal", "🤸"));
 
-        assertThat(dto).isEqualTo(new CategoryResponse(5L, "Yoga", "Bienestar corporal", true));
+        assertThat(dto).isEqualTo(new CategoryResponse(
+                5L, "Yoga", "yoga", "Bienestar corporal", "🧘", true, false));
         assertThat(entity.getName()).isEqualTo("Pilates");
         assertThat(entity.getDescription()).isEqualTo("Control corporal");
+        assertThat(entity.getEmoji()).isEqualTo("🤸");
     }
 
     @Test
