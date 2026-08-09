@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.payment.service;
 
+import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.PurchaseItemType;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
@@ -117,6 +118,10 @@ public class PaymentService {
             if (item.getItemType() == PurchaseItemType.EVENTO) {
                 EventOccurrence occurrence = eventOccurrenceRepository.findById(item.getReferenceId()).orElse(null);
                 if (occurrence != null) {
+                    if (occurrence.getStatus() != EventOccurrenceStatus.PROGRAMADA
+                            || !occurrence.getStartsAt().isAfter(Instant.now())) {
+                        throw new BusinessLogicException("Esta fecha ya no está disponible para reservar.");
+                    }
                     if (occurrence.getReservedSpots() + item.getQuantity() > occurrence.getCapacity()) {
                         throw new BusinessLogicException("No hay suficientes plazas disponibles para la sesión elegida.");
                     }

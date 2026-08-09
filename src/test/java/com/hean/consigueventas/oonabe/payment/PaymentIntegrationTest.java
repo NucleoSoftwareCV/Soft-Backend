@@ -102,7 +102,14 @@ class PaymentIntegrationTest {
         org.assertj.core.api.Assertions.assertThat(occurrences).isNotEmpty();
         org.assertj.core.api.Assertions.assertThat(services).isNotEmpty();
 
+        java.time.Instant startsAt = java.time.Instant.now().plus(java.time.Duration.ofDays(1));
         EventOccurrence occurrence = occurrences.get(0);
+        occurrence.setStatus(com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus.PROGRAMADA);
+        occurrence.setStartsAt(startsAt);
+        occurrence.setEndsAt(startsAt.plus(java.time.Duration.ofHours(2)));
+        occurrence.setReservedSpots(0);
+        occurrence.setCapacity(Math.max(occurrence.getCapacity(), 10));
+        eventOccurrenceRepository.saveAndFlush(occurrence);
         OneToOneService service = services.get(0);
 
         // 2. Armar el request de Checkout
