@@ -39,7 +39,7 @@ public class EventCardAssembler {
 
     public Page<EventCardResponse> toPage(Page<Event> events) {
         return new PageImpl<>(
-                toCards(events.getContent(), null),
+                toCards(events.getContent(), clock.instant()),
                 events.getPageable(),
                 events.getTotalElements()
         );

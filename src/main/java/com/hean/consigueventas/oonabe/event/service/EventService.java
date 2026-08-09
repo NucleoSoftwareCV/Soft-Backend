@@ -32,8 +32,10 @@ import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
 import com.hean.consigueventas.oonabe.event.specification.EventSpecification;
 import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
 import com.hean.consigueventas.oonabe.experienceType.repository.ExperienceTypeRepository;
+import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.masterdata.mapper.LocationMapper;
+import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
@@ -56,6 +58,7 @@ public class EventService {
     private final EventOccurrenceRepository occurrenceRepository;
     private final MeetingLinkRepository meetingLinkRepository;
     private final LocationRepository locationRepository;
+    private final CityRepository cityRepository;
     private final CategoryRepository categoryRepository;
     private final ExperienceTypeRepository experienceTypeRepository;
     private final SpecialistProfileRepository specialistProfileRepository;
@@ -71,6 +74,7 @@ public class EventService {
                         EventOccurrenceRepository occurrenceRepository,
                         MeetingLinkRepository meetingLinkRepository,
                         LocationRepository locationRepository,
+                        CityRepository cityRepository,
                         CategoryRepository categoryRepository,
                         ExperienceTypeRepository experienceTypeRepository,
                         SpecialistProfileRepository specialistProfileRepository,
@@ -84,6 +88,7 @@ public class EventService {
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
         this.locationRepository = locationRepository;
+        this.cityRepository = cityRepository;
         this.categoryRepository = categoryRepository;
         this.experienceTypeRepository = experienceTypeRepository;
         this.specialistProfileRepository = specialistProfileRepository;
@@ -356,6 +361,10 @@ public class EventService {
                         "Los datos de la ubicacion son obligatorios para eventos presenciales.");
             }
             Location location = locationMapper.toEntity(request.location());
+            City city = cityRepository.findById(request.location().cityId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "No se encontró la ciudad con ID: " + request.location().cityId()));
+            location.setCity(city);
             occurrence.setLocation(locationRepository.save(location));
         }
     }
