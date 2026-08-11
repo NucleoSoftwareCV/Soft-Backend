@@ -1,12 +1,16 @@
 package com.hean.consigueventas.oonabe.auth.controller;
 
+import com.hean.consigueventas.oonabe.auth.dto.request.ForgotPasswordRequest;
 import com.hean.consigueventas.oonabe.auth.dto.request.GoogleLoginRequest;
+import com.hean.consigueventas.oonabe.auth.dto.request.ResetPasswordRequest;
 import com.hean.consigueventas.oonabe.auth.dto.response.JwtResponse;
 import com.hean.consigueventas.oonabe.auth.dto.request.LoginRequest;
 import com.hean.consigueventas.oonabe.auth.dto.request.RegisterRequest;
 import com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest;
+import com.hean.consigueventas.oonabe.auth.dto.response.PasswordResetResponse;
 import com.hean.consigueventas.oonabe.auth.dto.response.TokenRefreshResponse;
 import com.hean.consigueventas.oonabe.auth.service.AuthService;
+import com.hean.consigueventas.oonabe.auth.service.PasswordResetService;
 import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,9 +33,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, PasswordResetService passwordResetService) {
         this.authService = authService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -93,5 +99,35 @@ public class AuthController {
     })
     public void logout(@Valid @RequestBody TokenRefreshRequest request) {
         authService.logout(request);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(
+            summary = "Solicitar recuperación de contraseña",
+            description = "Si el email corresponde a una cuenta, envía un enlace de recuperación. Siempre responde igual, exista o no la cuenta.",
+            security = {})
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud procesada",
+                    content = @Content(schema = @Schema(implementation = PasswordResetResponse.class)))
+    })
+    public PasswordResetResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return new PasswordResetResponse("Si el email existe, te enviamos un enlace para restablecer tu contraseña.");
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+            summary = "Restablecer contraseña",
+            description = "Establece una nueva contraseña usando el token recibido por email.",
+            security = {})
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Contraseña actualizada",
+                    content = @Content(schema = @Schema(implementation = PasswordResetResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Token inválido, expirado o ya usado",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    public PasswordResetResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.token(), request.newPassword());
+        return new PasswordResetResponse("Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.");
     }
 }

@@ -33,7 +33,9 @@ class AuthFlowIntegrationTest {
                                 {
                                   "username": "authuser",
                                   "email": "authuser@example.com",
-                                  "password": "secret123"
+                                  "password": "secret123",
+                                  "firstName": "Auth",
+                                  "lastName": "User"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -72,7 +74,9 @@ class AuthFlowIntegrationTest {
                                 {
                                   "username": "refreshuser",
                                   "email": "refreshuser@example.com",
-                                  "password": "secret123"
+                                  "password": "secret123",
+                                  "firstName": "Refresh",
+                                  "lastName": "User"
                                 }
                                 """))
                 .andExpect(status().isCreated());
@@ -100,26 +104,33 @@ class AuthFlowIntegrationTest {
                         .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken", not("")))
-                .andExpect(jsonPath("$.refreshToken").value(refreshToken))
+                .andExpect(jsonPath("$.refreshToken", not(refreshToken)))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         String newAccessToken = refreshResponse.replaceAll(".*\\\"accessToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        String rotatedRefreshToken = refreshResponse.replaceAll(".*\\\"refreshToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
 
         mockMvc.perform(get("/api/users/me")
                         .header("Authorization", "Bearer " + newAccessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("refreshuser@example.com"));
 
-        mockMvc.perform(post("/api/auth/logout")
+        // El refresh token original quedo invalidado por la rotacion: ya no sirve.
+        mockMvc.perform(post("/api/auth/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"refreshToken\":\"%s\"}", rotatedRefreshToken)))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(post("/api/auth/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
+                        .content(String.format("{\"refreshToken\":\"%s\"}", rotatedRefreshToken)))
                 .andExpect(status().isForbidden());
     }
 
@@ -131,7 +142,9 @@ class AuthFlowIntegrationTest {
                                 {
                                   "username": "dupuser",
                                   "email": "dupuser@example.com",
-                                  "password": "secret123"
+                                  "password": "secret123",
+                                  "firstName": "Dup",
+                                  "lastName": "User"
                                 }
                                 """))
                 .andExpect(status().isCreated());
@@ -142,7 +155,9 @@ class AuthFlowIntegrationTest {
                                 {
                                   "username": "dupuser",
                                   "email": "dupuser2@example.com",
-                                  "password": "secret123"
+                                  "password": "secret123",
+                                  "firstName": "Dup",
+                                  "lastName": "User"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
@@ -244,7 +259,9 @@ class AuthFlowIntegrationTest {
                                 {
                                   "username": "categoryuser",
                                   "email": "categoryuser@example.com",
-                                  "password": "secret123"
+                                  "password": "secret123",
+                                  "firstName": "Category",
+                                  "lastName": "User"
                                 }
                                 """))
                 .andExpect(status().isCreated());

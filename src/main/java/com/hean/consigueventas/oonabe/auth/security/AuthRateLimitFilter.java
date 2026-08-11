@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -17,13 +19,16 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final int maxAttempts;
     private final long windowMillis;
+    private final Set<String> trustedProxies;
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public AuthRateLimitFilter(
             @Value("${app.security.auth-rate-limit.max-attempts:30}") int maxAttempts,
-            @Value("${app.security.auth-rate-limit.window-ms:900000}") long windowMillis) {
+            @Value("${app.security.auth-rate-limit.window-ms:900000}") long windowMillis,
+            @Value("${app.security.trusted-proxies:}") List<String> trustedProxies) {
         this.maxAttempts = maxAttempts;
         this.windowMillis = windowMillis;
+        this.trustedProxies = Set.copyOf(trustedProxies);
     }
 
     @Override
@@ -66,14 +71,21 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         return path.equals("/api/auth/login")
                 || path.equals("/api/auth/register")
                 || path.equals("/api/auth/refresh-token")
+                || path.equals("/api/auth/forgot-password")
+                || path.equals("/api/auth/reset-password")
                 || path.equals("/api/v1/auth/admin/login");
     }
 
     private String clientKey(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
         String forwardedFor = request.getHeader("X-Forwarded-For");
-        String ip = forwardedFor == null || forwardedFor.isBlank()
-                ? request.getRemoteAddr()
-                : forwardedFor.split(",")[0].trim();
+
+        // Solo confiamos en X-Forwarded-For si la conexion inmediata viene de un
+        // proxy conocido; de lo contrario un cliente podria falsificarlo para
+        // esquivar el limite de intentos.
+        String ip = (trustedProxies.contains(remoteAddr) && forwardedFor != null && !forwardedFor.isBlank())
+                ? forwardedFor.split(",")[0].trim()
+                : remoteAddr;
         return ip + ":" + request.getRequestURI();
     }
 

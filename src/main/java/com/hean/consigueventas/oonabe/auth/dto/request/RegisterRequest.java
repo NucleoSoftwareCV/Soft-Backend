@@ -12,6 +12,14 @@ public record RegisterRequest(
         @Size(min = 3, max = 20)
         @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "El username solo puede contener letras, números, punto, guion y guion bajo")
         String username,
+        @Schema(description = "Nombre de pila.", example = "Ana", maxLength = 100)
+        @NotBlank
+        @Size(max = 100)
+        String firstName,
+        @Schema(description = "Apellidos.", example = "López", maxLength = 100)
+        @NotBlank
+        @Size(max = 100)
+        String lastName,
         @Schema(description = "Email único del usuario.", example = "usuario@example.com", format = "email", maxLength = 150)
         @NotBlank
         @Size(max = 150)

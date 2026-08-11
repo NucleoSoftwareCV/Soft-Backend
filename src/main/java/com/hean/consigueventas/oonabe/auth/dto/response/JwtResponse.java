@@ -14,8 +14,9 @@ public record JwtResponse(
         Long id,
         String username,
         String email,
+        String firstName,
         Set<String> roles) {
-    public JwtResponse(String token, String refreshToken, Long id, String username, String email, Set<String> roles) {
-        this(token, refreshToken, "Bearer", id, username, email, roles);
+    public JwtResponse(String token, String refreshToken, Long id, String username, String email, String firstName, Set<String> roles) {
+        this(token, refreshToken, "Bearer", id, username, email, firstName, roles);
     }
 }

@@ -102,6 +102,20 @@ public class ClientProfileService {
         return clientProfile;
     }
 
+    // Se llama al registrarse para que el nombre real quede disponible de inmediato
+    // (en vez de esperar a que el usuario visite sus preferencias para completarlo).
+    @Transactional
+    public void createInitialProfile(User user, String firstName, String lastName) {
+        if (clientProfileRepository.existsByUserId(user.getId())) {
+            return;
+        }
+
+        ClientProfile clientProfile = createDefaultClientProfile(user);
+        clientProfile.setFirstName(cleanText(firstName));
+        clientProfile.setLastName(cleanText(lastName));
+        clientProfileRepository.save(clientProfile);
+    }
+
     private void updateClientProfileData(
             ClientProfile clientProfile,
             ClientProfilePreferencesRequest request

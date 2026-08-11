@@ -16,11 +16,11 @@ public class TemporaryCustomerProfileService {
     }
 
     @Transactional
-    public void createProfileForUser(User user) {
+    public void createProfileForUser(User user, String firstName, String lastName) {
         CustomerProfile profile = new CustomerProfile();
         profile.setUser(user);
-        profile.setFirstNames(user.getUsername());
-        profile.setLastNames("");
+        profile.setFirstNames(firstName);
+        profile.setLastNames(lastName);
         temporaryCustomerProfileRepository.save(profile);
     }
 }
