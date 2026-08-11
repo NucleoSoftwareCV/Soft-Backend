@@ -42,6 +42,7 @@ public class OpenApiConfig {
                         "/api/v1/experience-types",
                         "/api/v1/locations/**",
                         "/api/v1/cities/**",
+                        "/api/v1/city-interests",
                         "/api/v1/one-to-one-services",
                         "/api/v1/one-to-one-services/{id}",
                         "/api/v1/one-to-one-services/slug/{slug}",
