@@ -53,11 +53,11 @@ public class SpecialistProfile extends AuditableEntity {
     @Size(max = 5000)
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-    //Medidas exactas:  126x126
+    // Medidas exactas de almacenamiento: 512x512.
     @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
 
-    //Medidas exactas: 1248x256
+    // Medidas exactas de almacenamiento: 1248x256.
     @Column(name = "banner_url", columnDefinition = "TEXT")
     private String bannerUrl;
 
@@ -94,4 +94,13 @@ public class SpecialistProfile extends AuditableEntity {
 
     @Column(name = "rejection_reason")
     private String rejectionReason;
+
+    @Column(name = "show_upcoming_events", nullable = false, columnDefinition = "boolean not null default true")
+    private boolean showUpcomingEvents = true;
+
+    @Column(name = "show_one_to_one_sessions", nullable = false, columnDefinition = "boolean not null default true")
+    private boolean showOneToOneSessions = true;
+
+    @Column(name = "show_gallery", nullable = false, columnDefinition = "boolean not null default true")
+    private boolean showGallery = true;
 }

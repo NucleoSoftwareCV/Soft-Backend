@@ -1,7 +1,9 @@
 package com.hean.consigueventas.oonabe.event.controller;
 
 import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
+import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceCalendarResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
 import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceRequest;
 import com.hean.consigueventas.oonabe.event.dto.request.EventOccurrenceStatusUpdateRequest;
@@ -9,6 +11,7 @@ import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
 import com.hean.consigueventas.oonabe.event.service.EventService;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,7 +35,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @Validated
@@ -68,6 +77,35 @@ public class EventOccurrenceController {
             @PageableDefault(size = 20, sort = "startsAt", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         return occurrenceService.getAllOccurrences(pageable);
+    }
+
+    @GetMapping("/public")
+    @Operation(
+            summary = "Calendario publico de ocurrencias de un especialista",
+            description = """
+                    Devuelve las ocurrencias programadas de eventos publicados de un especialista
+                    dentro de un rango de fechas, para pintar el calendario de su perfil publico.
+                    """,
+            security = {}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ocurrencias encontradas")
+    })
+    public List<EventOccurrenceCalendarResponse> getPublicCalendar(
+            @Parameter(description = "ID del especialista", example = "1", required = true)
+            @RequestParam Long specialistId,
+
+            @Parameter(description = "Fecha de inicio del rango (inclusive)", required = true)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @RequestParam LocalDate dateFrom,
+
+            @Parameter(description = "Fecha de fin del rango (inclusive)", required = true)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @RequestParam LocalDate dateTo
+    ) {
+        Instant from = dateFrom.atStartOfDay(TimeConfig.BUSINESS_ZONE).toInstant();
+        Instant to = dateTo.plusDays(1).atStartOfDay(TimeConfig.BUSINESS_ZONE).toInstant();
+        return occurrenceService.getPublicCalendar(specialistId, from, to);
     }
 
     @PutMapping("/{id}")

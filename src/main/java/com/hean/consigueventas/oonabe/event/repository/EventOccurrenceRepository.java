@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +33,21 @@ public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence
             order by occurrence.event.id, occurrence.startsAt
             """)
     List<EventOccurrence> findProgrammedByEventIds(@Param("eventIds") Collection<Long> eventIds);
+
+    @EntityGraph(attributePaths = {"event"})
+    @Query("""
+            select occurrence
+            from EventOccurrence occurrence
+            where occurrence.event.specialist.id = :specialistId
+              and occurrence.event.status = com.hean.consigueventas.oonabe.common.enums.EventStatus.PUBLICADO
+              and occurrence.status = com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus.PROGRAMADA
+              and occurrence.startsAt >= :from
+              and occurrence.startsAt < :to
+            order by occurrence.startsAt asc
+            """)
+    List<EventOccurrence> findPublicCalendarOccurrences(
+            @Param("specialistId") Long specialistId,
+            @Param("from") Instant from,
+            @Param("to") Instant to
+    );
 }

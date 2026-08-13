@@ -60,11 +60,13 @@ public class OneToOneServiceController {
             @RequestParam(required = false) Long workTopicId,
             @Parameter(description = "ID de la tecnica", example = "1")
             @RequestParam(required = false) Long techniqueId,
+            @Parameter(description = "ID del especialista", example = "1")
+            @RequestParam(required = false) Long specialistId,
             @ParameterObject
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return PagedResponse.from(
-                service.getPublicServices(search, workTopicId, techniqueId, OneToOnePageables.sanitizePublicListing(pageable))
+                service.getPublicServices(search, workTopicId, techniqueId, specialistId, OneToOnePageables.sanitizePublicListing(pageable))
         );
     }
 

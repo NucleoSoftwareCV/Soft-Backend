@@ -40,6 +40,12 @@ public record SpecialistProfilePartialUpdateRequest(
 
         Set<Long> workTopicIds,
 
-        Set<Long> techniqueIds
+        Set<Long> techniqueIds,
+
+        Boolean showUpcomingEvents,
+
+        Boolean showOneToOneSessions,
+
+        Boolean showGallery
 ) {
 }

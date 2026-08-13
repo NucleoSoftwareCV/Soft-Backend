@@ -67,6 +67,9 @@ public final class EventSpecification {
         if (filter.isRecurring() != null) {
             spec = spec.and(isRecurring(filter.isRecurring()));
         }
+        if (filter.specialistId() != null) {
+            spec = spec.and(hasSpecialist(filter.specialistId()));
+        }
         if (startsAtDirection != null) {
             spec = spec.and(orderByNextProgrammedOccurrence(startsAtDirection));
         }

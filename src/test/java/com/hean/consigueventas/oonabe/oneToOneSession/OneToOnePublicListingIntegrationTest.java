@@ -49,6 +49,7 @@ class OneToOnePublicListingIntegrationTest {
     private String serviceSearchTerm;
     private Long workTopicId;
     private Long techniqueId;
+    private Long specialistId;
 
     @BeforeEach
     void setUpFilterData() {
@@ -70,6 +71,7 @@ class OneToOnePublicListingIntegrationTest {
         serviceSearchTerm = saved.getTitle().substring(0, Math.min(8, saved.getTitle().length()));
         workTopicId = workTopic.getId();
         techniqueId = technique.getId();
+        specialistId = saved.getSpecialist().getId();
     }
 
     @Test
@@ -122,6 +124,15 @@ class OneToOnePublicListingIntegrationTest {
         mockMvc.perform(get("/api/v1/one-to-one-services")
                         .param("workTopicId", workTopicId.toString())
                         .param("techniqueId", techniqueId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
+    }
+
+    @Test
+    void publicListingFiltersBySpecialistId() throws Exception {
+        mockMvc.perform(get("/api/v1/one-to-one-services")
+                        .param("specialistId", specialistId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(1)))
                 .andExpect(jsonPath("$.content[*].id").value(hasItem(serviceId.intValue())));
