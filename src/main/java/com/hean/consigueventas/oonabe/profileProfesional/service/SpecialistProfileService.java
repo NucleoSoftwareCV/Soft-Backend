@@ -500,7 +500,7 @@ public class SpecialistProfileService {
         if (search != null && !search.isBlank()) {
             String normalizedCategory = profileCategory == null || profileCategory.isBlank()
                     ? null
-                    : validateProfileCategory(profileCategory);
+                    : validateProfileCategory(profileCategory).toLowerCase();
 
             profiles =
                     specialistProfileRepository

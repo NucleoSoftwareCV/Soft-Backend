@@ -21,6 +21,8 @@ public class LocalImageStorageService {
     public static final int PROFILE_PHOTO_SIZE = 512;
     public static final int BANNER_WIDTH = 1248;
     public static final int BANNER_HEIGHT = 256;
+    public static final int COVER_WIDTH = 1200;
+    public static final int COVER_HEIGHT = 900;
 
     private static final Set<String> ALLOWED_EXTENSIONS =
             Set.of("jpg", "jpeg", "png");
@@ -86,6 +88,32 @@ public class LocalImageStorageService {
                 file,
                 specialistProfileId,
                 "gallery"
+        );
+    }
+
+    public String saveEventImage(
+            MultipartFile file,
+            Long eventId
+    ) {
+        validateImage(file, COVER_WIDTH, COVER_HEIGHT);
+
+        return saveImage(
+                file,
+                eventId,
+                "event-gallery"
+        );
+    }
+
+    public String saveSessionCoverImage(
+            MultipartFile file,
+            Long sessionId
+    ) {
+        validateImage(file, COVER_WIDTH, COVER_HEIGHT);
+
+        return saveImage(
+                file,
+                sessionId,
+                "session-cover"
         );
     }
 

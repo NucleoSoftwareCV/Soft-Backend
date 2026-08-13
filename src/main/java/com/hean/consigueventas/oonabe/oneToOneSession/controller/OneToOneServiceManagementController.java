@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -102,6 +104,17 @@ public class OneToOneServiceManagementController {
     })
     public OneToOneServiceResponse updateService(@PathVariable Long id, @Valid @RequestBody OneToOneServiceRequest request) {
         return service.updateService(id, SecurityUtils.getAuthenticatedUserId(), request);
+    }
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(SecurityConstants.HAS_ROLE_PROFESSIONAL)
+    @Operation(
+            summary = "Subir imagen de portada de la sesion",
+            description = "Reemplaza la imagen de portada de una sesion 1-a-1 del especialista logueado.",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+    )
+    public OneToOneServiceResponse uploadServiceImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return service.uploadCoverImage(id, SecurityUtils.getAuthenticatedUserId(), file);
     }
 
     @PatchMapping("/{id}/status")

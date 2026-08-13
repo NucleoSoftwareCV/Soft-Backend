@@ -12,6 +12,7 @@ import com.hean.consigueventas.oonabe.auth.security.JwtUtils;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.common.exception.TokenRefreshException;
 import com.hean.consigueventas.oonabe.profileCliente.repository.ClientProfileRepository;
+import com.hean.consigueventas.oonabe.profileCliente.entity.OnboardingStatus;
 import com.hean.consigueventas.oonabe.user.dto.response.UserResponse;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.mapper.UserMapper;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -60,6 +62,12 @@ public class AuthService {
         return clientProfileRepository.findByUserId(userId)
                 .map(profile -> profile.getFirstName())
                 .orElse(null);
+    }
+
+    private boolean onboardingRequiredFor(Long userId) {
+        return clientProfileRepository.findByUserId(userId)
+                .map(profile -> profile.getOnboardingStatus() == OnboardingStatus.NOT_STARTED)
+                .orElse(false);
     }
 
     @Transactional
@@ -100,7 +108,8 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
 
         return new JwtResponse(jwt, refreshToken.getToken(), userDetails.getId(), userDetails.getUsername(),
-                userDetails.getEmail(), firstNameFor(userDetails.getId()), roles);
+                userDetails.getEmail(), firstNameFor(userDetails.getId()), roles,
+                onboardingRequiredFor(userDetails.getId()), false);
     }
 
     @Transactional
@@ -115,7 +124,9 @@ public class AuthService {
         String givenName = (String) response.getOrDefault("given_name", "");
         String familyName = (String) response.getOrDefault("family_name", "");
 
-        User user = userRepository.findByUsernameOrEmail(email, email)
+        Optional<User> existingUser = userRepository.findByUsernameOrEmail(email, email);
+        boolean newlyRegistered = existingUser.isEmpty();
+        User user = existingUser
                 .orElseGet(() -> {
                     User newUser = new User();
                     newUser.setEmail(email);
@@ -141,7 +152,7 @@ public class AuthService {
                 .collect(Collectors.toSet());
 
         return new JwtResponse(jwt, refreshToken.getToken(), user.getId(), user.getUsername(), user.getEmail(),
-                firstNameFor(user.getId()), roles);
+                firstNameFor(user.getId()), roles, onboardingRequiredFor(user.getId()), newlyRegistered);
     }
 
     private String generateUniqueUsername(String email) {

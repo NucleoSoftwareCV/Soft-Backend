@@ -75,6 +75,12 @@ public record EventDetailResponse(
         Instant createdAt,
 
         @Schema(description = "Fecha de actualización")
-        Instant updatedAt
+        Instant updatedAt,
+
+        @Schema(description = "URL de la imagen de portada del evento")
+        String coverImageUrl,
+
+        @Schema(description = "Galeria de imagenes del evento, ordenadas")
+        List<EventImageResponse> images
 ) {
 }

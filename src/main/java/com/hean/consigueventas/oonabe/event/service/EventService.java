@@ -14,10 +14,12 @@ import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.CreateEventResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventImageResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventManagementResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
+import com.hean.consigueventas.oonabe.event.entity.EventImage;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.entity.MeetingLink;
 import com.hean.consigueventas.oonabe.event.mapper.EventMapper;
@@ -26,6 +28,7 @@ import com.hean.consigueventas.oonabe.event.mapper.MeetingLinkMapper;
 import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
 import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAttendeeDto;
+import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.event.repository.MeetingLinkRepository;
@@ -39,6 +42,7 @@ import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +50,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +58,8 @@ import org.springframework.security.access.AccessDeniedException;
 
 @Service
 public class EventService {
+
+    private static final int MAX_EVENT_IMAGES = 8;
 
     private final EventRepository eventRepository;
     private final EventOccurrenceRepository occurrenceRepository;
@@ -69,6 +76,8 @@ public class EventService {
     private final MeetingLinkMapper meetingLinkMapper;
     private final LocationMapper locationMapper;
     private final EventCardAssembler eventCardAssembler;
+    private final EventImageRepository eventImageRepository;
+    private final LocalImageStorageService imageStorageService;
 
     public EventService(EventRepository eventRepository,
                         EventOccurrenceRepository occurrenceRepository,
@@ -83,7 +92,9 @@ public class EventService {
                         MeetingLinkMapper meetingLinkMapper,
                         LocationMapper locationMapper,
                         EventCardAssembler eventCardAssembler,
-                        EventAttendeeRepository eventAttendeeRepository) {
+                        EventAttendeeRepository eventAttendeeRepository,
+                        EventImageRepository eventImageRepository,
+                        LocalImageStorageService imageStorageService) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
@@ -98,6 +109,8 @@ public class EventService {
         this.locationMapper = locationMapper;
         this.eventCardAssembler = eventCardAssembler;
         this.eventAttendeeRepository = eventAttendeeRepository;
+        this.eventImageRepository = eventImageRepository;
+        this.imageStorageService = imageStorageService;
     }
 
     @Transactional
@@ -244,7 +257,58 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(Long id) {
         Event event = getEventOrThrow(id);
-        return eventMapper.toDetailResponse(event);
+        return eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId()));
+    }
+
+    @Transactional
+    public EventManagementResponse addGalleryImage(Long id, MultipartFile file, Long userId, boolean admin) {
+        Event event = getManagedEvent(id, userId, admin);
+
+        List<EventImage> existing = eventImageRepository.findByEventIdOrderBySortOrderAscIdAsc(id);
+        if (existing.size() >= MAX_EVENT_IMAGES) {
+            throw new BusinessLogicException("Ya alcanzaste el maximo de " + MAX_EVENT_IMAGES + " imagenes para este evento.");
+        }
+
+        String url = imageStorageService.saveEventImage(file, id);
+
+        EventImage image = new EventImage();
+        image.setEvent(event);
+        image.setUrl(url);
+        image.setCover(existing.isEmpty());
+        image.setSortOrder((short) existing.size());
+        eventImageRepository.save(image);
+
+        return toManagementResponse(event);
+    }
+
+    @Transactional
+    public EventManagementResponse deleteGalleryImage(Long id, Long imageId, Long userId, boolean admin) {
+        Event event = getManagedEvent(id, userId, admin);
+
+        EventImage image = eventImageRepository.findById(imageId)
+                .filter(candidate -> candidate.getEvent().getId().equals(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada con ID: " + imageId));
+
+        boolean wasCover = image.isCover();
+        imageStorageService.deleteImage(image.getUrl());
+        eventImageRepository.delete(image);
+
+        if (wasCover) {
+            eventImageRepository.findByEventIdOrderBySortOrderAscIdAsc(id).stream()
+                    .findFirst()
+                    .ifPresent(next -> {
+                        next.setCover(true);
+                        eventImageRepository.save(next);
+                    });
+        }
+
+        return toManagementResponse(event);
+    }
+
+    private List<EventImageResponse> resolveGalleryImages(Long eventId) {
+        return eventImageRepository.findByEventIdOrderBySortOrderAscIdAsc(eventId).stream()
+                .map(eventMapper::toImageResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -335,10 +399,16 @@ public class EventService {
                 .map(occurrenceMapper::toResponse)
                 .toList();
         return new EventManagementResponse(
-                eventMapper.toDetailResponse(event),
+                eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId())),
                 event.getStatus(),
                 event.getSpecialist().getId(),
                 occurrences);
+    }
+
+    private String resolveCoverImageUrl(Long eventId) {
+        return eventImageRepository.findFirstByEventIdOrderByCoverDescSortOrderAscIdAsc(eventId)
+                .map(EventImage::getUrl)
+                .orElse(null);
     }
 
     private void configureOccurrence(
