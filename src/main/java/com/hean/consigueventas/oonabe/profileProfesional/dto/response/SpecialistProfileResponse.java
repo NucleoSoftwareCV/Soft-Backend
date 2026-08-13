@@ -81,6 +81,18 @@ public record SpecialistProfileResponse(
         List<ProfessionalLanguageResponse> languages,
 
         @Schema(description = "Redes sociales del perfil")
-        List<ProfessionalSocialLinkResponse> socialLinks
+        List<ProfessionalSocialLinkResponse> socialLinks,
+
+        @Schema(description = "Imagenes de la galeria publica")
+        List<GalleryImageResponse> galleryImages,
+
+        @Schema(description = "Mostrar la seccion de proximos eventos en el perfil publico")
+        Boolean showUpcomingEvents,
+
+        @Schema(description = "Mostrar la seccion de sesiones 1 a 1 en el perfil publico")
+        Boolean showOneToOneSessions,
+
+        @Schema(description = "Mostrar la seccion de galeria en el perfil publico")
+        Boolean showGallery
 ) {
 }

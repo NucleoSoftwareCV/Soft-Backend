@@ -12,10 +12,12 @@ import com.hean.consigueventas.oonabe.profileProfesional.dto.request.Professiona
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.ProfessionalSocialLinkRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfilePartialUpdateRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.response.GalleryImageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalLanguageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalSocialLinkResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.*;
+import com.hean.consigueventas.oonabe.profileProfesional.mapper.ProfessionalGalleryImageMapper;
 import com.hean.consigueventas.oonabe.profileProfesional.mapper.ProfessionalLanguageMapper;
 import com.hean.consigueventas.oonabe.profileProfesional.mapper.ProfessionalSocialLinkMapper;
 import com.hean.consigueventas.oonabe.profileProfesional.mapper.SpecialistProfileMapper;
@@ -53,6 +55,8 @@ public class SpecialistProfileService {
             "TIKTOK", 4
     );
 
+    private static final int MAX_GALLERY_IMAGES = 12;
+
     private final SpecialistProfileRepository specialistProfileRepository;
     private final ProfessionalSocialLinkRepository socialLinkRepository;
     private final ProfessionalWorkTopicRepository professionalWorkTopicRepository;
@@ -65,6 +69,8 @@ public class SpecialistProfileService {
     private final LocalImageStorageService localImageStorageService;
     private final ProfessionalLanguageRepository professionalLanguageRepository;
     private final ProfessionalLanguageMapper professionalLanguageMapper;
+    private final ProfessionalGalleryImageRepository galleryImageRepository;
+    private final ProfessionalGalleryImageMapper galleryImageMapper;
 
     @Transactional
     public SpecialistProfileResponse createProfile(
@@ -309,6 +315,18 @@ public class SpecialistProfileService {
             );
         }
 
+        if (request.showUpcomingEvents() != null) {
+            profile.setShowUpcomingEvents(request.showUpcomingEvents());
+        }
+
+        if (request.showOneToOneSessions() != null) {
+            profile.setShowOneToOneSessions(request.showOneToOneSessions());
+        }
+
+        if (request.showGallery() != null) {
+            profile.setShowGallery(request.showGallery());
+        }
+
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
 
@@ -482,7 +500,7 @@ public class SpecialistProfileService {
         if (search != null && !search.isBlank()) {
             String normalizedCategory = profileCategory == null || profileCategory.isBlank()
                     ? null
-                    : validateProfileCategory(profileCategory);
+                    : validateProfileCategory(profileCategory).toLowerCase();
 
             profiles =
                     specialistProfileRepository
@@ -767,8 +785,7 @@ public class SpecialistProfileService {
                                 )
                         );
 
-        localImageStorageService.deleteImage(profile.getPhotoUrl());
-
+        String previousPhotoUrl = profile.getPhotoUrl();
         String photoUrl = localImageStorageService.saveProfilePhoto(
                 file,
                 profile.getId()
@@ -779,6 +796,8 @@ public class SpecialistProfileService {
 
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
+
+        localImageStorageService.deleteImage(previousPhotoUrl);
 
         return buildResponse(updatedProfile);
     }
@@ -803,8 +822,7 @@ public class SpecialistProfileService {
                                 )
                         );
 
-        localImageStorageService.deleteImage(profile.getBannerUrl());
-
+        String previousBannerUrl = profile.getBannerUrl();
         String bannerUrl = localImageStorageService.saveBanner(
                 file,
                 profile.getId()
@@ -816,7 +834,97 @@ public class SpecialistProfileService {
         SpecialistProfile updatedProfile =
                 specialistProfileRepository.save(profile);
 
+        localImageStorageService.deleteImage(previousBannerUrl);
+
         return buildResponse(updatedProfile);
+    }
+
+    @Transactional
+    public SpecialistProfileResponse uploadGalleryImage(
+            String username,
+            MultipartFile file
+    ) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario autenticado no encontrado."
+                        )
+                );
+
+        SpecialistProfile profile =
+                specialistProfileRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Perfil profesional no encontrado."
+                                )
+                        );
+
+        long currentCount =
+                galleryImageRepository.countBySpecialistProfileId(profile.getId());
+
+        if (currentCount >= MAX_GALLERY_IMAGES) {
+            throw new BusinessLogicException(
+                    "Solo puedes subir hasta " + MAX_GALLERY_IMAGES + " imágenes a tu galería."
+            );
+        }
+
+        String imageUrl = localImageStorageService.saveGalleryImage(
+                file,
+                profile.getId()
+        );
+
+        ProfessionalGalleryImage image = new ProfessionalGalleryImage();
+        image.setSpecialistProfile(profile);
+        image.setImageUrl(imageUrl);
+        image.setSortOrder((int) currentCount);
+
+        galleryImageRepository.save(image);
+
+        markProfileAsDraft(profile);
+
+        SpecialistProfile updatedProfile =
+                specialistProfileRepository.save(profile);
+
+        return buildResponse(updatedProfile);
+    }
+
+    @Transactional
+    public void deleteGalleryImage(
+            String username,
+            Long imageId
+    ) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario autenticado no encontrado."
+                        )
+                );
+
+        SpecialistProfile profile =
+                specialistProfileRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Perfil profesional no encontrado."
+                                )
+                        );
+
+        ProfessionalGalleryImage image =
+                galleryImageRepository
+                        .findBySpecialistProfileIdAndId(
+                                profile.getId(),
+                                imageId
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Imagen de galería no encontrada."
+                                )
+                        );
+
+        galleryImageRepository.delete(image);
+        localImageStorageService.deleteImage(image.getImageUrl());
+
+        markProfileAsDraft(profile);
+        specialistProfileRepository.save(profile);
     }
 
     private void saveWorkTopics(
@@ -932,12 +1040,22 @@ public class SpecialistProfileService {
                         .map(socialLinkMapper::toResponse)
                         .toList();
 
+        List<GalleryImageResponse> galleryImages =
+                galleryImageRepository
+                        .findBySpecialistProfileIdOrderBySortOrderAscCreatedAtAsc(
+                                profile.getId()
+                        )
+                        .stream()
+                        .map(galleryImageMapper::toResponse)
+                        .toList();
+
         return specialistProfileMapper.toResponse(
                 profile,
                 workTopics,
                 techniques,
                 languages,
-                socialLinks
+                socialLinks,
+                galleryImages
 
         );
     }

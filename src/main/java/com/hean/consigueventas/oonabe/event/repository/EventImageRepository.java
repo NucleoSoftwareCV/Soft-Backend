@@ -23,4 +23,8 @@ public interface EventImageRepository extends JpaRepository<EventImage, Long> {
     List<EventImage> findOrderedCandidatesByEventIds(@Param("eventIds") Collection<Long> eventIds);
 
     Optional<EventImage> findFirstByEventIdOrderByCoverDescSortOrderAscIdAsc(Long eventId);
+
+    List<EventImage> findByEventIdOrderBySortOrderAscIdAsc(Long eventId);
+
+    long countByEventId(Long eventId);
 }

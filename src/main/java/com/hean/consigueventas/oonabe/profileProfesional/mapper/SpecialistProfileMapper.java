@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.profileProfesional.mapper;
 
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.response.GalleryImageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalLanguageResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.ProfessionalSocialLinkResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
@@ -29,6 +30,9 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "rejectionReason", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "showUpcomingEvents", ignore = true)
+    @Mapping(target = "showOneToOneSessions", ignore = true)
+    @Mapping(target = "showGallery", ignore = true)
     SpecialistProfile toEntity(SpecialistProfileRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -44,6 +48,9 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "rejectionReason", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "showUpcomingEvents", ignore = true)
+    @Mapping(target = "showOneToOneSessions", ignore = true)
+    @Mapping(target = "showGallery", ignore = true)
     void updateEntityFromRequest(
             SpecialistProfileRequest request,
             @MappingTarget SpecialistProfile profile
@@ -72,11 +79,16 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "techniques", source = "techniques")
     @Mapping(target = "languages", source = "languages")
     @Mapping(target = "socialLinks", source = "socialLinks")
+    @Mapping(target = "galleryImages", source = "galleryImages")
+    @Mapping(target = "showUpcomingEvents", source = "profile.showUpcomingEvents")
+    @Mapping(target = "showOneToOneSessions", source = "profile.showOneToOneSessions")
+    @Mapping(target = "showGallery", source = "profile.showGallery")
     SpecialistProfileResponse toResponse(
             SpecialistProfile profile,
             Set<String> workTopics,
             Set<String> techniques,
             List<ProfessionalLanguageResponse> languages,
-            List<ProfessionalSocialLinkResponse> socialLinks
+            List<ProfessionalSocialLinkResponse> socialLinks,
+            List<GalleryImageResponse> galleryImages
     );
 }

@@ -12,11 +12,12 @@ public final class OneToOneServiceSpecification {
     private OneToOneServiceSpecification() {
     }
 
-    public static Specification<OneToOneService> publicListing(String search, Long workTopicId, Long techniqueId) {
+    public static Specification<OneToOneService> publicListing(String search, Long workTopicId, Long techniqueId, Long specialistId) {
         return published()
                 .and(matchesSearch(search))
                 .and(hasWorkTopic(workTopicId))
-                .and(hasTechnique(techniqueId));
+                .and(hasTechnique(techniqueId))
+                .and(hasSpecialist(specialistId));
     }
 
     private static Specification<OneToOneService> published() {
@@ -41,6 +42,15 @@ public final class OneToOneServiceSpecification {
             }
             query.distinct(true);
             return criteriaBuilder.equal(root.join("techniques").get("id"), techniqueId);
+        };
+    }
+
+    private static Specification<OneToOneService> hasSpecialist(Long specialistId) {
+        return (root, query, criteriaBuilder) -> {
+            if (specialistId == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("specialist").get("id"), specialistId);
         };
     }
 

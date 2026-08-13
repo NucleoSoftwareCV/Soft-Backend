@@ -71,7 +71,7 @@ public interface SpecialistProfileRepository
             SELECT p FROM SpecialistProfile p
             WHERE p.approvalStatus = :approvalStatus
               AND p.publicationStatus = :publicationStatus
-              AND (:profileCategory IS NULL OR LOWER(p.profileCategory) = LOWER(:profileCategory))
+              AND (:profileCategory IS NULL OR LOWER(p.profileCategory) = :profileCategory)
               AND (
                 LOWER(p.publicName) LIKE LOWER(CONCAT('%', :search, '%'))
                 OR LOWER(p.biography) LIKE LOWER(CONCAT('%', :search, '%'))

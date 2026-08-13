@@ -19,10 +19,12 @@ import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneService
 import com.hean.consigueventas.oonabe.oneToOneSession.specification.OneToOneServiceSpecification;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
+import com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.util.HashSet;
@@ -43,6 +45,7 @@ public class OneToOneSessionService {
     private final OneToOneServiceMapper serviceMapper;
     private final WorkTopicRepository workTopicRepository;
     private final TechniqueRepository techniqueRepository;
+    private final LocalImageStorageService imageStorageService;
 
     public OneToOneSessionService(
             OneToOneServiceRepository serviceRepository,
@@ -50,7 +53,8 @@ public class OneToOneSessionService {
             LocationRepository locationRepository,
             OneToOneServiceMapper serviceMapper,
             WorkTopicRepository workTopicRepository,
-            TechniqueRepository techniqueRepository
+            TechniqueRepository techniqueRepository,
+            LocalImageStorageService imageStorageService
     ) {
         this.serviceRepository = serviceRepository;
         this.specialistProfileRepository = specialistProfileRepository;
@@ -58,12 +62,13 @@ public class OneToOneSessionService {
         this.serviceMapper = serviceMapper;
         this.workTopicRepository = workTopicRepository;
         this.techniqueRepository = techniqueRepository;
+        this.imageStorageService = imageStorageService;
     }
 
     @Transactional(readOnly = true)
-    public Page<OneToOneServiceCardResponse> getPublicServices(String search, Long workTopicId, Long techniqueId, Pageable pageable) {
+    public Page<OneToOneServiceCardResponse> getPublicServices(String search, Long workTopicId, Long techniqueId, Long specialistId, Pageable pageable) {
         return serviceRepository
-                .findAll(OneToOneServiceSpecification.publicListing(search, workTopicId, techniqueId), pageable)
+                .findAll(OneToOneServiceSpecification.publicListing(search, workTopicId, techniqueId, specialistId), pageable)
                 .map(serviceMapper::toCardDto);
     }
 
@@ -128,6 +133,21 @@ public class OneToOneSessionService {
         if (request.techniques() != null) {
             entity.setTechniques(resolveTechniques(request.techniques()));
         }
+
+        return serviceMapper.toDto(serviceRepository.save(entity));
+    }
+
+    @Transactional
+    public OneToOneServiceResponse uploadCoverImage(Long id, Long userId, MultipartFile file) {
+        OneToOneService entity = findServiceById(id);
+        validateOwner(entity, userId);
+
+        if (entity.getImageUrl() != null) {
+            imageStorageService.deleteImage(entity.getImageUrl());
+        }
+
+        String url = imageStorageService.saveSessionCoverImage(file, id);
+        entity.setImageUrl(url);
 
         return serviceMapper.toDto(serviceRepository.save(entity));
     }

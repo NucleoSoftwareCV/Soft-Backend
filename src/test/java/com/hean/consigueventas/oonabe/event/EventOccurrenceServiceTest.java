@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.event.dto.response.EventOccurrenceAdminRes
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.mapper.EventOccurrenceMapper;
+import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.service.EventOccurrenceService;
 import org.junit.jupiter.api.Test;
@@ -33,9 +34,11 @@ class EventOccurrenceServiceTest {
     private static final ZoneId LIMA_ZONE = ZoneId.of("America/Lima");
 
     private final EventOccurrenceRepository occurrenceRepository = mock(EventOccurrenceRepository.class);
+    private final EventImageRepository eventImageRepository = mock(EventImageRepository.class);
     private final EventOccurrenceMapper mapper = Mappers.getMapper(EventOccurrenceMapper.class);
     private final EventOccurrenceService service = new EventOccurrenceService(
             occurrenceRepository,
+            eventImageRepository,
             mapper
     );
 

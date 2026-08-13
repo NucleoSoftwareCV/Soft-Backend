@@ -350,7 +350,7 @@ public class SpecialistProfileController {
     @PreAuthorize("hasRole('PROFESSIONAL')")
     @Operation(
             summary = "Subir foto de perfil",
-            description = "Permite al profesional subir o reemplazar su foto de perfil con medidas 126x126."
+            description = "Permite al profesional subir o reemplazar su foto de perfil con medidas 512x512."
     )
     public SpecialistProfileResponse uploadProfilePhoto(
             Authentication authentication,
@@ -379,6 +379,43 @@ public class SpecialistProfileController {
         return specialistProfileService.uploadBanner(
                 authentication.getName(),
                 file
+        );
+    }
+
+    //Profesional: sube una imagen a su galería
+    @PostMapping(
+            value = "/me/gallery-images",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    @Operation(
+            summary = "Subir imagen a la galería",
+            description = "Permite al profesional agregar una imagen a la galería de su perfil (máximo 12)."
+    )
+    public SpecialistProfileResponse uploadGalleryImage(
+            Authentication authentication,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return specialistProfileService.uploadGalleryImage(
+                authentication.getName(),
+                file
+        );
+    }
+
+    //Profesional: elimina una imagen de su galería
+    @DeleteMapping("/me/gallery-images/{imageId}")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    @Operation(
+            summary = "Eliminar imagen de la galería",
+            description = "Permite al profesional eliminar una imagen de la galería de su perfil."
+    )
+    public void deleteGalleryImage(
+            Authentication authentication,
+            @PathVariable Long imageId
+    ) {
+        specialistProfileService.deleteGalleryImage(
+                authentication.getName(),
+                imageId
         );
     }
 }

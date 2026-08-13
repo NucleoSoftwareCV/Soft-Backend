@@ -67,7 +67,10 @@ public record EventFilterRequest(
         Integer hourTo,
 
         @Schema(description = "true = solo recurrentes, false = solo unicos, null = todos")
-        Boolean isRecurring
+        Boolean isRecurring,
+
+        @Schema(description = "ID del especialista/organizador")
+        Long specialistId
 ) {
         @AssertTrue(message = "La fecha final no puede ser anterior a la fecha inicial")
         @Schema(hidden = true)

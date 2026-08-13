@@ -8,6 +8,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -74,6 +76,10 @@ public class ClientProfile {
 
     @Column(name = "receive_weekly_summary", nullable = false)
     private Boolean receiveWeeklySummary = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "onboarding_status", length = 24)
+    private OnboardingStatus onboardingStatus;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

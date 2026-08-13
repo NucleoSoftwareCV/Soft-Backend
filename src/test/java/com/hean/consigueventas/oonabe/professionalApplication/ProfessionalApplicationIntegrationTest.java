@@ -248,6 +248,9 @@ class ProfessionalApplicationIntegrationTest {
                         null,
                         null,
                         null,
+                        null,
+                        null,
+                        null,
                         null
                 );
 
@@ -288,6 +291,9 @@ class ProfessionalApplicationIntegrationTest {
                         null,
                         null,
                         "Biografia actualizada sin ocultar el perfil.",
+                        null,
+                        null,
+                        null,
                         null,
                         null,
                         null,

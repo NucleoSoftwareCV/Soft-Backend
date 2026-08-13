@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
+import com.hean.consigueventas.oonabe.event.dto.response.EventImageResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventOrganizerResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -73,14 +74,20 @@ public interface EventMapper {
     @Mapping(target = "experienceTypeSlug", source = "experienceType.slug")
     EventResponse toResponse(Event event);
 
-    @Mapping(target = "organizer", source = "specialist")
-    @Mapping(target = "categoryId", source = "category.id")
-    @Mapping(target = "categoryName", source = "category.name")
-    @Mapping(target = "experienceTypeId", source = "experienceType.id")
-    @Mapping(target = "eventType", source = "experienceType.name")
-    @Mapping(target = "experienceTypeSlug", source = "experienceType.slug")
-    @Mapping(target = "isRecurring", source = "recurring")
-    EventDetailResponse toDetailResponse(Event event);
+    @Mapping(target = "organizer", source = "event.specialist")
+    @Mapping(target = "categoryId", source = "event.category.id")
+    @Mapping(target = "categoryName", source = "event.category.name")
+    @Mapping(target = "experienceTypeId", source = "event.experienceType.id")
+    @Mapping(target = "eventType", source = "event.experienceType.name")
+    @Mapping(target = "experienceTypeSlug", source = "event.experienceType.slug")
+    @Mapping(target = "isRecurring", source = "event.recurring")
+    @Mapping(target = "coverImageUrl", source = "coverImageUrl")
+    @Mapping(target = "images", source = "images")
+    EventDetailResponse toDetailResponse(Event event, String coverImageUrl, List<EventImageResponse> images);
+
+    @Mapping(target = "id", source = "image.id")
+    @Mapping(target = "url", source = "image.url")
+    EventImageResponse toImageResponse(com.hean.consigueventas.oonabe.event.entity.EventImage image);
 
     EventOrganizerResponse toOrganizerResponse(SpecialistProfile specialist);
 

@@ -83,6 +83,23 @@ class EventPublicApiIntegrationTest {
     }
 
     @Test
+    void publicEventListingFiltersBySpecialistId() throws Exception {
+        var event = eventRepository.findByTitle("Iniciación a la Meditación Trascendental y del Sonido")
+                .orElseThrow();
+        Long specialistId = event.getSpecialist().getId();
+
+        mockMvc.perform(get("/api/v1/events")
+                        .param("specialistId", specialistId.toString())
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[*].organizerId")
+                        .value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(specialistId.intValue()))))
+                .andExpect(jsonPath("$.content[*].id")
+                        .value(org.hamcrest.Matchers.hasItem(event.getId().intValue())));
+    }
+
+    @Test
     void publicRelatedEventEndpointsReturnNotFoundWhenBaseEventDoesNotExist() throws Exception {
         mockMvc.perform(get("/api/v1/events/999999/similar"))
                 .andExpect(status().isNotFound())
