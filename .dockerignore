@@ -1,0 +1,16 @@
+.git
+.idea
+.vscode
+.agents
+.cache
+target
+build
+dist
+*.iml
+.env
+.env.*
+!.env.example
+Dockerfile
+docker-compose*.yml
+.docker/
+README.md

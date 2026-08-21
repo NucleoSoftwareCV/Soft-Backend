@@ -1,5 +1,9 @@
 HELP.md
 target/
+.env
+.env.*
+!.env.example
+!.env.prod.example
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -31,3 +35,33 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Codex / agent local artifacts
+.cache/
+outputs/
+.agents/
+.agents/skills/
+.claude/
+.codex/
+.skills/
+AGENTS.local.md
+CLAUDE.local.md
+
+# Local generated documents
+*.xlsx
+*.xls
+*.inspect.ndjson
+
+# Runtime uploaded media
+/images/
+
+# Local DB backups
+outputs/**/*.sql
+*.dump
+*.backup
+
+# Keep Flyway migrations versioned
+!src/main/resources/db/
+!src/main/resources/db/**
+!src/main/resources/db/migration/
+!src/main/resources/db/migration/*.sql

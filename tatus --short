@@ -1,0 +1,20 @@
+warning: in the working copy of '.gitattributes', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.mvn/wrapper/maven-wrapper.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pom.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/hean/consigueventas/oonabe/OonaBeApplication.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/resources/application.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/hean/consigueventas/oonabe/OonaBeApplicationTests.java', LF will be replaced by CRLF the next time Git touches it
+ .gitignore                                         | 34 [32m++++++++[m
+ pom.xml                                            | 98 [32m+++++++++++++++[m[31m-------[m
+ .../com/hean/consigueventas/oonabe/config/vacio    |  0
+ .../hean/consigueventas/oonabe/controller/vacio    |  0
+ .../java/com/hean/consigueventas/oonabe/dto/vacio  |  0
+ .../com/hean/consigueventas/oonabe/entity/vacio    |  0
+ .../com/hean/consigueventas/oonabe/mapper/vacio    |  0
+ .../hean/consigueventas/oonabe/repository/vacio    |  0
+ .../com/hean/consigueventas/oonabe/security/vacio  |  0
+ .../com/hean/consigueventas/oonabe/service/vacio   |  0
+ src/main/resources/application.properties          | 44 [32m+++++++++[m[31m-[m
+ .../oonabe/OonaBeApplicationTests.java             | 30 [32m+++++++[m
+ 12 files changed, 173 insertions(+), 33 deletions(-)

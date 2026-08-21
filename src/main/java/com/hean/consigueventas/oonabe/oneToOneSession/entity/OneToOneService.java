@@ -1,0 +1,107 @@
+package com.hean.consigueventas.oonabe.oneToOneSession.entity;
+
+import com.hean.consigueventas.oonabe.common.entity.AuditableEntity;
+import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.common.enums.SessionModality;
+import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
+import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
+import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.user.entity.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "one_to_one_services")
+@Getter
+@Setter
+public class OneToOneService extends AuditableEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Version
+    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    private long version;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialist_id", nullable = false)
+    private SpecialistProfile specialist;
+
+    @Column(name = "slug", nullable = false, unique = true, length = 180)
+    private String slug;
+
+    @Column(name = "title", nullable = false, length = 180)
+    private String title;
+
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(name = "duration_minutes", nullable = false)
+    private Integer durationMinutes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "modality", nullable = false, length = 15)
+    private SessionModality modality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
+
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency = "EUR";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private PublicationStatus status = PublicationStatus.BORRADOR;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
+
+    @Column(name = "approved_at")
+    private Instant approvedAt;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "one_to_one_service_work_topics",
+            joinColumns = @JoinColumn(name = "one_to_one_service_id"),
+            inverseJoinColumns = @JoinColumn(name = "work_topic_id")
+    )
+    private Set<WorkTopic> workTopics = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "one_to_one_service_techniques",
+            joinColumns = @JoinColumn(name = "one_to_one_service_id"),
+            inverseJoinColumns = @JoinColumn(name = "technique_id")
+    )
+    private Set<Technique> techniques = new HashSet<>();
+}
