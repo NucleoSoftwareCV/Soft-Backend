@@ -10,6 +10,9 @@ public record EventOrganizerResponse(
         @Schema(description = "Nombre público")
         String publicName,
 
+        @Schema(description = "Slug público del perfil del organizador")
+        String slug,
+
         @Schema(description = "Biografía o resumen")
         String biography,
 
