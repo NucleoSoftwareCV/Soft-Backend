@@ -2,13 +2,12 @@ package com.hean.consigueventas.oonabe.professionalApplication.service;
 
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
-import com.hean.consigueventas.oonabe.masterdata.entity.City;
-import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.professionalApplication.dto.request.ProfessionalApplicationDecisionRequest;
 import com.hean.consigueventas.oonabe.professionalApplication.dto.request.ProfessionalApplicationRequest;
 import com.hean.consigueventas.oonabe.professionalApplication.dto.response.ProfessionalApplicationResponse;
 import com.hean.consigueventas.oonabe.professionalApplication.entity.ProfessionalApplication;
 import com.hean.consigueventas.oonabe.professionalApplication.enums.ProfessionalApplicationStatus;
+import com.hean.consigueventas.oonabe.professionalApplication.enums.ProfessionalType;
 import com.hean.consigueventas.oonabe.professionalApplication.mapper.ProfessionalApplicationMapper;
 import com.hean.consigueventas.oonabe.professionalApplication.repository.ProfessionalApplicationRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.service.SpecialistProfileService;
@@ -16,12 +15,14 @@ import com.hean.consigueventas.oonabe.user.entity.Role;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.RoleRepository;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,7 +31,6 @@ public class ProfessionalApplicationService {
     private final ProfessionalApplicationRepository applicationRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final CityRepository cityRepository;
     private final ProfessionalApplicationMapper mapper;
     private final SpecialistProfileService specialistProfileService;
 
@@ -38,65 +38,95 @@ public class ProfessionalApplicationService {
             ProfessionalApplicationRepository applicationRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
-            CityRepository cityRepository,
             ProfessionalApplicationMapper mapper,
             SpecialistProfileService specialistProfileService) {
+
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.cityRepository = cityRepository;
         this.mapper = mapper;
         this.specialistProfileService = specialistProfileService;
     }
 
     @Transactional
-    public ProfessionalApplicationResponse saveMyApplication(
-            Long userId,
-            ProfessionalApplicationRequest request) {
-        User user = getUser(userId);
-        if (hasRole(user, Role.ROLE_PROFESSIONAL)) {
-            throw new BusinessLogicException("El usuario ya tiene acceso profesional.");
+    public ProfessionalApplicationResponse createApplication(
+            ProfessionalApplicationRequest request,
+            Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario no encontrado."
+                        ));
+
+        boolean isProfessional = user.getRoles() != null
+                && user.getRoles().stream()
+                .anyMatch(role ->
+                        Role.ROLE_PROFESSIONAL.equals(role.getName()));
+
+        if (isProfessional) {
+            throw new BusinessLogicException(
+                    "Tu cuenta ya tiene el rol de profesional."
+            );
         }
 
-        City city = cityRepository.findById(request.cityId())
-                .filter(candidate -> Boolean.TRUE.equals(candidate.getIsActive()))
-                .orElseThrow(() -> new ResourceNotFoundException("Ciudad activa no encontrada."));
-
-        ProfessionalApplication application = applicationRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    ProfessionalApplication created = new ProfessionalApplication();
-                    created.setUser(user);
-                    return created;
-                });
-
-        if (application.getStatus() == ProfessionalApplicationStatus.APROBADO) {
-            throw new BusinessLogicException("La solicitud ya fue aprobada y no puede modificarse.");
+        if (applicationRepository.findByUserId(userId).isPresent()) {
+            throw new BusinessLogicException(
+                    "Ya existe una solicitud profesional asociada a tu cuenta."
+            );
         }
 
-        application.setFullName(request.fullName().trim());
+        String email = request.email().trim().toLowerCase();
+        String fullName = request.fullName().trim();
+        String city = request.city().trim();
+
+        ProfessionalApplication application =
+                new ProfessionalApplication();
+
+        application.setUser(user);
+        application.setFullName(fullName);
+        application.setEmail(email);
         application.setCity(city);
-        application.setProfessionalType(request.professionalType());
-        application.setWhatsappPhone(request.whatsappPhone().trim());
-        application.setMotivation(request.motivation().trim());
+
+        application.setProfessionalType(
+                ProfessionalType.valueOf(
+                        request.professionalType()
+                                .trim()
+                                .toUpperCase()
+                )
+        );
+
+        application.setWhatsappPhone(
+                request.whatsappPhone().trim()
+        );
+
+        application.setMotivation(
+                request.motivation().trim()
+        );
+
         application.setPrivacyAcceptedAt(Instant.now());
-        application.setStatus(ProfessionalApplicationStatus.PENDIENTE);
+
+        application.setStatus(
+                ProfessionalApplicationStatus.PENDIENTE
+        );
+
         application.setEvaluatedBy(null);
         application.setEvaluatedAt(null);
         application.setRejectionReason(null);
 
-        return mapper.toResponse(applicationRepository.save(application));
-    }
+        ProfessionalApplication saved =
+                applicationRepository.save(application);
 
-    public ProfessionalApplicationResponse getMyApplication(Long userId) {
-        return applicationRepository.findByUserId(userId)
-                .map(mapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Solicitud profesional no encontrada."));
+        return mapper.toResponse(saved);
     }
 
     public Page<ProfessionalApplicationResponse> getApplicationsForAdmin(
             ProfessionalApplicationStatus status,
             Pageable pageable) {
-        return applicationRepository.findForAdmin(status, pageable).map(mapper::toResponse);
+
+        return applicationRepository
+                .findForAdmin(status, pageable)
+                .map(mapper::toResponse);
     }
 
     @Transactional
@@ -104,51 +134,100 @@ public class ProfessionalApplicationService {
             Long applicationId,
             Long adminId,
             ProfessionalApplicationDecisionRequest request) {
-        ProfessionalApplication application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Solicitud profesional no encontrada."));
+
+        ProfessionalApplication application =
+                applicationRepository.findById(applicationId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Solicitud profesional no encontrada."
+                                ));
 
         if (application.getStatus() == request.status()) {
             return mapper.toResponse(application);
         }
-        if (application.getStatus() != ProfessionalApplicationStatus.PENDIENTE) {
-            throw new BusinessLogicException("Solo se pueden evaluar solicitudes pendientes.");
+
+        if (application.getStatus() !=
+                ProfessionalApplicationStatus.PENDIENTE) {
+
+            throw new BusinessLogicException(
+                    "Solo se pueden evaluar solicitudes pendientes."
+            );
         }
 
-        User admin = getUser(adminId);
-        application.setStatus(request.status());
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Administrador no encontrado."
+                        ));
+
         application.setEvaluatedBy(admin);
         application.setEvaluatedAt(Instant.now());
+        application.setStatus(request.status());
 
-        if (request.status() == ProfessionalApplicationStatus.APROBADO) {
+        if (request.status() ==
+                ProfessionalApplicationStatus.APROBADO) {
+
             application.setRejectionReason(null);
-            grantProfessionalRole(application.getUser());
-            specialistProfileService.createMinimalProfileIfMissing(
-                    application.getUser(),
-                    application.getFullName(),
-                    application.getWhatsappPhone());
-        } else {
-            application.setRejectionReason(request.rejectionReason().trim());
+
+            User professional =
+                    createOrPromoteProfessional(application);
+
+            application.setUser(professional);
+
+        } else if (request.status() ==
+                ProfessionalApplicationStatus.RECHAZADO) {
+
+            String reason = request.rejectionReason();
+
+            if (reason == null || reason.trim().isEmpty()) {
+                throw new BusinessLogicException(
+                        "El motivo del rechazo es obligatorio."
+                );
+            }
+
+            application.setRejectionReason(
+                    reason.trim()
+            );
         }
 
-        return mapper.toResponse(applicationRepository.save(application));
+        ProfessionalApplication saved =
+                applicationRepository.save(application);
+
+        return mapper.toResponse(saved);
     }
 
-    private User getUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
-    }
+    private User createOrPromoteProfessional(
+            ProfessionalApplication application) {
 
-    private void grantProfessionalRole(User user) {
-        if (hasRole(user, Role.ROLE_PROFESSIONAL)) {
-            return;
+        User user = application.getUser();
+
+        if (user == null) {
+            throw new BusinessLogicException(
+                    "La solicitud no tiene un usuario asociado."
+            );
         }
-        Role professionalRole = roleRepository.findByName(Role.ROLE_PROFESSIONAL)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol profesional no encontrado."));
+
+        Role professionalRole =
+                roleRepository.findByName(
+                        Role.ROLE_PROFESSIONAL
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Rol profesional no encontrado."
+                        ));
+
+        if (user.getRoles() == null) {
+            user.setRoles(new HashSet<>());
+        }
+
         user.getRoles().add(professionalRole);
-        userRepository.save(user);
-    }
 
-    private boolean hasRole(User user, String roleName) {
-        return user.getRoles().stream().anyMatch(role -> roleName.equals(role.getName()));
+        User savedUser = userRepository.save(user);
+        specialistProfileService.createMinimalProfileIfMissing(
+                savedUser,
+                application.getFullName(),
+                application.getWhatsappPhone()
+        );
+
+        return savedUser;
     }
 }

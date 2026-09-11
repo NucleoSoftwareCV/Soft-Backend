@@ -8,10 +8,15 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ProfessionalApplicationMapper {
 
-    @Mapping(target = "userId", source = "user.id")
-    @Mapping(target = "email", source = "user.email")
-    @Mapping(target = "cityId", source = "city.id")
-    @Mapping(target = "cityName", source = "city.name")
-    @Mapping(target = "evaluatedById", source = "evaluatedBy.id")
-    ProfessionalApplicationResponse toResponse(ProfessionalApplication application);
+    @Mapping(
+            target = "userId",
+            source = "user.id"
+    )
+    @Mapping(
+            target = "evaluatedById",
+            source = "evaluatedBy.id"
+    )
+    ProfessionalApplicationResponse toResponse(
+            ProfessionalApplication application
+    );
 }

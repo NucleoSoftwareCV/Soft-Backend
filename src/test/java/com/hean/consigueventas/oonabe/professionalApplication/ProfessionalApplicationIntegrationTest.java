@@ -1,8 +1,7 @@
+
 package com.hean.consigueventas.oonabe.professionalApplication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest;
-import com.hean.consigueventas.oonabe.auth.dto.response.TokenRefreshResponse;
 import com.hean.consigueventas.oonabe.auth.entity.RefreshToken;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.auth.service.AuthService;
@@ -10,10 +9,8 @@ import com.hean.consigueventas.oonabe.auth.service.RefreshTokenService;
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
-import com.hean.consigueventas.oonabe.masterdata.entity.City;
-import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfilePartialUpdateRequest;
+import com.hean.consigueventas.oonabe.profileProfesional.dto.request.SpecialistProfileRequest;
 import com.hean.consigueventas.oonabe.profileProfesional.dto.response.SpecialistProfileResponse;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.service.SpecialistProfileService;
@@ -41,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,8 +48,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ProfessionalApplicationIntegrationTest {
 
-    private static final String MY_APPLICATION = "/api/v1/professional-applications/me";
-    private static final String ADMIN_APPLICATIONS = "/api/v1/admin/professional-applications";
+    private static final String APPLICATIONS =
+            "/api/v1/professional-applications";
+
+    private static final String ADMIN_APPLICATIONS =
+            "/api/v1/admin/professional-applications";
 
     @Autowired
     private MockMvc mockMvc;
@@ -67,9 +67,6 @@ class ProfessionalApplicationIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private CityRepository cityRepository;
-
-    @Autowired
     private RefreshTokenService refreshTokenService;
 
     @Autowired
@@ -82,159 +79,291 @@ class ProfessionalApplicationIntegrationTest {
     private SpecialistProfileRepository specialistProfileRepository;
 
     @Test
-    void unauthenticatedUserCannotCreateOrReadApplication() throws Exception {
-        mockMvc.perform(put(MY_APPLICATION)
+    void unauthenticatedUserCannotCreateApplication() throws Exception {
+        mockMvc.perform(
+                post(APPLICATIONS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
-                .andExpect(status().isUnauthorized());
-
-        mockMvc.perform(get(MY_APPLICATION))
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        validRequest()
+                                )
+                        )
+        )
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void userCreatesAndUpdatesSinglePendingApplication() throws Exception {
-        saveApplication("user1", validRequest())
+    void authenticatedUserCanCreateApplication() throws Exception {
+        mockMvc.perform(
+                post(APPLICATIONS)
+                        .with(user(principal("user1")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        validRequest()
+                                )
+                        )
+        )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDIENTE"))
+                .andExpect(jsonPath("$.fullName").value("Usuario Uno"))
+                .andExpect(jsonPath("$.city").value("Lima"))
                 .andExpect(jsonPath("$.email").value("user1@oona.es"));
-
-        ProfessionalApplicationRequest updated = new ProfessionalApplicationRequest(
-                "Usuario Uno",
-                activeCity().getId(),
-                ProfessionalType.COACH,
-                "+34600999888",
-                "Acompaño procesos de bienestar y crecimiento personal.",
-                true
-        );
-        saveApplication("user1", updated)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.professionalType").value("COACH"))
-                .andExpect(jsonPath("$.whatsappPhone").value("+34600999888"));
-
-        assertThat(applicationRepository.count()).isEqualTo(1);
     }
 
     @Test
-    void requestValidatesPrivacyAndActiveCity() throws Exception {
-        ProfessionalApplicationRequest withoutPrivacy = new ProfessionalApplicationRequest(
-                "Usuario Uno",
-                activeCity().getId(),
-                ProfessionalType.YOGA,
-                "+34600123456",
-                "Tengo experiencia impartiendo clases de yoga.",
-                false
-        );
-        saveApplication("user1", withoutPrivacy)
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors").isArray());
+    void publicApplicationRequiresNameCityAndEmail() throws Exception {
+        ProfessionalApplicationRequest invalidRequest =
+               new ProfessionalApplicationRequest(
+        "",
+        "",
+        "correo-invalido",
+        "Terapeuta",
+        "+51 999 999 999",
+        "Quiero formar parte de Círculo Oona."
+);
 
-        ProfessionalApplicationRequest missingCity = new ProfessionalApplicationRequest(
-                "Usuario Uno",
-                Long.MAX_VALUE,
-                ProfessionalType.YOGA,
-                "+34600123456",
-                "Tengo experiencia impartiendo clases de yoga.",
-                true
-        );
-        saveApplication("user1", missingCity)
-                .andExpect(status().isNotFound());
+        mockMvc.perform(
+                post(APPLICATIONS)
+                        .with(user(principal("user1")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        invalidRequest
+                                )
+                        )
+        )
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void rejectedApplicationCanBeCorrectedAndResubmitted() throws Exception {
-        Long applicationId = createApplicationAndGetId("user1");
-        decide(applicationId, ProfessionalApplicationStatus.RECHAZADO, "Falta información profesional")
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RECHAZADO"));
+    void pendingApplicationCannotBeDuplicatedForSameUser()
+            throws Exception {
 
-        saveApplication("user1", validRequest())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PENDIENTE"))
-                .andExpect(jsonPath("$.rejectionReason").doesNotExist());
+        mockMvc.perform(
+                post(APPLICATIONS)
+                        .with(user(principal("user1")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        validRequest()
+                                )
+                        )
+        )
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                post(APPLICATIONS)
+                        .with(user(principal("user1")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        validRequest()
+                                )
+                        )
+        )
+                .andExpect(status().isConflict());
     }
 
     @Test
-    void adminListsAndApprovesApplicationAndRefreshReturnsProfessionalRole() throws Exception {
-        Long applicationId = createApplicationAndGetId("user1");
+    void adminCanListPendingApplications() throws Exception {
+        createApplicationAndGetId();
 
-        mockMvc.perform(get(ADMIN_APPLICATIONS)
+        mockMvc.perform(
+                get(ADMIN_APPLICATIONS)
                         .param("status", "PENDIENTE")
-                        .param("size", "1")
-                        .with(user(principal("admin_main1"))))
+                        .param("size", "10")
+                        .with(
+                                user(
+                                        principal("admin_main1")
+                                )
+                        )
+        )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
-                .andExpect(jsonPath("$.totalElements").value(1));
-
-        decide(applicationId, ProfessionalApplicationStatus.APROBADO, null)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("APROBADO"));
-
-        User approvedUser = userRepository.findByUsername("user1").orElseThrow();
-        assertThat(approvedUser.getRoles())
-                .extracting(Role::getName)
-                .contains(Role.ROLE_PROFESSIONAL);
-
-        var automaticProfile = specialistProfileRepository
-                .findByUserId(approvedUser.getId())
-                .orElseThrow();
-        assertThat(automaticProfile.getApprovalStatus()).isEqualTo(ApprovalStatus.APROBADO);
-        assertThat(automaticProfile.getPublicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
-        assertThat(automaticProfile.getBiography()).isEmpty();
-        assertThat(automaticProfile.getPhotoUrl()).isEmpty();
-
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(approvedUser.getId());
-        TokenRefreshResponse refreshed = authService.refreshToken(
-                new TokenRefreshRequest(refreshToken.getToken())
-        );
-        assertThat(refreshed.roles()).contains("USER", "PROFESSIONAL");
+                .andExpect(jsonPath("$.content[0].fullName")
+                        .value("Usuario Uno"))
+                .andExpect(jsonPath("$.content[0].city")
+                        .value("Lima"))
+                .andExpect(jsonPath("$.content[0].email")
+                        .value("user1@oona.es"));
     }
 
     @Test
-    void regularUserCannotEvaluateApplications() throws Exception {
-        Long applicationId = createApplicationAndGetId("user1");
+    void regularUserCannotEvaluateApplications()
+            throws Exception {
+
+        Long applicationId =
+                createApplicationAndGetId();
+
         ProfessionalApplicationDecisionRequest request =
                 new ProfessionalApplicationDecisionRequest(
                         ProfessionalApplicationStatus.APROBADO,
                         null
                 );
 
-        mockMvc.perform(patch(ADMIN_APPLICATIONS + "/{id}/decision", applicationId)
-                        .with(user(principal("user2")))
+        mockMvc.perform(
+                patch(
+                        ADMIN_APPLICATIONS
+                                + "/{id}/decision",
+                        applicationId
+                )
+                        .with(
+                                user(
+                                        principal("user2")
+                                )
+                        )
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        request
+                                )
+                        )
+        )
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void approvedProfessionalCreatesApprovedDraftProfileWithoutSecondReview() throws Exception {
-        Long applicationId = createApplicationAndGetId("user1");
-        decide(applicationId, ProfessionalApplicationStatus.APROBADO, null)
-                .andExpect(status().isOk());
+    void adminCanApproveApplicationAndPromoteExistingUser()
+            throws Exception {
 
-        SpecialistProfileRequest profileRequest = new SpecialistProfileRequest(
-                "Usuario Uno Bienestar",
-                "PROFESIONALES",
-                "Profesional de bienestar integral.",
-                "Acompaño procesos individuales mediante yoga y respiración consciente.",
-                "+34600123456",
-                null,
-                "user1@oona.es",
-                null,
-                Set.of(),
-                Set.of()
-        );
+        Long applicationId =
+                createApplicationAndGetId();
 
-        SpecialistProfileResponse updated =
-                specialistProfileService.updateMyProfile("user1", profileRequest);
-        assertThat(updated.approvalStatus()).isEqualTo(ApprovalStatus.APROBADO);
-        assertThat(updated.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+        decide(
+                applicationId,
+                ProfessionalApplicationStatus.APROBADO,
+                null
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status")
+                        .value("APROBADO"))
+                .andExpect(jsonPath("$.city")
+                        .value("Lima"))
+                .andExpect(jsonPath("$.userId")
+                        .value(userId("user1")));
+
+        User approvedUser =
+                userRepository
+                        .findByUsername("user1")
+                        .orElseThrow();
+
+        assertThat(approvedUser.getRoles())
+                .extracting(Role::getName)
+                .contains(Role.ROLE_PROFESSIONAL);
+
+        RefreshToken refreshToken =
+                refreshTokenService.createRefreshToken(
+                        approvedUser.getId()
+                );
+
+        var refreshed =
+                authService.refreshToken(
+                        new com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest(
+                                refreshToken.getToken()
+                        )
+                );
+
+        assertThat(refreshed.roles())
+                .contains(
+                        "USER",
+                        "PROFESSIONAL"
+                );
     }
 
     @Test
-    void incompleteDraftCanBeEditedAndPublishExplainsEveryMissingRequirement() throws Exception {
-        Long applicationId = createApplicationAndGetId("user1");
-        decide(applicationId, ProfessionalApplicationStatus.APROBADO, null)
+    void adminCanRejectApplicationWithReason()
+            throws Exception {
+
+        Long applicationId =
+                createApplicationAndGetId();
+
+        decide(
+                applicationId,
+                ProfessionalApplicationStatus.RECHAZADO,
+                "Falta información profesional"
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status")
+                        .value("RECHAZADO"))
+                .andExpect(jsonPath("$.rejectionReason")
+                        .value(
+                                "Falta información profesional"
+                        ));
+    }
+
+    @Test
+    void rejectionRequiresReason()
+            throws Exception {
+
+        Long applicationId =
+                createApplicationAndGetId();
+
+        decide(
+                applicationId,
+                ProfessionalApplicationStatus.RECHAZADO,
+                null
+        )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void approvedProfessionalCanUpdateProfile()
+            throws Exception {
+
+        Long applicationId =
+                createApplicationAndGetId();
+
+        decide(
+                applicationId,
+                ProfessionalApplicationStatus.APROBADO,
+                null
+        )
+                .andExpect(status().isOk());
+
+        SpecialistProfileRequest profileRequest =
+                new SpecialistProfileRequest(
+                        "Usuario Uno Bienestar",
+                        "PROFESIONALES",
+                        "Profesional de bienestar integral.",
+                        "Acompaño procesos individuales mediante yoga y respiración consciente.",
+                        "+34600123456",
+                        null,
+                        "user1@oona.es",
+                        null,
+                        Set.of(),
+                        Set.of()
+                );
+
+        SpecialistProfileResponse updated =
+                specialistProfileService.updateMyProfile(
+                        "user1",
+                        profileRequest
+                );
+
+        assertThat(updated.approvalStatus())
+                .isEqualTo(
+                        ApprovalStatus.APROBADO
+                );
+
+        assertThat(updated.publicationStatus())
+                .isEqualTo(
+                        PublicationStatus.BORRADOR
+                );
+    }
+
+    @Test
+    void incompleteDraftCanBeEditedAndPublishExplainsEveryMissingRequirement()
+            throws Exception {
+
+        Long applicationId =
+                createApplicationAndGetId();
+
+        decide(
+                applicationId,
+                ProfessionalApplicationStatus.APROBADO,
+                null
+        )
                 .andExpect(status().isOk());
 
         SpecialistProfilePartialUpdateRequest draftUpdate =
@@ -255,37 +384,92 @@ class ProfessionalApplicationIntegrationTest {
                 );
 
         SpecialistProfileResponse updated =
-                specialistProfileService.updateMyProfilePartial("user1", draftUpdate);
+                specialistProfileService.updateMyProfilePartial(
+                        "user1",
+                        draftUpdate
+                );
 
-        assertThat(updated.publicName()).isEqualTo("Usuario Uno Actualizado");
-        assertThat(updated.biography()).isEmpty();
-        assertThat(updated.description()).isEmpty();
-        assertThat(updated.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+        assertThat(updated.publicName())
+                .isEqualTo(
+                        "Usuario Uno Actualizado"
+                );
 
-        assertThatThrownBy(() -> specialistProfileService.publishMyProfile("user1"))
-                .isInstanceOf(BusinessLogicException.class)
-                .hasMessageContaining("foto de perfil")
-                .hasMessageContaining("banner")
-                .hasMessageContaining("biografía")
-                .hasMessageContaining("descripción");
+        assertThat(updated.biography())
+                .isEmpty();
 
-        mockMvc.perform(patch("/api/v1/specialist-profiles/me/publish")
-                        .with(user("user1").roles("PROFESSIONAL")))
+        assertThat(updated.description())
+                .isEmpty();
+
+        assertThat(updated.publicationStatus())
+                .isEqualTo(
+                        PublicationStatus.BORRADOR
+                );
+
+        assertThatThrownBy(
+                () ->
+                        specialistProfileService
+                                .publishMyProfile("user1")
+        )
+                .isInstanceOf(
+                        BusinessLogicException.class
+                )
+                .hasMessageContaining(
+                        "foto de perfil"
+                )
+                .hasMessageContaining(
+                        "banner"
+                )
+                .hasMessageContaining(
+                        "biografía"
+                )
+                .hasMessageContaining(
+                        "descripción"
+                );
+
+        mockMvc.perform(
+                patch(
+                        "/api/v1/specialist-profiles/me/publish"
+                )
+                        .with(
+                                user("user1")
+                                        .roles("PROFESSIONAL")
+                        )
+        )
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(
-                        "No se puede publicar el perfil. Completa: foto de perfil, banner, biografía, descripción."
-                ));
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "No se puede publicar el perfil. Completa: foto de perfil, banner, biografía, descripción."
+                                )
+                );
 
-        mockMvc.perform(patch("/api/v1/specialist-profiles/me")
-                        .with(user("user1").roles("PROFESSIONAL"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"whatsappPhone\":\"+51 92803719599\"}"))
+        mockMvc.perform(
+                patch(
+                        "/api/v1/specialist-profiles/me"
+                )
+                        .with(
+                                user("user1")
+                                        .roles("PROFESSIONAL")
+                        )
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                "{\"whatsappPhone\":\"+51 92803719599\"}"
+                        )
+        )
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[0].field").value("whatsappPhone"));
+                .andExpect(
+                        jsonPath(
+                                "$.errors[0].field"
+                        )
+                                .value("whatsappPhone")
+                );
     }
 
     @Test
     void editingPublishedProfileKeepsItVisible() {
+
         SpecialistProfilePartialUpdateRequest request =
                 new SpecialistProfilePartialUpdateRequest(
                         null,
@@ -310,55 +494,100 @@ class ProfessionalApplicationIntegrationTest {
                 );
 
         assertThat(updated.publicationStatus())
-                .isEqualTo(PublicationStatus.PUBLICADO);
+                .isEqualTo(
+                        PublicationStatus.PUBLICADO
+                );
+
         assertThat(updated.biography())
-                .isEqualTo("Biografia actualizada sin ocultar el perfil.");
+                .isEqualTo(
+                        "Biografia actualizada sin ocultar el perfil."
+                );
     }
 
-    private org.springframework.test.web.servlet.ResultActions saveApplication(
-            String username,
-            ProfessionalApplicationRequest request) throws Exception {
-        return mockMvc.perform(put(MY_APPLICATION)
-                .with(user(principal(username)))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+    private Long createApplicationAndGetId()
+            throws Exception {
+
+        mockMvc.perform(
+                post(APPLICATIONS)
+                        .with(user(principal("user1")))
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        validRequest()
+                                )
+                        )
+        )
+                .andExpect(status().isOk());
+
+        return applicationRepository
+                .findByUserId(userId("user1"))
+                .orElseThrow()
+                .getId();
     }
+
+  private ProfessionalApplicationRequest validRequest() {
+    return new ProfessionalApplicationRequest(
+            "Usuario Uno",
+            "Lima",
+            "user1@oona.es",
+            "Terapeuta",
+            "+51 999 999 999",
+            "Quiero formar parte de Círculo Oona para compartir mis servicios."
+    );
+}
 
     private org.springframework.test.web.servlet.ResultActions decide(
             Long applicationId,
             ProfessionalApplicationStatus status,
-            String rejectionReason) throws Exception {
+            String rejectionReason
+    ) throws Exception {
+
         ProfessionalApplicationDecisionRequest request =
-                new ProfessionalApplicationDecisionRequest(status, rejectionReason);
-        return mockMvc.perform(patch(ADMIN_APPLICATIONS + "/{id}/decision", applicationId)
-                .with(user(principal("admin_main1")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
-    }
+                new ProfessionalApplicationDecisionRequest(
+                        status,
+                        rejectionReason
+                );
 
-    private Long createApplicationAndGetId(String username) throws Exception {
-        saveApplication(username, validRequest()).andExpect(status().isOk());
-        return applicationRepository.findByUserId(
-                userRepository.findByUsername(username).orElseThrow().getId()
-        ).orElseThrow().getId();
-    }
-
-    private ProfessionalApplicationRequest validRequest() {
-        return new ProfessionalApplicationRequest(
-                "Usuario Uno",
-                activeCity().getId(),
-                ProfessionalType.YOGA,
-                "+34600123456",
-                "Tengo experiencia impartiendo clases de yoga y bienestar.",
-                true
+        return mockMvc.perform(
+                patch(
+                        ADMIN_APPLICATIONS
+                                + "/{id}/decision",
+                        applicationId
+                )
+                        .with(
+                                user(
+                                        principal("admin_main1")
+                                )
+                        )
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        request
+                                )
+                        )
         );
     }
 
-    private City activeCity() {
-        return cityRepository.findByIsActiveTrue().stream().findFirst().orElseThrow();
+    private Long userId(String username) {
+
+        return userRepository
+                .findByUsername(username)
+                .orElseThrow()
+                .getId();
     }
 
-    private UserDetailsImpl principal(String username) {
-        return UserDetailsImpl.build(userRepository.findByUsername(username).orElseThrow());
+    private UserDetailsImpl principal(
+            String username
+    ) {
+
+        return UserDetailsImpl.build(
+                userRepository
+                        .findByUsername(username)
+                        .orElseThrow()
+        );
     }
 }

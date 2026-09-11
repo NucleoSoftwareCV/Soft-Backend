@@ -23,69 +23,91 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
-@Tag(name = "Solicitudes profesionales", description = "Solicitud y aprobación de acceso al panel profesional")
+@Tag(
+        name = "Solicitudes profesionales",
+        description = "Solicitud y aprobación de acceso como profesional"
+)
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 public class ProfessionalApplicationController {
 
     private final ProfessionalApplicationService service;
 
-    public ProfessionalApplicationController(ProfessionalApplicationService service) {
+    public ProfessionalApplicationController(
+            ProfessionalApplicationService service) {
         this.service = service;
     }
 
-    @PutMapping("/professional-applications/me")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Guardar mi solicitud profesional")
+    @PostMapping("/professional-applications")
+    @Operation(
+            summary = "Enviar solicitud profesional",
+            description = "Permite enviar una solicitud profesional a un usuario autenticado"
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud guardada"),
-            @ApiResponse(responseCode = "400", description = "Solicitud invalida",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Solicitud enviada correctamente"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Datos de solicitud inválidos",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ProblemDetail.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "El usuario debe iniciar sesión"
+            )
     })
-    public ProfessionalApplicationResponse saveMyApplication(
+    public ProfessionalApplicationResponse createApplication(
             @AuthenticationPrincipal UserDetailsImpl principal,
             @Valid @RequestBody ProfessionalApplicationRequest request) {
-        return service.saveMyApplication(principal.getId(), request);
-    }
-
-    @GetMapping("/professional-applications/me")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Consultar mi solicitud profesional")
-    public ProfessionalApplicationResponse getMyApplication(
-            @AuthenticationPrincipal UserDetailsImpl principal) {
-        return service.getMyApplication(principal.getId());
+        return service.createApplication(
+                request,
+                principal.getId()
+        );
     }
 
     @GetMapping("/admin/professional-applications")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Listar solicitudes profesionales")
+    @Operation(
+            summary = "Listar solicitudes profesionales",
+            description = "Permite al administrador consultar las solicitudes"
+    )
     public PagedResponse<ProfessionalApplicationResponse> getApplicationsForAdmin(
-            @RequestParam(required = false) ProfessionalApplicationStatus status,
+            @RequestParam(required = false)
+            ProfessionalApplicationStatus status,
             @ParameterObject
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+            @PageableDefault(
+                    size = 10,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            )
             Pageable pageable) {
-        return PagedResponse.from(service.getApplicationsForAdmin(status, pageable));
+        return PagedResponse.from(
+                service.getApplicationsForAdmin(status, pageable)
+        );
     }
 
     @PatchMapping("/admin/professional-applications/{id}/decision")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Aprobar o rechazar una solicitud profesional")
+    @Operation(
+            summary = "Aprobar o rechazar solicitud profesional"
+    )
     public ProfessionalApplicationResponse decide(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetailsImpl principal,
             @Valid @RequestBody ProfessionalApplicationDecisionRequest request) {
-        return service.decide(id, principal.getId(), request);
+        return service.decide(
+                id,
+                principal.getId(),
+                request
+        );
     }
 }

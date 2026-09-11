@@ -74,7 +74,6 @@ public class SpecialistProfileController {
         );
     }
 
-    //Profesional: actualiza TODO el perfil. Requiere enviar todos los campos obligatorios.
     @PutMapping("/me")
     @PreAuthorize("hasRole('PROFESSIONAL')")
     @Operation(

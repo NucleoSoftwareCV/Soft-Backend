@@ -6,20 +6,34 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-@Schema(description = "Decision administrativa sobre una solicitud profesional")
+@Schema(description = "Decisión administrativa sobre una solicitud profesional")
 public record ProfessionalApplicationDecisionRequest(
-        @NotNull
+
+        @NotNull(message = "La decisión es obligatoria")
         ProfessionalApplicationStatus status,
 
-        @Size(max = 500)
+        @Size(
+                max = 500,
+                message = "El motivo no puede superar los 500 caracteres"
+        )
         String rejectionReason
+
 ) {
-    @AssertTrue(message = "La decision debe ser APROBADO o RECHAZADO y todo rechazo requiere un motivo")
+
+    @AssertTrue(
+            message = "La decisión debe ser APROBADO o RECHAZADO y todo rechazo requiere un motivo"
+    )
     public boolean isValidDecision() {
-        if (status == null || status == ProfessionalApplicationStatus.PENDIENTE) {
+
+        if (status == null ||
+                status == ProfessionalApplicationStatus.PENDIENTE) {
+
             return false;
         }
-        return status != ProfessionalApplicationStatus.RECHAZADO
-                || (rejectionReason != null && !rejectionReason.isBlank());
+
+        return status !=
+                ProfessionalApplicationStatus.RECHAZADO
+                || (rejectionReason != null
+                && !rejectionReason.isBlank());
     }
 }

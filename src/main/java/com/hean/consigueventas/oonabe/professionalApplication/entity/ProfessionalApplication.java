@@ -1,7 +1,6 @@
 package com.hean.consigueventas.oonabe.professionalApplication.entity;
 
 import com.hean.consigueventas.oonabe.common.entity.AuditableEntity;
-import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.professionalApplication.enums.ProfessionalApplicationStatus;
 import com.hean.consigueventas.oonabe.professionalApplication.enums.ProfessionalType;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -32,10 +31,16 @@ import java.time.Instant;
                 name = "uk_professional_application_user",
                 columnNames = "user_id"
         ),
-        indexes = @Index(
-                name = "idx_professional_application_status_created",
-                columnList = "status, created_at"
-        )
+        indexes = {
+                @Index(
+                        name = "idx_professional_application_status_created",
+                        columnList = "status, created_at"
+                ),
+                @Index(
+                        name = "idx_professional_application_email",
+                        columnList = "email"
+                )
+        }
 )
 @Getter
 @Setter
@@ -45,33 +50,65 @@ public class ProfessionalApplication extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(
+            name = "user_id",
+            nullable = true,
+            unique = true
+    )
     private User user;
 
-    @Column(name = "full_name", length = 200)
+    @Column(
+            name = "full_name",
+            nullable = false,
+            length = 200
+    )
     private String fullName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private City city;
+    @Column(
+            name = "email",
+            nullable = false,
+            length = 150
+    )
+    private String email;
+
+    @Column(
+            name = "city",
+            nullable = false,
+            length = 100
+    )
+    private String city;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "professional_type", length = 40)
+    @Column(
+            name = "professional_type",
+            length = 40
+    )
     private ProfessionalType professionalType;
 
-    @Column(name = "whatsapp_phone", length = 25)
+    @Column(
+            name = "whatsapp_phone",
+            length = 25
+    )
     private String whatsappPhone;
 
-    @Column(name = "reason", length = 500)
+    @Column(
+            name = "reason",
+            length = 500
+    )
     private String motivation;
 
     @Column(name = "privacy_accepted_at")
     private Instant privacyAcceptedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private ProfessionalApplicationStatus status = ProfessionalApplicationStatus.PENDIENTE;
+    @Column(
+            name = "status",
+            nullable = false,
+            length = 20
+    )
+    private ProfessionalApplicationStatus status =
+            ProfessionalApplicationStatus.PENDIENTE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "evaluated_by")
@@ -80,10 +117,17 @@ public class ProfessionalApplication extends AuditableEntity {
     @Column(name = "evaluated_at")
     private Instant evaluatedAt;
 
-    @Column(name = "rejection_reason", length = 500)
+    @Column(
+            name = "rejection_reason",
+            length = 500
+    )
     private String rejectionReason;
 
     @Version
-    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    @Column(
+            name = "version",
+            nullable = false,
+            columnDefinition = "bigint default 0"
+    )
     private long version;
 }

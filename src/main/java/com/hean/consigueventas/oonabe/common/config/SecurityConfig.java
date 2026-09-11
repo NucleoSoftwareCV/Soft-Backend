@@ -1,14 +1,14 @@
 package com.hean.consigueventas.oonabe.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hean.consigueventas.oonabe.auth.security.AuthTokenFilter;
 import com.hean.consigueventas.oonabe.auth.security.AuthRateLimitFilter;
+import com.hean.consigueventas.oonabe.auth.security.AuthTokenFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -51,6 +51,7 @@ public class SecurityConfig {
             UserDetailsService userDetailsService,
             ObjectMapper objectMapper,
             @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
+
         this.authTokenFilter = authTokenFilter;
         this.authRateLimitFilter = authRateLimitFilter;
         this.userDetailsService = userDetailsService;
@@ -60,55 +61,166 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/v1/auth/admin/login", "/error", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/all").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/experience-types/all").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/experience-types/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/event-occurrences/public", "/api/v1/event-occurrences/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/cities/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/city-interests").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/techniques/active", "/api/v1/techniques/search").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/images/profile-images/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/specialist-profiles","/api/v1/specialist-profiles/slug/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
-                        .requestMatchers(HttpMethod.GET,
+        http
+                .csrf(csrf -> csrf.disable())
+
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/v1/auth/admin/login",
+                                "/error",
+                                "/actuator/health",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/contact/email"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/categories/all"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/categories/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/experience-types/all"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/experience-types/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/event-occurrences/public",
+                                "/api/v1/event-occurrences/public/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/locations/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/cities/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/city-interests"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/work-topics/active",
+                                "/api/v1/work-topics/search"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/techniques/active",
+                                "/api/v1/techniques/search"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/images/profile-images/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/specialist-profiles",
+                                "/api/v1/specialist-profiles/slug/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/one-to-one-services",
+                                "/api/v1/one-to-one-services/{id}",
+                                "/api/v1/one-to-one-services/slug/{slug}"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/v1/events",
                                 "/api/v1/events/{id:\\d+}",
                                 "/api/v1/events/{id:\\d+}/similar",
-                                "/api/v1/events/{id:\\d+}/organizer-events").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
-                        .requestMatchers("/api/v1/payments/checkout/**").hasRole("USER")
+                                "/api/v1/events/{id:\\d+}/organizer-events"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/home/event-sections"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/v1/admin/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                "/api/v1/payments/checkout/**"
+                        ).hasRole("USER")
+
                         .anyRequest().authenticated()
                 )
+
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) -> writeSecurityProblem(
-                                request,
-                                response,
-                                HttpStatus.UNAUTHORIZED,
-                                "No autenticado",
-                                "Debes autenticarte para acceder a este recurso.",
-                                "unauthenticated"))
-                        .accessDeniedHandler((request, response, accessDeniedException) -> writeSecurityProblem(
-                                request,
-                                response,
-                                HttpStatus.FORBIDDEN,
-                                "No autorizado",
-                                "No tienes permisos para realizar esta accion.",
-                                "forbidden"))
+
+                        .authenticationEntryPoint(
+                                (request, response, authException) ->
+                                        writeSecurityProblem(
+                                                request,
+                                                response,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "No autenticado",
+                                                "Debes autenticarte para acceder a este recurso.",
+                                                "unauthenticated"
+                                        )
+                        )
+
+                        .accessDeniedHandler(
+                                (request, response, accessDeniedException) ->
+                                        writeSecurityProblem(
+                                                request,
+                                                response,
+                                                HttpStatus.FORBIDDEN,
+                                                "No autorizado",
+                                                "No tienes permisos para realizar esta accion.",
+                                                "forbidden"
+                                        )
+                        )
                 )
+
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+                .addFilterBefore(
+                        authRateLimitFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
+                .addFilterBefore(
+                        authTokenFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -116,21 +228,31 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<AuthRateLimitFilter> authRateLimitFilterRegistration(
             AuthRateLimitFilter filter) {
+
         FilterRegistrationBean<AuthRateLimitFilter> registration =
                 new FilterRegistrationBean<>(filter);
+
         registration.setEnabled(false);
+
         return registration;
     }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+
+        DaoAuthenticationProvider authProvider =
+                new DaoAuthenticationProvider(userDetailsService);
+
         authProvider.setPasswordEncoder(passwordEncoder());
+
         return authProvider;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig
+    ) throws Exception {
+
         return authConfig.getAuthenticationManager();
     }
 
@@ -141,18 +263,51 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
-        java.util.List<String> origins = new java.util.ArrayList<>(allowedOrigins);
+
+        java.util.List<String> origins =
+                new java.util.ArrayList<>(allowedOrigins);
+
         if (!origins.contains("http://localhost:4200")) {
             origins.add("http://localhost:4200");
         }
+
         configuration.setAllowedOrigins(origins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of(
+                        "Authorization",
+                        "Content-Type",
+                        "Accept"
+                )
+        );
+
+        configuration.setExposedHeaders(
+                List.of("Authorization")
+        );
+
         configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
+
         return source;
     }
 
@@ -162,16 +317,47 @@ public class SecurityConfig {
             HttpStatus status,
             String title,
             String message,
-            String type) throws IOException {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, message);
+            String type
+    ) throws IOException {
+
+        ProblemDetail detail =
+                ProblemDetail.forStatusAndDetail(
+                        status,
+                        message
+                );
+
         detail.setTitle(title);
-        detail.setType(URI.create("https://api.oona.local/errors/" + type));
-        detail.setProperty("message", message);
-        detail.setProperty("timestamp", LocalDateTime.now());
-        detail.setProperty("path", request.getRequestURI());
+
+        detail.setType(
+                URI.create(
+                        "https://api.oona.local/errors/" + type
+                )
+        );
+
+        detail.setProperty(
+                "message",
+                message
+        );
+
+        detail.setProperty(
+                "timestamp",
+                LocalDateTime.now()
+        );
+
+        detail.setProperty(
+                "path",
+                request.getRequestURI()
+        );
 
         response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), detail);
+
+        response.setContentType(
+                MediaType.APPLICATION_PROBLEM_JSON_VALUE
+        );
+
+        objectMapper.writeValue(
+                response.getOutputStream(),
+                detail
+        );
     }
 }
