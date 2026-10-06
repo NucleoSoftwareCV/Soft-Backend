@@ -25,6 +25,9 @@ public record OneToOneServiceResponse(
         @Schema(description = "WhatsApp publico del especialista.")
         String specialistWhatsappPhone,
 
+        @Schema(description = "Slug público del perfil del especialista.")
+        String specialistSlug,
+
         @Schema(description = "Identificador de texto amigable para la URL (enlace legible). Ejemplo: 'terapia-psicologica'.")
         String slug,
 

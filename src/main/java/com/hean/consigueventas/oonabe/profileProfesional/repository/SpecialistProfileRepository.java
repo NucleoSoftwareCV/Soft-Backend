@@ -67,6 +67,9 @@ public interface SpecialistProfileRepository
 
     //Buscar perfiles publicos por texto libre (nombre publico o biografia),
     //opcionalmente filtrando por categoria de perfil
+    //Buscar perfiles publicos por texto libre (nombre publico, biografia,
+    //descripcion, temas de trabajo, tecnicas, sesiones 1:1 y eventos
+    //publicados del profesional), opcionalmente filtrando por categoria
     @Query("""
             SELECT p FROM SpecialistProfile p
             WHERE p.approvalStatus = :approvalStatus
@@ -75,7 +78,38 @@ public interface SpecialistProfileRepository
               AND (
                 LOWER(p.publicName) LIKE LOWER(CONCAT('%', :search, '%'))
                 OR LOWER(p.biography) LIKE LOWER(CONCAT('%', :search, '%'))
-              )
+                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR EXISTS (
+                    SELECT pwt FROM ProfessionalWorkTopic pwt
+                    JOIN pwt.workTopic w
+                    WHERE pwt.specialistProfile = p
+                      AND LOWER(w.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                )
+                OR EXISTS (
+                    SELECT pt FROM ProfessionalTechnique pt
+                    JOIN pt.technique t
+                    WHERE pt.specialistProfile = p
+                      AND LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                )
+                OR EXISTS (
+                    SELECT s FROM OneToOneService s
+                    WHERE s.specialist = p
+                      AND s.status = com.hean.consigueventas.oonabe.common.enums.PublicationStatus.PUBLICADO
+                      AND (
+                        LOWER(s.title) LIKE LOWER(CONCAT('%', :search, '%'))
+                        OR LOWER(s.description) LIKE LOWER(CONCAT('%', :search, '%'))
+                      )
+                )
+                OR EXISTS (
+                    SELECT e FROM Event e
+                    WHERE e.specialist = p
+                      AND e.status = com.hean.consigueventas.oonabe.common.enums.EventStatus.PUBLICADO
+                      AND (
+                        LOWER(e.title) LIKE LOWER(CONCAT('%', :search, '%'))
+                        OR LOWER(e.summary) LIKE LOWER(CONCAT('%', :search, '%'))
+                      )
+                )
+            )
             """)
     Page<SpecialistProfile> searchPublicProfiles(
             @Param("profileCategory") String profileCategory,

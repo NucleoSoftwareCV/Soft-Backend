@@ -20,6 +20,7 @@ public interface OneToOneServiceMapper {
     @Mapping(target = "specialistName", source = "specialist.publicName")
     @Mapping(target = "specialistPhotoUrl", source = "specialist.photoUrl")
     @Mapping(target = "specialistWhatsappPhone", source = "specialist.whatsappPhone")
+    @Mapping(target = "specialistSlug", source = "specialist.slug") 
     @Mapping(target = "locationId", source = "location.id")
     @Mapping(target = "locationName", source = "location.name")
     @Mapping(target = "workTopics", source = "workTopics", qualifiedByName = "mapWorkTopics")
