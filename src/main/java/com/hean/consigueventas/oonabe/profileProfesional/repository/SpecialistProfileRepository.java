@@ -20,7 +20,7 @@ public interface SpecialistProfileRepository
     Optional<SpecialistProfile> findByUserId(Long userId);
 
     //Buscar un perfil por su slug o enlace identificador
-    Optional<SpecialistProfile> findBySlug(String slug);
+    //Optional<SpecialistProfile> findBySlug(String slug);
 
     //Buscar un perfil por su slug cuando está aprobado y publicado
     Optional<SpecialistProfile> findBySlugAndApprovalStatusAndPublicationStatus(
