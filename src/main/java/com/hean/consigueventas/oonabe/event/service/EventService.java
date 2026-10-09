@@ -42,7 +42,7 @@ import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.masterdata.repository.LocationRepository;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService;
+import com.hean.consigueventas.oonabe.profileProfesional.service.ImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -77,7 +77,7 @@ public class EventService {
     private final LocationMapper locationMapper;
     private final EventCardAssembler eventCardAssembler;
     private final EventImageRepository eventImageRepository;
-    private final LocalImageStorageService imageStorageService;
+    private final ImageStorageService imageStorageService;
 
     public EventService(EventRepository eventRepository,
                         EventOccurrenceRepository occurrenceRepository,
@@ -94,7 +94,7 @@ public class EventService {
                         EventCardAssembler eventCardAssembler,
                         EventAttendeeRepository eventAttendeeRepository,
                         EventImageRepository eventImageRepository,
-                        LocalImageStorageService imageStorageService) {
+                        ImageStorageService imageStorageService) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;

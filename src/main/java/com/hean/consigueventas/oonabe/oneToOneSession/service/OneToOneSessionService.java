@@ -19,7 +19,7 @@ import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneService
 import com.hean.consigueventas.oonabe.oneToOneSession.specification.OneToOneServiceSpecification;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.repository.SpecialistProfileRepository;
-import com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService;
+import com.hean.consigueventas.oonabe.profileProfesional.service.ImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class OneToOneSessionService {
     private final OneToOneServiceMapper serviceMapper;
     private final WorkTopicRepository workTopicRepository;
     private final TechniqueRepository techniqueRepository;
-    private final LocalImageStorageService imageStorageService;
+    private final ImageStorageService imageStorageService;
 
     public OneToOneSessionService(
             OneToOneServiceRepository serviceRepository,
@@ -54,7 +54,7 @@ public class OneToOneSessionService {
             OneToOneServiceMapper serviceMapper,
             WorkTopicRepository workTopicRepository,
             TechniqueRepository techniqueRepository,
-            LocalImageStorageService imageStorageService
+            ImageStorageService imageStorageService
     ) {
         this.serviceRepository = serviceRepository;
         this.specialistProfileRepository = specialistProfileRepository;

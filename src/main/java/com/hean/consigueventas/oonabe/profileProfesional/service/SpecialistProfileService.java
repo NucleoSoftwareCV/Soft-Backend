@@ -66,7 +66,7 @@ public class SpecialistProfileService {
     private final UserRepository userRepository;
     private final SpecialistProfileMapper specialistProfileMapper;
     private final ProfessionalSocialLinkMapper socialLinkMapper;
-    private final LocalImageStorageService localImageStorageService;
+    private final ImageStorageService localImageStorageService;
     private final ProfessionalLanguageRepository professionalLanguageRepository;
     private final ProfessionalLanguageMapper professionalLanguageMapper;
     private final ProfessionalGalleryImageRepository galleryImageRepository;

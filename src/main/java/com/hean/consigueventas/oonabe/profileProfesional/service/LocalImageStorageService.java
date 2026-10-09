@@ -3,7 +3,7 @@ package com.hean.consigueventas.oonabe.profileProfesional.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -16,7 +16,12 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-public class LocalImageStorageService {
+@ConditionalOnProperty(
+        name = "app.storage.backend",
+        havingValue = "local",
+        matchIfMissing = true
+)
+public class LocalImageStorageService implements ImageStorageService {
 
     public static final int PROFILE_PHOTO_SIZE = 512;
     public static final int BANNER_WIDTH = 1248;
