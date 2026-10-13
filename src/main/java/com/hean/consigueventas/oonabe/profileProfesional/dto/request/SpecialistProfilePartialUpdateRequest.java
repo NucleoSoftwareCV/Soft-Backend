@@ -38,6 +38,8 @@ public record SpecialistProfilePartialUpdateRequest(
 
         String website,
 
+        Long cityId,
+
         Set<Long> workTopicIds,
 
         Set<Long> techniqueIds,

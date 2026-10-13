@@ -22,18 +22,18 @@ public class DataSeederOrchestrator {
 
         @Bean
         CommandLineRunner seedBaseData(
-                        UserSeeder userSeeder,
-                        SpecialistProfileSeeder specialistProfileSeeder,
-                        MasterDataSeeder masterDataSeeder,
-                        ExperienceTypeSeeder experienceTypeSeeder,
-                        OneToOneDataSeeder oneToOneDataSeeder,
-                        EventDataSeeder eventDataSeeder) {
+                UserSeeder userSeeder,
+                SpecialistProfileSeeder specialistProfileSeeder,
+                MasterDataSeeder masterDataSeeder,
+                ExperienceTypeSeeder experienceTypeSeeder,
+                OneToOneDataSeeder oneToOneDataSeeder,
+                EventDataSeeder eventDataSeeder) {
                 return args -> {
                         experienceTypeSeeder.seed();
                         Role roleUser = userSeeder.seedRole(Role.ROLE_USER, "Usuario final");
                         Role roleAdmin = userSeeder.seedRole(Role.ROLE_ADMIN, "Administrador del sistema");
                         Role roleProfessional = userSeeder.seedRole(Role.ROLE_PROFESSIONAL,
-                                        "Profesional / Especialista / Centro de Salud / Organizador");
+                                "Profesional / Especialista / Centro de Salud / Organizador");
 
                         // Hashes de contraseñas de fuerza 12 conservados (raw -> hash):
                         // User1? -> $2a$12$Lg.NO/N371FWxM4Q8zLMD.ZRtyKFhZx0DdkF.pYhP5lEo8ui0T9VG
@@ -41,29 +41,29 @@ public class DataSeederOrchestrator {
                         // Admin1@ -> $2a$12$CH2unS7WzVgwZb4NbpX/2esOGl3lqrQmnLXWOTA0B3jnisLAVrYnm
                         // Admin2# -> $2a$12$iEPmSb9Wf9moCU1kxmbVMelRk0fLZB9oEE/fq/VmVcXpos3VkfREG
                         userSeeder.seedUser("user1", "user1@oona.es",
-                                        "$2a$12$Lg.NO/N371FWxM4Q8zLMD.ZRtyKFhZx0DdkF.pYhP5lEo8ui0T9VG",
-                                        Set.of(roleUser));
+                                "$2a$12$Lg.NO/N371FWxM4Q8zLMD.ZRtyKFhZx0DdkF.pYhP5lEo8ui0T9VG",
+                                Set.of(roleUser));
                         userSeeder.seedUser("user2", "user2@oona.es",
-                                        "$2a$12$zfWqThYYydUBgUQ2/FGa4Oi3YMweIzonj5IMfGGskAX9igSxWDgIC",
-                                        Set.of(roleUser));
+                                "$2a$12$zfWqThYYydUBgUQ2/FGa4Oi3YMweIzonj5IMfGGskAX9igSxWDgIC",
+                                Set.of(roleUser));
                         userSeeder.seedUser("admin_main1", "admin1@oona.es",
-                                        "$2a$12$CH2unS7WzVgwZb4NbpX/2esOGl3lqrQmnLXWOTA0B3jnisLAVrYnm",
-                                        Set.of(roleAdmin));
+                                "$2a$12$CH2unS7WzVgwZb4NbpX/2esOGl3lqrQmnLXWOTA0B3jnisLAVrYnm",
+                                Set.of(roleAdmin));
                         userSeeder.seedUser("admin_main2", "admin2@oona.es",
-                                        "$2a$12$iEPmSb9Wf9moCU1kxmbVMelRk0fLZB9oEE/fq/VmVcXpos3VkfREG",
-                                        Set.of(roleAdmin));
+                                "$2a$12$iEPmSb9Wf9moCU1kxmbVMelRk0fLZB9oEE/fq/VmVcXpos3VkfREG",
+                                Set.of(roleAdmin));
 
                         User specUser1 = userSeeder.seedUser("specialist_ana", "ana@oona.es",
-                                        "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G",
-                                        Set.of(roleProfessional));
+                                "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G",
+                                Set.of(roleProfessional));
                         User specUser2 = userSeeder.seedUser("specialist_carlos", "carlos@oona.es",
-                                        "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G",
-                                        Set.of(roleProfessional));
+                                "$2a$10$1yXne63tKNiaeGrpPN0tD.1Sq5VM.SCCcZKUN53lbz7OYA49fLa8G",
+                                Set.of(roleProfessional));
                         User professionalDemo = userSeeder.seedUser(
-                                        "professional_demo",
-                                        "professional_demo@oona.es",
-                                        "$2a$12$3dFC2CgiIe6MloOVucl8BO/5llaccXtRPNqZXYUA/chcUoyxJd3vW",
-                                        Set.of(roleUser, roleProfessional));
+                                "professional_demo",
+                                "professional_demo@oona.es",
+                                "$2a$12$3dFC2CgiIe6MloOVucl8BO/5llaccXtRPNqZXYUA/chcUoyxJd3vW",
+                                Set.of(roleUser, roleProfessional));
 
                         MasterDataSeeder.SeedData masterData = masterDataSeeder.seed();
 
@@ -76,7 +76,8 @@ public class DataSeederOrchestrator {
                                 "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
                                 "+34600111222",
                                 "ana@oona.es",
-                                "https://anagomez.es"
+                                "https://anagomez.es",
+                                "Valencia"
                         );
 
                         SpecialistProfile profileCarlos = specialistProfileSeeder.seedSpecialist(
@@ -88,7 +89,8 @@ public class DataSeederOrchestrator {
                                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
                                 "+34600333444",
                                 "carlos@oona.es",
-                                "https://carlosyoga.es"
+                                "https://carlosyoga.es",
+                                "Barcelona"
                         );
 
                         SpecialistProfile demoProfile = specialistProfileSeeder.seedSpecialist(
@@ -100,28 +102,29 @@ public class DataSeederOrchestrator {
                                 "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
                                 "+34600999888",
                                 "professional_demo@oona.es",
-                                "https://oona.es"
+                                "https://oona.es",
+                                "Madrid"
                         );
 
                         oneToOneDataSeeder.seed(profileAna, profileCarlos, masterData.loc1(), masterData.loc2());
                         oneToOneDataSeeder.seedProfessionalDemo(demoProfile, masterData.loc1());
                         eventDataSeeder.seed(
-                                        masterData.catCuerpo(),
-                                        masterData.catMovimiento(),
-                                        masterData.catSonido(),
-                                        masterData.catHielo(),
-                                        masterData.catYoga(),
-                                        masterData.catMeditacion(),
-                                        masterData.catNutricion(),
-                                        masterData.loc1(),
-                                        masterData.loc2(),
-                                        masterData.loc3(),
-                                        profileAna,
-                                        profileCarlos);
+                                masterData.catCuerpo(),
+                                masterData.catMovimiento(),
+                                masterData.catSonido(),
+                                masterData.catHielo(),
+                                masterData.catYoga(),
+                                masterData.catMeditacion(),
+                                masterData.catNutricion(),
+                                masterData.loc1(),
+                                masterData.loc2(),
+                                masterData.loc3(),
+                                profileAna,
+                                profileCarlos);
                         eventDataSeeder.seedProfessionalDemo(
-                                        masterData.catYoga(),
-                                        masterData.loc1(),
-                                        demoProfile);
+                                masterData.catYoga(),
+                                masterData.loc1(),
+                                demoProfile);
                 };
         }
 }

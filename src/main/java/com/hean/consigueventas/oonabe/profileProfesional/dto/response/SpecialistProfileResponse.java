@@ -26,6 +26,9 @@ public record SpecialistProfileResponse(
         @Schema(description = "Categoría del perfil")
         String profileCategory,
 
+        @Schema(description = "Nombre de la ciudad donde trabaja el profesional")
+        String cityName,
+
         @Schema(description = "Biografía del perfil")
         String biography,
 

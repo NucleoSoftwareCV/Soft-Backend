@@ -3,6 +3,7 @@ package com.hean.consigueventas.oonabe.profileProfesional.entity;
 import com.hean.consigueventas.oonabe.common.entity.AuditableEntity;
 import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
+import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -88,6 +89,12 @@ public class SpecialistProfile extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
     private User approvedBy;
+
+    // Ciudad donde trabaja el profesional (elegida al solicitar acceso
+    // en /circulo-oona y propagada al perfil al aprobar la solicitud).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City city;
 
     @Column(name = "approved_at")
     private Instant approvedAt;
