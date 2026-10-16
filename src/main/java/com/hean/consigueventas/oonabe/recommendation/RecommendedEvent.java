@@ -8,6 +8,7 @@ public record RecommendedEvent(
         Event event,
         Long occurrenceId,
         Instant startsAt,
+        Instant endsAt,
         String cityName,
         int score,
         String reason
