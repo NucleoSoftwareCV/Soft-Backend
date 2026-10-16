@@ -6,7 +6,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 @Repository
 public interface EventFavoriteRepository
         extends JpaRepository<EventFavorite, Long> {
@@ -31,4 +32,12 @@ public interface EventFavoriteRepository
     );
 
     long countByClientProfileId(Long clientProfileId);
+    @Query("""
+        select distinct favorite.event.category.id
+        from EventFavorite favorite
+        where favorite.clientProfile.id = :clientProfileId
+        """)
+    List<Long> findFavoriteCategoryIdsByClientProfileId(
+            @Param("clientProfileId") Long clientProfileId
+    );
 }
