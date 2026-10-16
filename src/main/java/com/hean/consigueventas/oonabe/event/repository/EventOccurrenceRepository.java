@@ -50,4 +50,58 @@ public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence
             @Param("from") Instant from,
             @Param("to") Instant to
     );
+
+
+    @EntityGraph(attributePaths = {
+            "event",
+            "event.category",
+            "event.experienceType",
+            "event.specialist",
+            "location",
+            "location.city"
+    })
+    @Query("""
+        select occurrence
+        from EventOccurrence occurrence
+        join occurrence.event event
+        join event.specialist specialist
+        join specialist.user owner
+        join event.category category
+        left join event.experienceType experienceType
+        left join occurrence.location location
+        left join location.city city
+        where event.status =
+            com.hean.consigueventas.oonabe.common.enums.EventStatus.PUBLICADO
+          and specialist.approvalStatus =
+            com.hean.consigueventas.oonabe.common.enums.ApprovalStatus.APROBADO
+          and specialist.publicationStatus =
+            com.hean.consigueventas.oonabe.common.enums.PublicationStatus.PUBLICADO
+          and owner.status =
+            com.hean.consigueventas.oonabe.common.enums.UserStatus.ACTIVO
+          and owner.disabledAt is null
+          and category.active = true
+          and (experienceType.id is null or experienceType.active = true)
+          and occurrence.status =
+            com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus.PROGRAMADA
+          and occurrence.startsAt > :now
+          and occurrence.capacity > occurrence.reservedSpots
+          and (
+              event.modality =
+                com.hean.consigueventas.oonabe.common.enums.EventModality.ONLINE
+              or (
+                  location.isActive = true
+                  and city.isActive = true
+                  and (
+                      :cityName is null
+                      or lower(city.name) = lower(:cityName)
+                  )
+              )
+          )
+        order by event.id, occurrence.startsAt, occurrence.id
+        """)
+    List<EventOccurrence> findRecommendationCandidates(
+            @Param("now") Instant now,
+            @Param("cityName") String cityName
+    );
+
 }
