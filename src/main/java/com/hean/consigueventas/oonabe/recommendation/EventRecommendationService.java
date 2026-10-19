@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,18 +39,41 @@ public class EventRecommendationService {
     private final EventOccurrenceRepository occurrenceRepository;
     private final Clock clock;
 
-    private final RecommendationScorer scorer = new RecommendationScorer();
+    private final RecommendationScorer scorer =
+            new RecommendationScorer();
+
+    private final RecommendationEventFilter eventFilter =
+            new RecommendationEventFilter();
 
     public Page<RecommendedEvent> getRecommendations(
             String username,
             Pageable pageable
     ) {
+        return getRecommendations(
+                username,
+                pageable,
+                null,
+                true
+        );
+    }
+
+    public Page<RecommendedEvent> getRecommendations(
+            String username,
+            Pageable pageable,
+            EventFilterRequest filter,
+            boolean useProfileCity
+    ) {
         Objects.requireNonNull(username, "El usuario es obligatorio");
         validatePageable(pageable);
 
-        RecommendationSignals signals = signalsService.getSignals(username);
+        RecommendationSignals signals =
+                signalsService.getSignals(username);
 
-        String cityName = normalizeCity(signals.cityName());
+        String cityName = resolveCity(
+                signals,
+                filter,
+                useProfileCity
+        );
 
         List<EventOccurrence> candidates =
                 occurrenceRepository.findRecommendationCandidates(
@@ -60,6 +84,10 @@ public class EventRecommendationService {
         Map<Long, EventOccurrence> nearestByEvent = new HashMap<>();
 
         for (EventOccurrence occurrence : candidates) {
+            if (!eventFilter.matches(occurrence, filter)) {
+                continue;
+            }
+
             nearestByEvent.merge(
                     occurrence.getEvent().getId(),
                     occurrence,
@@ -76,7 +104,10 @@ public class EventRecommendationService {
                 .sorted(RECOMMENDATION_ORDER)
                 .toList();
 
-        int from = (int) Math.min(pageable.getOffset(), ordered.size());
+        int from = (int) Math.min(
+                pageable.getOffset(),
+                ordered.size()
+        );
 
         int to = (int) Math.min(
                 (long) from + pageable.getPageSize(),
@@ -112,8 +143,25 @@ public class EventRecommendationService {
                 cityName,
                 result.score(),
                 result.reason()
-
         );
+    }
+
+    private String resolveCity(
+            RecommendationSignals signals,
+            EventFilterRequest filter,
+            boolean useProfileCity
+    ) {
+        String explicitCity = filter == null
+                ? null
+                : normalizeCity(filter.cityName());
+
+        if (explicitCity != null) {
+            return explicitCity;
+        }
+
+        return useProfileCity
+                ? normalizeCity(signals.cityName())
+                : null;
     }
 
     private void validatePageable(Pageable pageable) {
