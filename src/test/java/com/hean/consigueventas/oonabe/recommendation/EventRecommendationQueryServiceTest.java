@@ -22,7 +22,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-
+import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 @ExtendWith(MockitoExtension.class)
 class EventRecommendationQueryServiceTest {
 
@@ -199,5 +199,36 @@ class EventRecommendationQueryServiceTest {
         image.setUrl(url);
 
         return image;
+    }
+    @Test
+    void shouldForwardFiltersAndCityPolicyToRecommendationService() {
+        PageRequest pageable = PageRequest.of(0, 12);
+
+        EventFilterRequest filter = mock(EventFilterRequest.class);
+
+        when(recommendationService.getRecommendations(
+                USERNAME,
+                pageable,
+                filter,
+                false
+        )).thenReturn(Page.empty(pageable));
+
+        var result = service.getRecommendations(
+                USERNAME,
+                pageable,
+                filter,
+                false
+        );
+
+        assertThat(result.getContent()).isEmpty();
+
+        verify(recommendationService).getRecommendations(
+                USERNAME,
+                pageable,
+                filter,
+                false
+        );
+
+        verifyNoInteractions(imageRepository);
     }
 }

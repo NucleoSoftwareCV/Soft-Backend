@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
+import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventImage;
@@ -28,9 +29,30 @@ public class EventRecommendationQueryService {
             String username,
             Pageable pageable
     ) {
-        Page<RecommendedEvent> recommendations =
-                recommendationService.getRecommendations(username, pageable);
+        return buildResponsePage(
+                recommendationService.getRecommendations(username, pageable)
+        );
+    }
 
+    public Page<RecommendedEventResponse> getRecommendations(
+            String username,
+            Pageable pageable,
+            EventFilterRequest filter,
+            boolean useProfileCity
+    ) {
+        return buildResponsePage(
+                recommendationService.getRecommendations(
+                        username,
+                        pageable,
+                        filter,
+                        useProfileCity
+                )
+        );
+    }
+
+    private Page<RecommendedEventResponse> buildResponsePage(
+            Page<RecommendedEvent> recommendations
+    ) {
         if (recommendations.isEmpty()) {
             return recommendations.map(result -> toResponse(result, null));
         }
