@@ -14,17 +14,17 @@ import com.hean.consigueventas.oonabe.masterdata.repository.CityRepository;
 import com.hean.consigueventas.oonabe.profileCliente.dto.request.ClientProfilePreferencesRequest;
 import com.hean.consigueventas.oonabe.profileCliente.dto.request.OnboardingInterestsRequest;
 import com.hean.consigueventas.oonabe.profileCliente.dto.request.OnboardingPreferencesRequest;
-import com.hean.consigueventas.oonabe.profileCliente.dto.response.ClientProfilePreferencesResponse;
 import com.hean.consigueventas.oonabe.profileCliente.dto.response.ClientOnboardingResponse;
+import com.hean.consigueventas.oonabe.profileCliente.dto.response.ClientProfilePreferencesResponse;
 import com.hean.consigueventas.oonabe.profileCliente.dto.response.ClientSpaceResponse;
-import com.hean.consigueventas.oonabe.profileCliente.entity.ClientInterestCategory;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientEventTypePreference;
+import com.hean.consigueventas.oonabe.profileCliente.entity.ClientInterestCategory;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientModalityPreference;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientProfile;
 import com.hean.consigueventas.oonabe.profileCliente.entity.OnboardingStatus;
 import com.hean.consigueventas.oonabe.profileCliente.mapper.ClientProfileMapper;
-import com.hean.consigueventas.oonabe.profileCliente.repository.ClientInterestCategoryRepository;
 import com.hean.consigueventas.oonabe.profileCliente.repository.ClientEventTypePreferenceRepository;
+import com.hean.consigueventas.oonabe.profileCliente.repository.ClientInterestCategoryRepository;
 import com.hean.consigueventas.oonabe.profileCliente.repository.ClientModalityPreferenceRepository;
 import com.hean.consigueventas.oonabe.profileCliente.repository.ClientProfileRepository;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -34,9 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.LinkedHashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -121,7 +121,11 @@ public class ClientProfileService {
     // Se llama al registrarse para que el nombre real quede disponible de inmediato
     // (en vez de esperar a que el usuario visite sus preferencias para completarlo).
     @Transactional
-    public void createInitialProfile(User user, String firstName, String lastName) {
+    public void createInitialProfile(
+            User user,
+            String firstName,
+            String lastName
+    ) {
         if (clientProfileRepository.existsByUserId(user.getId())) {
             return;
         }
@@ -130,6 +134,7 @@ public class ClientProfileService {
         clientProfile.setFirstName(cleanText(firstName));
         clientProfile.setLastName(cleanText(lastName));
         clientProfile.setOnboardingStatus(OnboardingStatus.NOT_STARTED);
+
         clientProfileRepository.save(clientProfile);
     }
 
@@ -144,9 +149,12 @@ public class ClientProfileService {
             OnboardingInterestsRequest request
     ) {
         ClientProfile profile = getOrCreateClientProfile(username);
+
         updateInterestCategories(profile, request.categoryIds());
+
         profile.setOnboardingStatus(OnboardingStatus.INTERESTS_SAVED);
         clientProfileRepository.save(profile);
+
         return buildOnboardingResponse(profile);
     }
 
@@ -156,11 +164,14 @@ public class ClientProfileService {
             OnboardingPreferencesRequest request
     ) {
         ClientProfile profile = getOrCreateClientProfile(username);
+
         updateOnboardingCity(profile, request.cityId());
         updateEventTypePreferences(profile, request.experienceTypeIds());
         updateModalityPreference(profile, request.modality());
+
         profile.setOnboardingStatus(OnboardingStatus.COMPLETED);
         clientProfileRepository.save(profile);
+
         return buildOnboardingResponse(profile);
     }
 
@@ -169,80 +180,158 @@ public class ClientProfileService {
             String username,
             OnboardingStatus status
     ) {
-        if (status != OnboardingStatus.SKIPPED && status != OnboardingStatus.COMPLETED) {
-            throw new BusinessLogicException("Solo se puede omitir o completar el onboarding.");
+        if (status != OnboardingStatus.SKIPPED
+                && status != OnboardingStatus.COMPLETED) {
+            throw new BusinessLogicException(
+                    "Solo se puede omitir o completar el onboarding."
+            );
         }
+
         ClientProfile profile = getOrCreateClientProfile(username);
         profile.setOnboardingStatus(status);
+
         clientProfileRepository.save(profile);
+
         return buildOnboardingResponse(profile);
     }
 
     private ClientProfile getOrCreateClientProfile(String username) {
         User user = getUserByUsername(username);
+
         return clientProfileRepository.findByUserId(user.getId())
-                .orElseGet(() -> clientProfileRepository.save(createDefaultClientProfile(user)));
+                .orElseGet(() ->
+                        clientProfileRepository.save(
+                                createDefaultClientProfile(user)
+                        )
+                );
     }
 
-    private void updateOnboardingCity(ClientProfile profile, Long cityId) {
+    private void updateOnboardingCity(
+            ClientProfile profile,
+            Long cityId
+    ) {
         if (cityId == null) {
             profile.setCity(null);
             return;
         }
+
         City city = cityRepository.findById(cityId)
-                .filter(candidate -> Boolean.TRUE.equals(candidate.getIsActive()))
-                .orElseThrow(() -> new ResourceNotFoundException("Ciudad activa no encontrada."));
+                .filter(candidate ->
+                        Boolean.TRUE.equals(candidate.getIsActive())
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Ciudad activa no encontrada."
+                        )
+                );
+
         profile.setCity(city);
     }
 
-    private void updateEventTypePreferences(ClientProfile profile, Set<Long> ids) {
-        clientEventTypePreferenceRepository.deleteByClientProfileId(profile.getId());
-        if (ids == null || ids.isEmpty()) {
+    private void updateEventTypePreferences(
+            ClientProfile profile,
+            Set<Long> ids
+    ) {
+        Set<Long> selectedIds = ids == null ? Set.of() : ids;
+
+        List<ExperienceType> types =
+                experienceTypeRepository.findAllById(selectedIds);
+
+        if (types.size() != selectedIds.size()
+                || types.stream().anyMatch(type -> !type.isActive())) {
+            throw new ResourceNotFoundException(
+                    "Uno o más tipos de experiencia activos no existen."
+            );
+        }
+
+        clientEventTypePreferenceRepository
+                .deleteByClientProfileId(profile.getId());
+
+        clientEventTypePreferenceRepository.flush();
+
+        if (types.isEmpty()) {
             return;
         }
-        List<ExperienceType> types = experienceTypeRepository.findAllById(ids);
-        if (types.size() != ids.size() || types.stream().anyMatch(type -> !type.isActive())) {
-            throw new ResourceNotFoundException("Uno o más tipos de experiencia activos no existen.");
-        }
-        clientEventTypePreferenceRepository.saveAll(types.stream().map(type -> {
-            ClientEventTypePreference preference = new ClientEventTypePreference();
-            preference.setClientProfile(profile);
-            preference.setExperienceType(type);
-            return preference;
-        }).toList());
+
+        List<ClientEventTypePreference> preferences =
+                types.stream()
+                        .map(type -> {
+                            ClientEventTypePreference preference =
+                                    new ClientEventTypePreference();
+
+                            preference.setClientProfile(profile);
+                            preference.setExperienceType(type);
+
+                            return preference;
+                        })
+                        .toList();
+
+        clientEventTypePreferenceRepository.saveAll(preferences);
     }
 
-    private void updateModalityPreference(ClientProfile profile, EventModality modality) {
-        ClientModalityPreference preference = clientModalityPreferenceRepository
-                .findByClientProfileId(profile.getId())
-                .orElseGet(ClientModalityPreference::new);
+    private void updateModalityPreference(
+            ClientProfile profile,
+            EventModality modality
+    ) {
+        ClientModalityPreference preference =
+                clientModalityPreferenceRepository
+                        .findByClientProfileId(profile.getId())
+                        .orElseGet(ClientModalityPreference::new);
+
         if (modality == null) {
             if (preference.getId() != null) {
                 clientModalityPreferenceRepository.delete(preference);
             }
             return;
         }
+
         preference.setClientProfile(profile);
         preference.setModality(modality);
+
         clientModalityPreferenceRepository.save(preference);
     }
 
-    private ClientOnboardingResponse buildOnboardingResponse(ClientProfile profile) {
-        Set<Long> categoryIds = clientInterestCategoryRepository.findByClientProfileId(profile.getId())
-                .stream().map(relation -> relation.getCategory().getId())
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        Set<Long> experienceTypeIds = clientEventTypePreferenceRepository.findByClientProfileId(profile.getId())
-                .stream().map(relation -> relation.getExperienceType().getId())
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        EventModality modality = clientModalityPreferenceRepository.findByClientProfileId(profile.getId())
-                .map(ClientModalityPreference::getModality).orElse(null);
+    private ClientOnboardingResponse buildOnboardingResponse(
+            ClientProfile profile
+    ) {
+        Set<Long> categoryIds =
+                clientInterestCategoryRepository
+                        .findByClientProfileId(profile.getId())
+                        .stream()
+                        .map(relation -> relation.getCategory().getId())
+                        .collect(
+                                java.util.stream.Collectors.toCollection(
+                                        LinkedHashSet::new
+                                )
+                        );
+
+        Set<Long> experienceTypeIds =
+                clientEventTypePreferenceRepository
+                        .findByClientProfileId(profile.getId())
+                        .stream()
+                        .map(relation -> relation.getExperienceType().getId())
+                        .collect(
+                                java.util.stream.Collectors.toCollection(
+                                        LinkedHashSet::new
+                                )
+                        );
+
+        EventModality modality =
+                clientModalityPreferenceRepository
+                        .findByClientProfileId(profile.getId())
+                        .map(ClientModalityPreference::getModality)
+                        .orElse(null);
+
         OnboardingStatus status = profile.getOnboardingStatus() == null
                 ? OnboardingStatus.SKIPPED
                 : profile.getOnboardingStatus();
+
         return new ClientOnboardingResponse(
                 status,
                 categoryIds,
-                profile.getCity() == null ? null : profile.getCity().getId(),
+                profile.getCity() == null
+                        ? null
+                        : profile.getCity().getId(),
                 experienceTypeIds,
                 modality
         );
@@ -310,21 +399,23 @@ public class ClientProfileService {
             ClientProfile clientProfile,
             Set<Long> categoryIds
     ) {
-        clientInterestCategoryRepository
-                .deleteByClientProfileId(clientProfile.getId());
-
-        if (categoryIds.isEmpty()) {
-            return;
-        }
-
         List<Category> categories =
                 categoryRepository.findAllById(categoryIds);
 
         if (categories.size() != categoryIds.size()
                 || categories.stream().anyMatch(category -> !category.isActive())) {
             throw new ResourceNotFoundException(
-                    "Una o más categorías no existen."
+                    "Una o más categorías no existen o están inactivas."
             );
+        }
+
+        clientInterestCategoryRepository
+                .deleteByClientProfileId(clientProfile.getId());
+
+        clientInterestCategoryRepository.flush();
+
+        if (categories.isEmpty()) {
+            return;
         }
 
         List<ClientInterestCategory> interestCategories =
