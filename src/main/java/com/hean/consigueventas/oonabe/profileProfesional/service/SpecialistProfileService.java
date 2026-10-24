@@ -28,6 +28,7 @@ import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +38,12 @@ import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -550,7 +552,11 @@ public class SpecialistProfileService {
                             );
         }
 
-        return profiles.map(this::buildResponse);
+        return new PageImpl<>(
+                buildResponses(profiles.getContent()),
+                pageable,
+                profiles.getTotalElements()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -603,7 +609,13 @@ public class SpecialistProfileService {
                     );
         }
 
-        return profiles.map(this::buildResponse);
+        //Rendimiento: se construyen todas las respuestas de la pagina con
+        //5 consultas fijas por lote en lugar de 5+ consultas por perfil
+        return new PageImpl<>(
+                buildResponses(profiles.getContent()),
+                pageable,
+                profiles.getTotalElements()
+        );
     }
 
     @Transactional
@@ -1013,68 +1025,144 @@ public class SpecialistProfileService {
     private SpecialistProfileResponse buildResponse(
             SpecialistProfile profile
     ) {
-        Set<String> workTopics =
-                professionalWorkTopicRepository
-                        .findBySpecialistProfileId(profile.getId())
-                        .stream()
-                        .map(relation ->
-                                relation.getWorkTopic().getName()
-                        )
-                        .collect(Collectors.toSet());
+        return buildResponses(List.of(profile)).getFirst();
+    }
 
-        Set<String> techniques =
-                professionalTechniqueRepository
-                        .findBySpecialistProfileId(profile.getId())
-                        .stream()
-                        .map(relation ->
-                                relation.getTechnique().getName()
-                        )
-                        .collect(Collectors.toSet());
+    //Construye las respuestas de una pagina completa de perfiles con un
+    //numero FIJO de consultas (5 por lote, independiente de cuantos perfiles
+    //haya), en lugar del patron N+1 anterior que ejecutaba 5 o mas consultas
+    //POR PERFIL (mas una extra por cada tema/tecnica por el proxy LAZY).
+    //Es la correccion de rendimiento del listado de profesionales.
+    private List<SpecialistProfileResponse> buildResponses(
+            List<SpecialistProfile> profiles
+    ) {
+        if (profiles.isEmpty()) {
+            return List.of();
+        }
 
-        List<ProfessionalLanguageResponse> languages =
-                professionalLanguageRepository
-                        .findBySpecialistProfileIdOrderByLanguageNameAsc(
-                                profile.getId()
-                        )
-                        .stream()
-                        .map(professionalLanguageMapper::toResponse)
-                        .toList();
+        List<Long> profileIds = profiles.stream()
+                .map(SpecialistProfile::getId)
+                .toList();
 
-        List<ProfessionalSocialLinkResponse> socialLinks =
-                socialLinkRepository
-                        .findBySpecialistProfileId(profile.getId())
-                        .stream()
-                        .sorted(
-                                Comparator.comparingInt(
-                                        link -> SOCIAL_NETWORK_ORDER
-                                                .getOrDefault(
-                                                        link.getPlatform()
-                                                                .toUpperCase(Locale.ROOT),
-                                                        99
-                                                )
+        //Consulta 1: temas de trabajo de todos los perfiles de la pagina.
+        //JOIN FETCH trae el nombre del tema en la misma consulta, evitando
+        //la inicializacion perezosa por cada tema.
+        Map<Long, Set<String>> workTopicsByProfile = new HashMap<>();
+        for (ProfessionalWorkTopic relation
+                : professionalWorkTopicRepository
+                .findAllBySpecialistProfileIdIn(profileIds)) {
+            workTopicsByProfile
+                    .computeIfAbsent(
+                            relation.getSpecialistProfile().getId(),
+                            id -> new LinkedHashSet<>()
+                    )
+                    .add(relation.getWorkTopic().getName());
+        }
+
+        //Consulta 2: tecnicas de todos los perfiles (JOIN FETCH idem)
+        Map<Long, Set<String>> techniquesByProfile = new HashMap<>();
+        for (ProfessionalTechnique relation
+                : professionalTechniqueRepository
+                .findAllBySpecialistProfileIdIn(profileIds)) {
+            techniquesByProfile
+                    .computeIfAbsent(
+                            relation.getSpecialistProfile().getId(),
+                            id -> new LinkedHashSet<>()
+                    )
+                    .add(relation.getTechnique().getName());
+        }
+
+        //Consulta 3: idiomas de todos los perfiles, ordenados alfabeticamente
+        //(el orden global se conserva al agrupar por perfil)
+        Map<Long, List<ProfessionalLanguageResponse>> languagesByProfile =
+                new HashMap<>();
+        for (ProfessionalLanguage language
+                : professionalLanguageRepository
+                .findBySpecialistProfileIdInOrderByLanguageNameAsc(
+                        profileIds
+                )) {
+            languagesByProfile
+                    .computeIfAbsent(
+                            language.getSpecialistProfile().getId(),
+                            id -> new ArrayList<>()
+                    )
+                    .add(professionalLanguageMapper.toResponse(language));
+        }
+
+        //Consulta 4: redes sociales de todos los perfiles
+        Map<Long, List<ProfessionalSocialLinkResponse>> socialLinksByProfile =
+                new HashMap<>();
+        for (ProfessionalSocialLink socialLink
+                : socialLinkRepository.findBySpecialistProfileIdIn(profileIds)) {
+            socialLinksByProfile
+                    .computeIfAbsent(
+                            socialLink.getSpecialistProfile().getId(),
+                            id -> new ArrayList<>()
+                    )
+                    .add(socialLinkMapper.toResponse(socialLink));
+        }
+
+        //Consulta 5: imagenes de galeria de todos los perfiles
+        Map<Long, List<GalleryImageResponse>> galleryImagesByProfile =
+                new HashMap<>();
+        for (ProfessionalGalleryImage galleryImage
+                : galleryImageRepository
+                .findBySpecialistProfileIdInOrderBySortOrderAscCreatedAtAsc(
+                        profileIds
+                )) {
+            galleryImagesByProfile
+                    .computeIfAbsent(
+                            galleryImage.getSpecialistProfile().getId(),
+                            id -> new ArrayList<>()
+                    )
+                    .add(galleryImageMapper.toResponse(galleryImage));
+        }
+
+        return profiles.stream()
+                .map(profile -> specialistProfileMapper.toResponse(
+                        profile,
+                        workTopicsByProfile.getOrDefault(
+                                profile.getId(),
+                                Set.of()
+                        ),
+                        techniquesByProfile.getOrDefault(
+                                profile.getId(),
+                                Set.of()
+                        ),
+                        languagesByProfile.getOrDefault(
+                                profile.getId(),
+                                List.of()
+                        ),
+                        sortSocialLinks(
+                                socialLinksByProfile.getOrDefault(
+                                        profile.getId(),
+                                        List.of()
                                 )
+                        ),
+                        galleryImagesByProfile.getOrDefault(
+                                profile.getId(),
+                                List.of()
                         )
-                        .map(socialLinkMapper::toResponse)
-                        .toList();
+                ))
+                .toList();
+    }
 
-        List<GalleryImageResponse> galleryImages =
-                galleryImageRepository
-                        .findBySpecialistProfileIdOrderBySortOrderAscCreatedAtAsc(
-                                profile.getId()
+    //Ordena las redes sociales por plataforma (INSTAGRAM, YOUTUBE, FACEBOOK, TIKTOK)
+    private List<ProfessionalSocialLinkResponse> sortSocialLinks(
+            List<ProfessionalSocialLinkResponse> socialLinks
+    ) {
+        return socialLinks.stream()
+                .sorted(
+                        Comparator.comparingInt(
+                                link -> SOCIAL_NETWORK_ORDER
+                                        .getOrDefault(
+                                                link.platform()
+                                                        .toUpperCase(Locale.ROOT),
+                                                99
+                                        )
                         )
-                        .stream()
-                        .map(galleryImageMapper::toResponse)
-                        .toList();
-
-        return specialistProfileMapper.toResponse(
-                profile,
-                workTopics,
-                techniques,
-                languages,
-                socialLinks,
-                galleryImages
-
-        );
+                )
+                .toList();
     }
 
     private void markProfileAsDraft(
