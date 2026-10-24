@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalGall
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,11 @@ public interface ProfessionalGalleryImageRepository
 
     List<ProfessionalGalleryImage> findBySpecialistProfileIdOrderBySortOrderAscCreatedAtAsc(
             Long specialistProfileId
+    );
+
+    List<ProfessionalGalleryImage>
+    findBySpecialistProfileIdInOrderBySortOrderAscCreatedAtAsc(
+            Collection<Long> specialistProfileIds
     );
 
     Optional<ProfessionalGalleryImage> findBySpecialistProfileIdAndId(
