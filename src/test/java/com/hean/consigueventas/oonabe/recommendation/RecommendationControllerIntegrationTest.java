@@ -1,11 +1,13 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.recommendation.dto.response.RecommendedEventResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,8 +20,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -51,12 +55,16 @@ class RecommendationControllerIntegrationTest {
     void shouldReturnRecommendationsForAuthenticatedUser() throws Exception {
         PageRequest pageable = PageRequest.of(0, 12);
 
-        when(queryService.getRecommendations("cliente", pageable))
-                .thenReturn(new PageImpl<>(
-                        List.of(response()),
-                        pageable,
-                        1
-                ));
+        when(queryService.getRecommendations(
+                eq("cliente"),
+                eq(pageable),
+                any(EventFilterRequest.class),
+                eq(true)
+        )).thenReturn(new PageImpl<>(
+                List.of(response()),
+                pageable,
+                1
+        ));
 
         mockMvc.perform(get(PATH)
                         .param("username", "otra-cuenta"))
@@ -71,13 +79,21 @@ class RecommendationControllerIntegrationTest {
                 .andExpect(jsonPath("$.number").value(0))
                 .andExpect(jsonPath("$.size").value(12))
                 .andExpect(header().string(
-                        "Cache-Control", containsString("no-store")
+                        "Cache-Control",
+                        containsString("no-store")
                 ))
                 .andExpect(header().string(
-                        "Cache-Control", containsString("private")
+                        "Cache-Control",
+                        containsString("private")
                 ));
 
-        verify(queryService).getRecommendations("cliente", pageable);
+        verify(queryService).getRecommendations(
+                eq("cliente"),
+                eq(pageable),
+                any(EventFilterRequest.class),
+                eq(true)
+        );
+
         verifyNoMoreInteractions(queryService);
     }
 
@@ -86,8 +102,12 @@ class RecommendationControllerIntegrationTest {
     void shouldReturnEmptyPage() throws Exception {
         PageRequest pageable = PageRequest.of(1, 5);
 
-        when(queryService.getRecommendations("cliente", pageable))
-                .thenReturn(Page.empty(pageable));
+        when(queryService.getRecommendations(
+                eq("cliente"),
+                eq(pageable),
+                any(EventFilterRequest.class),
+                eq(true)
+        )).thenReturn(Page.empty(pageable));
 
         mockMvc.perform(get(PATH)
                         .param("page", "1")
@@ -140,6 +160,75 @@ class RecommendationControllerIntegrationTest {
     void shouldRejectExternalSort() throws Exception {
         mockMvc.perform(get(PATH)
                         .param("sort", "title,asc"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(queryService);
+    }
+
+    @Test
+    @WithMockUser(username = "cliente", roles = "USER")
+    void shouldForwardFiltersAndCityPolicy() throws Exception {
+        PageRequest pageable = PageRequest.of(0, 12);
+
+        when(queryService.getRecommendations(
+                eq("cliente"),
+                eq(pageable),
+                any(EventFilterRequest.class),
+                eq(false)
+        )).thenReturn(Page.empty(pageable));
+
+        mockMvc.perform(get(PATH)
+                        .param("useProfileCity", "false")
+                        .param("cityName", "Valencia")
+                        .param("includeOnline", "true")
+                        .param("categoryId", "10")
+                        .param("search", "yoga")
+                        .param("maxPrice", "25")
+                        .param("dateFrom", "2026-11-01")
+                        .param("dateTo", "2026-11-30"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<EventFilterRequest> captor =
+                ArgumentCaptor.forClass(EventFilterRequest.class);
+
+        verify(queryService).getRecommendations(
+                eq("cliente"),
+                eq(pageable),
+                captor.capture(),
+                eq(false)
+        );
+
+        EventFilterRequest filter = captor.getValue();
+
+        assertThat(filter.cityName()).isEqualTo("Valencia");
+        assertThat(filter.includeOnline()).isTrue();
+        assertThat(filter.categoryId()).isEqualTo(10L);
+        assertThat(filter.search()).isEqualTo("yoga");
+        assertThat(filter.maxPrice()).isEqualByComparingTo("25");
+        assertThat(filter.dateFrom())
+                .isEqualTo(LocalDate.of(2026, 11, 1));
+        assertThat(filter.dateTo())
+                .isEqualTo(LocalDate.of(2026, 11, 30));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "dateFrom,2026-11-30,dateTo,2026-11-01",
+            "hourFrom,18,hourTo,10",
+            "minPrice,50,maxPrice,10",
+            "categoryId,10,categoryIds,20",
+            "hourFrom,24,hourTo,24"
+    })
+    @WithMockUser(username = "cliente", roles = "USER")
+    void shouldRejectInvalidFilters(
+            String firstName,
+            String firstValue,
+            String secondName,
+            String secondValue
+    ) throws Exception {
+        mockMvc.perform(get(PATH)
+                        .param(firstName, firstValue)
+                        .param(secondName, secondValue))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(queryService);
