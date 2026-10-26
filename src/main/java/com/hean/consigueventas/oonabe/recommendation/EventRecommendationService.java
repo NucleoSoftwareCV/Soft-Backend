@@ -108,9 +108,11 @@ public class EventRecommendationService {
                 occurrence.getEvent(),
                 occurrence.getId(),
                 occurrence.getStartsAt(),
+                occurrence.getEndsAt(),
                 cityName,
                 result.score(),
                 result.reason()
+
         );
     }
 

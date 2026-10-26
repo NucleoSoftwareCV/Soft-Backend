@@ -92,9 +92,9 @@ public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence
                   location.isActive = true
                   and city.isActive = true
                   and (
-                      :cityName is null
-                      or lower(city.name) = lower(:cityName)
-                  )
+                       cast(:cityName as String) is null
+                       or lower(city.name) = lower(cast(:cityName as String))
+                   )
               )
           )
         order by event.id, occurrence.startsAt, occurrence.id
