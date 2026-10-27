@@ -94,11 +94,13 @@ class EventMapRepositoryTest {
 
     @Test
     void returnsCoordinatesAndAddressWithoutLoadingEachEventDetail() {
+        event.setMood(EventMood.CONECTAR);
         em.flush();
         em.clear();
         var page = repository.findAvailableLocations(NOW, PageRequest.of(0, 100));
         assertThat(page.getTotalElements()).isEqualTo(1);
         assertThat(page.getContent().getFirst().categoryId()).isEqualTo(category.getId());
+        assertThat(page.getContent().getFirst().mood()).isEqualTo(EventMood.CONECTAR);
         assertThat(page.getContent().getFirst().organizerName()).isEqualTo("Profesional mapa");
         assertThat(page.getContent().getFirst().modality()).isEqualTo(EventModality.PRESENCIAL);
         assertThat(page.getContent().getFirst().address()).isEqualTo("Calle de prueba 12");

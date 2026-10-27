@@ -54,6 +54,7 @@ class EventRecommendationQueryServiceTest {
     void shouldPreserveSelectedDatesScoreAndReason() {
         PageRequest pageable = PageRequest.of(0, 12);
         Event event = createEvent(7L);
+        event.setMood(com.hean.consigueventas.oonabe.common.enums.EventMood.ENERGIA);
 
         RecommendedEvent recommendation = new RecommendedEvent(
                 event,
@@ -77,6 +78,8 @@ class EventRecommendationQueryServiceTest {
                 service.getRecommendations(USERNAME, pageable);
 
         RecommendedEventResponse response = result.getContent().getFirst();
+        assertThat(response.event().mood()).isEqualTo(
+                com.hean.consigueventas.oonabe.common.enums.EventMood.ENERGIA);
 
         assertThat(response.event().id()).isEqualTo(7L);
         assertThat(response.event().title()).isEqualTo("Yoga");

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -26,6 +27,7 @@ public record EventMapPointResponse(
         Long specialistId,
         String organizerName,
         EventModality modality,
-        boolean isRecurring
+        boolean isRecurring,
+        EventMood mood
 ) {
 }

@@ -46,7 +46,7 @@ public interface EventMapRepository extends Repository<EventOccurrence, Long> {
                         location.address, city.name, location.latitude, location.longitude,
                         event.summary, category.id, category.name, experienceType.id,
                         experienceType.name, specialist.id, specialist.publicName,
-                        event.modality, event.isRecurring
+                        event.modality, event.isRecurring, event.mood
                     )
                     """ + VISIBLE_LOCATIONS + " order by occurrence.startsAt, occurrence.id",
             countQuery = "select count(occurrence) " + VISIBLE_LOCATIONS

@@ -104,7 +104,8 @@ public class EventRecommendationQueryService {
                 experienceType == null ? null : experienceType.getId(),
                 experienceType == null ? null : experienceType.getName(),
                 experienceType == null ? null : experienceType.getSlug(),
-                event.isRecurring()
+                event.isRecurring(),
+                event.getMood()
         );
 
         return new RecommendedEventResponse(

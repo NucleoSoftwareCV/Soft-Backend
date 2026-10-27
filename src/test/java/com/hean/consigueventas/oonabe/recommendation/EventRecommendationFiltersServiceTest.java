@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.recommendation;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
@@ -222,6 +223,28 @@ class EventRecommendationFiltersServiceTest {
         assertThat(result.getContent()).isEmpty();
     }
 
+    @Test
+    void shouldFilterMoodBeforeRankingAndPagination() {
+        EventOccurrence relaxation = occurrence(1L, 101L, 10L, 30L, "Valencia", "2026-10-20T12:00:00Z");
+        EventOccurrence energy = occurrence(2L, 102L, 10L, 99L, "Valencia", "2026-10-20T12:00:00Z");
+        EventOccurrence followedEnergy = occurrence(3L, 103L, 10L, 30L, "Valencia", "2026-10-21T12:00:00Z");
+        EventOccurrence unknown = occurrence(4L, 104L, 10L, 30L, "Valencia", "2026-10-20T12:00:00Z");
+        relaxation.getEvent().setMood(EventMood.RELAJACION);
+        energy.getEvent().setMood(EventMood.ENERGIA);
+        followedEnergy.getEvent().setMood(EventMood.ENERGIA);
+        when(occurrenceRepository.findRecommendationCandidates(NOW, null))
+                .thenReturn(List.of(relaxation, energy, unknown, followedEnergy));
+        EventFilterRequest filter = new EventFilterRequest(
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, EventMood.ENERGIA);
+
+        var first = service.getRecommendations(USERNAME, PageRequest.of(0, 1), filter, false);
+        var second = service.getRecommendations(USERNAME, PageRequest.of(1, 1), filter, false);
+        assertThat(first.getTotalElements()).isEqualTo(2);
+        assertThat(first.getContent()).extracting(result -> result.event().getId()).containsExactly(3L);
+        assertThat(second.getContent()).extracting(result -> result.event().getId()).containsExactly(2L);
+    }
+
     private EventFilterRequest filter(
             Long categoryId,
             String cityName,
@@ -239,6 +262,7 @@ class EventRecommendationFiltersServiceTest {
                 null,
                 null,
                 dateFrom,
+                null,
                 null,
                 null,
                 null,

@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.recommendation;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
@@ -216,6 +217,23 @@ class RecommendationEventFilterTest {
         assertThat(matcher.matches(occurrence, filters.build())).isTrue();
     }
 
+    @Test
+    void shouldFilterEachMoodAndExcludeUnclassifiedEventsOnlyWhenRequested() {
+        Filters filters = new Filters();
+        for (EventMood mood : EventMood.values()) {
+            filters.mood = mood;
+            event.setMood(mood);
+            assertThat(matcher.matches(occurrence, filters.build())).isTrue();
+            event.setMood(null);
+            assertThat(matcher.matches(occurrence, filters.build())).isFalse();
+        }
+        filters.mood = null;
+        assertThat(matcher.matches(occurrence, filters.build())).isTrue();
+        filters.mood = EventMood.ENERGIA;
+        event.setMood(EventMood.RELAJACION);
+        assertThat(matcher.matches(occurrence, filters.build())).isFalse();
+    }
+
     private static class Filters {
         String search;
         Long categoryId;
@@ -232,6 +250,7 @@ class RecommendationEventFilterTest {
         Integer hourTo;
         Boolean isRecurring;
         Long specialistId;
+        EventMood mood;
 
         EventFilterRequest build() {
             return new EventFilterRequest(
@@ -249,7 +268,8 @@ class RecommendationEventFilterTest {
                     hourFrom,
                     hourTo,
                     isRecurring,
-                    specialistId
+                    specialistId,
+                    mood
             );
         }
     }

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.recommendation.dto.response.RecommendedEventResponse;
@@ -183,6 +184,7 @@ class RecommendationControllerIntegrationTest {
                         .param("includeOnline", "true")
                         .param("categoryId", "10")
                         .param("search", "yoga")
+                        .param("mood", "ENERGIA")
                         .param("maxPrice", "25")
                         .param("dateFrom", "2026-11-01")
                         .param("dateTo", "2026-11-30"))
@@ -204,6 +206,7 @@ class RecommendationControllerIntegrationTest {
         assertThat(filter.includeOnline()).isTrue();
         assertThat(filter.categoryId()).isEqualTo(10L);
         assertThat(filter.search()).isEqualTo("yoga");
+        assertThat(filter.mood()).isEqualTo(EventMood.ENERGIA);
         assertThat(filter.maxPrice()).isEqualByComparingTo("25");
         assertThat(filter.dateFrom())
                 .isEqualTo(LocalDate.of(2026, 11, 1));
@@ -217,7 +220,8 @@ class RecommendationControllerIntegrationTest {
             "hourFrom,18,hourTo,10",
             "minPrice,50,maxPrice,10",
             "categoryId,10,categoryIds,20",
-            "hourFrom,24,hourTo,24"
+            "hourFrom,24,hourTo,24",
+            "mood,INVALIDO,maxPrice,25"
     })
     @WithMockUser(username = "cliente", roles = "USER")
     void shouldRejectInvalidFilters(
@@ -254,7 +258,8 @@ class RecommendationControllerIntegrationTest {
                 null,
                 null,
                 null,
-                false
+                false,
+                null
         );
 
         return new RecommendedEventResponse(

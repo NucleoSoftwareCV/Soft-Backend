@@ -29,6 +29,7 @@ public final class RecommendationEventFilter {
                 && matchesCategory(event, filter)
                 && matchesExperienceType(event, filter)
                 && matchesModality(event, filter)
+                && (filter.mood() == null || filter.mood() == event.getMood())
                 && matchesSpecialist(event, filter)
                 && matchesRecurrence(event, filter)
                 && matchesPrice(event, filter)
