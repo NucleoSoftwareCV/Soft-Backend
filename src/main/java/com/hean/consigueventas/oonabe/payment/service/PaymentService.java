@@ -26,6 +26,7 @@ import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.user.repository.TemporaryCustomerProfileRepository;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
 import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
@@ -42,7 +43,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +81,12 @@ public class PaymentService {
 
         List<CheckoutResponseItemDto> responseItems = new ArrayList<>();
         BigDecimal totalSubtotal = BigDecimal.ZERO;
+
+        // Hold occurrence locks in a deterministic order for the entire checkout.
+        checkoutRequest.getItems().stream()
+                .filter(i -> i.getItemType() == PurchaseItemType.EVENTO)
+                .map(CheckoutItemDto::getReferenceId).distinct().sorted()
+                .forEach(id -> eventOccurrenceRepository.findLockedById(id));
 
         for (CheckoutItemDto itemDto : checkoutRequest.getItems()) {
             PurchaseOrderItem item = new PurchaseOrderItem();
@@ -196,8 +205,20 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponseDto processPayment(String orderCode, PaymentProcessRequestDto request) {
-        PurchaseOrder order = purchaseOrderRepository.findByCode(orderCode)
+        PurchaseOrder order = purchaseOrderRepository.findLockedByCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró la orden con código: " + orderCode));
+
+        List<EventBooking> orderBookings = eventBookingRepository.findLockedByOrderId(order.getId());
+        orderBookings.stream().map(b -> b.getOccurrence().getId()).distinct().sorted()
+                .forEach(id -> eventOccurrenceRepository.findLockedById(id));
+        if (order.getStatus() == PurchaseOrderStatus.CANCELADA
+                && orderBookings.stream().anyMatch(b -> b.getStatus() == BookingStatus.CANCELADA)) {
+            throw new BookingConflictException("El profesional rechazó la reserva y la orden fue cancelada.");
+        }
+        Set<Long> rejectedItemIds = orderBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CANCELADA && b.getOrderItem() != null)
+                .map(b -> b.getOrderItem().getId())
+                .collect(Collectors.toSet());
 
         if (order.getStatus() != PurchaseOrderStatus.ABIERTA) {
             throw new BusinessLogicException("La orden de compra ya no está abierta. Estado actual: " + order.getStatus());
@@ -258,20 +279,15 @@ public class PaymentService {
             receipt.setCustomerName(order.getCustomer().getFirstNames() + " " + order.getCustomer().getLastNames());
             receipt.setCustomerEmail(order.getCustomer().getUser().getEmail());
 
-            List<PurchaseOrderItem> items = purchaseOrderItemRepository.findAll().stream()
-                    .filter(i -> i.getOrder().getId().equals(order.getId()))
+            // Rejected bookings were already removed from the order total; they are neither confirmed nor billed.
+            List<PurchaseOrderItem> items = purchaseOrderItemRepository.findByOrderIdOrderByIdAsc(order.getId()).stream()
+                    .filter(i -> !rejectedItemIds.contains(i.getId()))
                     .toList();
 
-            for (PurchaseOrderItem item : items) {
-                if (item.getItemType() == PurchaseItemType.EVENTO) {
-                    List<EventBooking> bookings = eventBookingRepository.findAll().stream()
-                            .filter(b -> b.getOrderItem() != null && b.getOrderItem().getId().equals(item.getId()))
-                            .toList();
-                    for (EventBooking booking : bookings) {
-                        booking.setStatus(BookingStatus.CONFIRMADA);
-                        eventBookingRepository.save(booking);
-                    }
-                }
+            for (EventBooking booking : orderBookings) {
+                if (booking.getStatus() == BookingStatus.CANCELADA) continue;
+                booking.setStatus(BookingStatus.CONFIRMADA);
+                eventBookingRepository.save(booking);
             }
 
             StringBuilder descBuilder = new StringBuilder("Compra en Oona:\n");
