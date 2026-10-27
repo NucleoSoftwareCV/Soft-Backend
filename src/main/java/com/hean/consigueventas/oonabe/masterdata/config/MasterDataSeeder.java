@@ -57,11 +57,11 @@ public class MasterDataSeeder {
         seedCity("Valencia", "Valencia");
 
         Location loc1 = seedLocation("Centro Holistico Miraflores",
-                "Av. Larco 123", "LINK", "Valencia", "Valencia", true);
+                "Av. Larco 123", "LINK", "Valencia", "Valencia", true, "39.474000", "-0.380000");
         Location loc2 = seedLocation("Casa Bienestar San Isidro",
-                "Av. Javier Prado 456", "LINK", "Barcelona", "Barcelona", true);
+                "Av. Javier Prado 456", "LINK", "Barcelona", "Barcelona", true, "41.389000", "2.159000");
         Location loc3 = seedLocation("Cada de vista", "hola", "Acceso",
-                "Madrid", "Madrid", true);
+                "Madrid", "Madrid", true, "40.417000", "-3.703000");
 
         seedWorkTopic("Autoestima", true);
         seedWorkTopic("Motivacion", true);
@@ -133,50 +133,51 @@ public class MasterDataSeeder {
                 .replaceAll("(^-|-$)", "");
     }
 
+    /**
+     * Puntos orientativos de ciudad para las tres sedes iniciales.
+     * Fuente: https://www.geonames.org/es/largest-cities-in-spain.html
+     * Solo completa las semillas originales sin coordenadas; respeta ediciones posteriores.
+     */
     private Location seedLocation(
             String name,
-            String address,
-            String reference,
+            String legacyAddress,
+            String legacyReference,
             String cityName,
             String provinceName,
-            boolean isActive) {
+            boolean isActive,
+            String latitude,
+            String longitude) {
 
         Location location = locationRepository.findByName(name).orElse(null);
-        City targetCity = (cityName != null && provinceName != null)
-                ? cityRepository.findByNameAndProvince(cityName, provinceName).orElse(null)
-                : null;
-
-        if (location == null) {
-            Location newLocation = new Location();
-            newLocation.setName(name);
-            newLocation.setAddress(address);
-            newLocation.setReference(reference);
-            newLocation.setIsActive(isActive);
-            newLocation.setCity(targetCity);
-            return locationRepository.save(newLocation);
-        } else {
-            boolean changed = false;
-            if (!address.equals(location.getAddress())) {
-                location.setAddress(address);
-                changed = true;
-            }
-            if (!reference.equals(location.getReference())) {
-                location.setReference(reference);
-                changed = true;
-            }
-            if (location.getIsActive() != isActive) {
-                location.setIsActive(isActive);
-                changed = true;
-            }
-            if (targetCity != null && !targetCity.equals(location.getCity())) {
-                location.setCity(targetCity);
-                changed = true;
-            }
-            if (changed) {
-                return locationRepository.save(location);
-            }
-            return location;
+        City targetCity = cityRepository.findByNameAndProvince(cityName, provinceName).orElse(null);
+        if (targetCity == null) {
+            throw new IllegalStateException("No existe la ciudad de la ubicacion inicial: " + cityName);
         }
+
+        boolean creating = location == null;
+        if (!creating) {
+            boolean originalSeed = legacyAddress.equals(location.getAddress())
+                    && legacyReference.equals(location.getReference())
+                    && location.getLatitude() == null
+                    && location.getLongitude() == null
+                    && (location.getCity() == null
+                        || java.util.Objects.equals(targetCity.getId(), location.getCity().getId()));
+            if (!originalSeed) {
+                return location;
+            }
+        } else {
+            location = new Location();
+            location.setName(name);
+            location.setIsActive(isActive);
+        }
+
+        location.setAddress("Ubicación aproximada en " + cityName
+                + ". Dirección exacta pendiente de confirmar.");
+        location.setReference("Punto orientativo de ciudad; confirmar la dirección con el organizador.");
+        location.setCity(targetCity);
+        location.setLatitude(new java.math.BigDecimal(latitude));
+        location.setLongitude(new java.math.BigDecimal(longitude));
+        return locationRepository.save(location);
     }
 
     private void seedCity(String name, String province) {
