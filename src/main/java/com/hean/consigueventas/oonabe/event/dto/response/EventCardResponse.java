@@ -2,6 +2,8 @@ package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import com.hean.consigueventas.oonabe.review.dto.response.EventReviewerPreviewResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -63,6 +65,15 @@ public record EventCardResponse(
         String experienceTypeSlug,
 
         @Schema(description = "¿Es recurrente?")
-        Boolean isRecurring
+        Boolean isRecurring,
+
+        @Schema(description = "Promedio real de estrellas; null cuando no hay reseñas")
+        Double averageRating,
+
+        @Schema(description = "Cantidad total de reseñas del evento")
+        long reviewCount,
+
+        @Schema(description = "Hasta cuatro autores reales de reseñas, con su avatar si existe")
+        List<EventReviewerPreviewResponse> reviewers
 ) {
 }

@@ -84,6 +84,9 @@ public class SecurityConfig {
                                 "/api/v1/events/{id:\\d+}",
                                 "/api/v1/events/{id:\\d+}/similar",
                                 "/api/v1/events/{id:\\d+}/organizer-events").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/events/*/reviews",
+                                "/api/v1/events/*/reviews/summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
