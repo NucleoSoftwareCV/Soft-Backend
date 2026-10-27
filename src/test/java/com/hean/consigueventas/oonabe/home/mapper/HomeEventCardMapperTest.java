@@ -36,7 +36,8 @@ class HomeEventCardMapperTest {
                 30L,
                 "Clases",
                 "clases",
-                true
+                true,
+                null
         );
 
         HomeEventCardResponse response = mapper.toResponse(source);

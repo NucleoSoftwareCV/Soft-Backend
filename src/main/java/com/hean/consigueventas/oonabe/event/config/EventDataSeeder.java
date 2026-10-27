@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.event.config;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
@@ -75,6 +76,7 @@ public class EventDataSeeder {
                 "Taller de porteo ergonómico edición verano. En este taller veremos las opciones más frescas para portear a tu bebé cuando hace calor. Si estás embarazada es el mejor momento para informarte.",
                 EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna,
                 "talleres", false);
+        seedMood(event1, EventMood.CONECTAR);
         seedOccurrence(event1, null,
                 futureInstant(1, 12, 0), futureInstant(1, 13, 30), 20,
                 "https://zoom.us/j/9876543210?pwd=secretZoomPassword123");
@@ -89,6 +91,7 @@ public class EventDataSeeder {
                 "Descubre los beneficios del pilates aéreo trabajando con columpios especiales. Una clase que desafía tu equilibrio y fortalece todo tu core de forma divertida y segura.",
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos,
                 "clases", true);
+        seedMood(event2, EventMood.ENERGIA);
         seedOccurrence(event2, loc1,
                 futureInstant(2, 15, 0), futureInstant(2, 16, 30), 15, null);
         seedEventDetailSections(event2,
@@ -102,6 +105,7 @@ public class EventDataSeeder {
                 "Una experiencia única que combina el equilibrio y la relajación del Paddle Surf con las vibraciones armónicas de los cuencos tibetanos y gongs al atardecer.",
                 EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos,
                 "ceremonias", false);
+        seedMood(event3, EventMood.RELAJACION);
         seedOccurrence(event3, loc2,
                 futureInstant(3, 17, 30), futureInstant(3, 19, 0), 10, null);
         seedEventDetailSections(event3,
@@ -115,6 +119,7 @@ public class EventDataSeeder {
                 "Taller práctico de respiración consciente combinado con la inmersión en tina de hielo. Aprende a dominar tu mente, controlar tu sistema nervioso y potenciar tu sistema inmune.",
                 EventModality.PRESENCIAL, 45.00, "EUR", (short) 18, catHielo, profileAna,
                 "talleres", false);
+        seedMood(event4, EventMood.ENERGIA);
         seedOccurrence(event4, loc1,
                 futureInstant(4, 10, 0), futureInstant(4, 12, 0), 12, null);
         seedEventDetailSections(event4,
@@ -128,6 +133,7 @@ public class EventDataSeeder {
                 "Disfruta de una sesión de Yoga Vinyasa al aire libre. Fluiremos de postura a postura guiados por la respiración para revitalizar el cuerpo y calmar la mente en un entorno natural.",
                 EventModality.PRESENCIAL, 15.00, "EUR", (short) 12, catYoga, profileCarlos,
                 "clases", true);
+        seedMood(event5, EventMood.ENERGIA);
         seedOccurrence(event5, loc1,
                 futureInstant(5, 9, 0), futureInstant(5, 10, 30), 25, null);
         seedEventDetailSections(event5,
@@ -141,6 +147,7 @@ public class EventDataSeeder {
                 "En este encuentro online aprenderás el origen, los beneficios científicos y las técnicas fundamentales de la meditación trascendental para reducir el ruido mental.",
                 EventModality.ONLINE, 15.00, "EUR", (short) 16, catMeditacion, profileAna,
                 "encuentros-grupales", false);
+        seedMood(event6, EventMood.RELAJACION);
         seedOccurrence(event6, null,
                 futureInstant(1, 18, 0), futureInstant(1, 19, 30), 50,
                 "https://zoom.us/j/1112223333?pwd=meditationPass456");
@@ -155,6 +162,7 @@ public class EventDataSeeder {
                 "Aprende a planificar un menú saludable y a cocinar en un solo bloque de tiempo (batch cooking) con recetas sencillas y nutritivas para toda la semana.",
                 EventModality.ONLINE, 25.00, "EUR", (short) 18, catNutricion, profileAna,
                 "talleres", false);
+        seedMood(event7, EventMood.CONECTAR);
         seedOccurrence(event7, null,
                 futureInstant(2, 19, 0), futureInstant(2, 21, 0), 30,
                 "https://zoom.us/j/4445556666?pwd=nutritionPass789");
@@ -165,6 +173,7 @@ public class EventDataSeeder {
                 "Una jornada dedicada al cultivo de la atención plena a través de caminatas conscientes, prácticas de escaneo corporal y meditaciones en grupo en medio de la naturaleza.",
                 EventModality.PRESENCIAL, 60.00, "EUR", (short) 18, catMeditacion, profileCarlos,
                 "retiros", false);
+        seedMood(event8, EventMood.RELAJACION);
         seedOccurrence(event8, loc1,
                 futureInstant(3, 10, 0), futureInstant(3, 17, 0), 15, null);
 
@@ -174,6 +183,7 @@ public class EventDataSeeder {
                 "Sumérgete en un océano de vibraciones terapéuticas. Los gongs y los cuencos de cuarzo te guiarán a un estado meditativo profundo para restaurar tu energía vital.",
                 EventModality.PRESENCIAL, 25.00, "EUR", (short) 16, catSonido, profileCarlos,
                 "ceremonias", true);
+        seedMood(event9, EventMood.RELAJACION);
         seedOccurrence(event9, loc1,
                 futureInstant(4, 20, 0), futureInstant(4, 21, 30), 20, null);
 
@@ -183,6 +193,7 @@ public class EventDataSeeder {
                 "Una sesion pausada con posturas sostenidas, respiracion consciente y cierre meditativo para liberar tension acumulada.",
                 EventModality.PRESENCIAL, 18.00, "EUR", (short) 14, catYoga, profileAna,
                 "clases", false);
+        seedMood(event10, EventMood.RELAJACION);
         seedOccurrence(event10, loc2,
                 futureInstant(5, 9, 0), futureInstant(5, 10, 15), 18, null);
         seedEventDetailSections(event10,
@@ -196,6 +207,7 @@ public class EventDataSeeder {
                 "Encuentro de escucha profunda con cuencos de cuarzo, respiracion guiada y relajacion corporal.",
                 EventModality.PRESENCIAL, 22.00, "EUR", (short) 16, catSonido, profileAna,
                 "ceremonias", false);
+        seedMood(event11, EventMood.RELAJACION);
         seedOccurrence(event11, loc2,
                 futureInstant(6, 19, 0), futureInstant(6, 20, 15), 16, null);
         seedEventDetailSections(event11,
@@ -209,6 +221,7 @@ public class EventDataSeeder {
                 "Practicaremos movilidad, respiracion y ejercicios conscientes para recuperar confianza corporal de forma segura.",
                 EventModality.PRESENCIAL, 20.00, "EUR", (short) 18, catCuerpo, profileCarlos,
                 "clases", false);
+        seedMood(event12, EventMood.CONECTAR);
         seedOccurrence(event12, loc1,
                 futureInstant(7, 11, 0), futureInstant(7, 12, 15), 12, null);
         seedEventDetailSections(event12,
@@ -222,6 +235,7 @@ public class EventDataSeeder {
                 "Una experiencia de movimiento libre con pautas sencillas para conectar con ritmo, respiracion y presencia.",
                 EventModality.PRESENCIAL, 24.00, "EUR", (short) 16, catMovimiento, profileAna,
                 "clases", false);
+        seedMood(event13, EventMood.ENERGIA);
         seedOccurrence(event13, loc3,
                 futureInstant(8, 17, 0), futureInstant(8, 18, 30), 20, null);
         seedEventDetailSections(event13,
@@ -261,6 +275,7 @@ public class EventDataSeeder {
                 profile,
                 "talleres",
                 false);
+        seedMood(event, EventMood.CONECTAR);
         seedOccurrence(
                 event,
                 location,
@@ -269,6 +284,14 @@ public class EventDataSeeder {
                 18,
                 null);
         seedCover(event, "https://images.unsplash.com/photo-1506126613408-eca07ce68773");
+    }
+
+    /** Valores iniciales para el catálogo de desarrollo; conserva la clasificación editada. */
+    private void seedMood(Event event, EventMood mood) {
+        if (event.getMood() == null) {
+            event.setMood(mood);
+            eventRepository.save(event);
+        }
     }
 
     private Event seedEvent(

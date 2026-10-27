@@ -47,6 +47,7 @@ public class OpenApiConfig {
                         "/api/v1/one-to-one-services/{id}",
                         "/api/v1/one-to-one-services/slug/{slug}",
                         "/api/v1/events",
+                        "/api/v1/events/map",
                         "/api/v1/events/{id}",
                         "/api/v1/home/**"
                 )
@@ -124,6 +125,7 @@ public class OpenApiConfig {
                             }
                             if (path.startsWith("/api/v1/events")) {
                                 if (path.equals("/api/v1/events")
+                                        || path.equals("/api/v1/events/map")
                                         || path.equals("/api/v1/events/{id}")
                                         || path.equals("/api/v1/events/{id}/similar")
                                         || path.equals("/api/v1/events/{id}/organizer-events")) {
