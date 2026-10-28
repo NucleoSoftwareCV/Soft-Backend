@@ -3,11 +3,14 @@ package com.hean.consigueventas.oonabe.booking;
 import com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.Decision;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.*;
+import com.hean.consigueventas.oonabe.booking.service.ExpiredOrderReleaseService;
 import com.hean.consigueventas.oonabe.booking.service.ProfessionalBookingService;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
+import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.payment.dto.PaymentProcessRequestDto;
+import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import com.hean.consigueventas.oonabe.payment.service.PaymentService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
@@ -20,6 +23,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -45,6 +51,9 @@ class ProfessionalBookingConcurrencyTest {
     @Autowired ProfessionalBookingService service;
     @Autowired EventBookingRepository bookings;
     @Autowired BookingStatusHistoryRepository history;
+    @Autowired ExpiredOrderReleaseService release;
+    @Autowired PurchaseOrderRepository orders;
+    @Autowired EventOccurrenceRepository occurrences;
     Long professionalId;
     Long clientId;
     Long occurrenceId;
@@ -100,6 +109,48 @@ class ProfessionalBookingConcurrencyTest {
             boolean paid = b.getOrderItem().getOrder().getPaidAt() != null;
             assertThat(b.getStatus()).isEqualTo(paid ? BookingStatus.CONFIRMADA : BookingStatus.CANCELADA);
             assertThat(b.getOccurrence().getReservedSpots()).isEqualTo(paid ? 2 : 0);
+        });
+    }
+
+    @Test void expirationReleaseAndRejectionFreeTheSpotsOnlyOnce() throws Exception {
+        String code = reserve();
+        String orderCode = expire(code);
+        race(() -> release.release(orderCode) > 0,
+                () -> { service.decide(professionalId, code, new Decision(BookingStatus.CANCELADA, "No disponible")); return true; });
+        tx.executeWithoutResult(status -> {
+            var b = bookings.findByCode(code).orElseThrow();
+            assertThat(b.getStatus()).isEqualTo(BookingStatus.CANCELADA);
+            assertThat(history.findByBookingTypeAndBookingIdOrderByCreatedAtAscIdAsc(PurchaseItemType.EVENTO, b.getId())).hasSize(1);
+            assertThat(em.find(EventOccurrence.class, occurrenceId).getReservedSpots()).isZero();
+        });
+    }
+
+    @Test void expirationReleaseAndLatePaymentCannotBothSucceed() throws Exception {
+        String code = reserve();
+        String orderCode = tx.execute(status -> bookings.findByCode(code).orElseThrow().getOrderItem().getOrder().getCode());
+        // Release runs on a clock in the future, payment still sees the order as open.
+        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, history,
+                Clock.offset(Clock.systemUTC(), Duration.ofHours(1)));
+        var outcomes = race(() -> {
+            PaymentProcessRequestDto request = new PaymentProcessRequestDto();
+            request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
+            request.setCardExpiration("12/30"); request.setCardCvv("123");
+            payments.processPayment(orderCode, request); return true;
+        }, () -> tx.execute(status -> futureRelease.release(orderCode)) > 0);
+        tx.executeWithoutResult(status -> {
+            var b = bookings.findByCode(code).orElseThrow();
+            boolean paid = b.getOrderItem().getOrder().getPaidAt() != null;
+            assertThat(outcomes).containsExactly(paid, !paid);
+            assertThat(b.getStatus()).isEqualTo(paid ? BookingStatus.CONFIRMADA : BookingStatus.CANCELADA);
+            assertThat(b.getOccurrence().getReservedSpots()).isEqualTo(paid ? 2 : 0);
+        });
+    }
+
+    private String expire(String code) {
+        return tx.execute(status -> {
+            var order = bookings.findByCode(code).orElseThrow().getOrderItem().getOrder();
+            order.setExpiresAt(Instant.now().minusSeconds(10));
+            return order.getCode();
         });
     }
 

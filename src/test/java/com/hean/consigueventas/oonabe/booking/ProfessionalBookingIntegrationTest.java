@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.Decision;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.*;
+import com.hean.consigueventas.oonabe.booking.service.ExpiredOrderReleaseService;
 import com.hean.consigueventas.oonabe.booking.service.ProfessionalBookingService;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.payment.dto.*;
@@ -35,6 +36,7 @@ class ProfessionalBookingIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired PaymentService payments;
     @Autowired ProfessionalBookingService service;
+    @Autowired ExpiredOrderReleaseService release;
     @Autowired EventBookingRepository bookings;
     @Autowired PurchaseOrderRepository orders;
     @Autowired BookingStatusHistoryRepository history;
@@ -180,6 +182,38 @@ class ProfessionalBookingIntegrationTest {
         assertThat(payments.processPayment(mixedOrder, pay).getStatus()).isEqualTo("APROBADO");
         assertThat(bookings.findByCode(rejected).orElseThrow().getStatus()).isEqualTo(BookingStatus.CANCELADA);
         assertThat(bookings.findByCode(kept).orElseThrow().getStatus()).isEqualTo(BookingStatus.CONFIRMADA);
+    }
+
+    @Test void expiredUnpaidOrderReleasesItsSpotsOnce() throws Exception {
+        service.decide(fixture.professional().getId(), code, new Decision(BookingStatus.CONFIRMADA, null));
+        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
+        orders.findByCode(orderCode).orElseThrow().setExpiresAt(java.time.Instant.now().minusSeconds(10));
+        assertThat(release.findReleasableOrderCodes()).contains(orderCode);
+
+        assertThat(release.release(orderCode)).isEqualTo(1);
+        assertThat(release.release(orderCode)).isZero();
+        var booking = bookings.findByCode(code).orElseThrow();
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELADA);
+        assertThat(booking.getCancelledAt()).isNotNull();
+        assertThat(fixture.occurrence().getReservedSpots()).isZero();
+        assertThat(orders.findByCode(orderCode).orElseThrow().getStatus())
+                .isEqualTo(com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus.EXPIRADA);
+        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
+        mvc.perform(get(BASE + "/" + code).with(user(professional(fixture.professional().getId()))))
+                .andExpect(jsonPath("$.history[1].reason").value("Orden expirada sin pago"))
+                .andExpect(jsonPath("$.history[1].changedBy").doesNotExist());
+        assertThat(payments.getMyBookings(fixture.client().getId()).getFirst().getStatus()).isEqualTo(BookingStatus.CANCELADA);
+    }
+
+    @Test void paidOrderIsNeverReleased() {
+        PaymentProcessRequestDto request = new PaymentProcessRequestDto();
+        request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
+        request.setCardCvv("123"); request.setCardExpiration("12/30");
+        payments.processPayment(orderCode, request);
+        orders.findByCode(orderCode).orElseThrow().setExpiresAt(java.time.Instant.now().minusSeconds(10));
+        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
+        assertThat(release.release(orderCode)).isZero();
+        assertThat(fixture.occurrence().getReservedSpots()).isEqualTo(2);
     }
 
     @Test void swaggerDocumentsTheProfessionalContract() throws Exception {
