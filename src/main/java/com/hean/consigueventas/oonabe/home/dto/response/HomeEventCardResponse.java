@@ -43,6 +43,7 @@ public record HomeEventCardResponse(
                 example = "RECURRENTE",
                 nullable = true
         )
-        String recurrenceLabel
+        String recurrenceLabel,
+        Long occurrenceId
 ) {
 }
