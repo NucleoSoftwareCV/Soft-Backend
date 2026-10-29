@@ -117,7 +117,11 @@ class ProfessionalBookingIntegrationTest {
                 .content("{\"method\":\"TARJETA\",\"cardNumber\":\"4111111111111111\",\"cardCvv\":\"123\",\"cardExpiration\":\"12/30\"}"))
                 .andExpect(status().isConflict());
         assertThat(fixture.occurrence().getReservedSpots()).isZero();
-        assertThat(payments.getMyBookings(fixture.client().getId()).getFirst().getStatus()).isEqualTo(BookingStatus.CANCELADA);
+        var mine = payments.getMyBookings(fixture.client().getId()).getFirst();
+        assertThat(mine.getStatus()).isEqualTo(BookingStatus.CANCELADA);
+        assertThat(mine.getCancellationCause()).isEqualTo("RECHAZADA");
+        assertThat(mine.getCancellationReason()).isEqualTo("Sin disponibilidad");
+        assertThat(mine.getCancelledAt()).isNotNull();
     }
 
     @Test void paidBookingCannotBeManagedAgain() {
@@ -202,7 +206,10 @@ class ProfessionalBookingIntegrationTest {
         mvc.perform(get(BASE + "/" + code).with(user(professional(fixture.professional().getId()))))
                 .andExpect(jsonPath("$.history[1].reason").value("Orden expirada sin pago"))
                 .andExpect(jsonPath("$.history[1].changedBy").doesNotExist());
-        assertThat(payments.getMyBookings(fixture.client().getId()).getFirst().getStatus()).isEqualTo(BookingStatus.CANCELADA);
+        var mine = payments.getMyBookings(fixture.client().getId()).getFirst();
+        assertThat(mine.getStatus()).isEqualTo(BookingStatus.CANCELADA);
+        assertThat(mine.getCancellationCause()).isEqualTo("EXPIRADA");
+        assertThat(mine.getCancellationReason()).isEqualTo("Orden expirada sin pago");
     }
 
     @Test void paidOrderIsNeverReleased() {

@@ -30,6 +30,8 @@ import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException
 import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
 import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
+import com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository;
+import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
 import com.hean.consigueventas.oonabe.common.enums.AttendanceStatus;
 import lombok.RequiredArgsConstructor;
@@ -42,9 +44,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,6 +66,7 @@ public class PaymentService {
     private final OneToOneServiceRepository oneToOneServiceRepository;
     private final EventBookingRepository eventBookingRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
+    private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
@@ -381,12 +387,23 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public List<MyBookingResponseDto> getMyBookings(Long userId) {
-        return eventBookingRepository.findByCustomer_User_IdOrderByCreatedAtDesc(userId).stream()
-                .map(this::toMyBookingResponse)
+        List<EventBooking> bookings = eventBookingRepository.findByCustomer_User_IdOrderByCreatedAtDesc(userId);
+        List<Long> cancelledIds = bookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CANCELADA)
+                .map(EventBooking::getId)
+                .toList();
+        // Latest cancellation entry per booking: who cancelled it and why.
+        Map<Long, BookingStatusHistory> cancellations = cancelledIds.isEmpty() ? Map.of()
+                : bookingStatusHistoryRepository.findByBookingTypeAndNewStatusAndBookingIdIn(
+                        PurchaseItemType.EVENTO, BookingStatus.CANCELADA.name(), cancelledIds).stream()
+                .collect(Collectors.toMap(BookingStatusHistory::getBookingId, h -> h,
+                        BinaryOperator.maxBy(Comparator.comparing(BookingStatusHistory::getCreatedAt))));
+        return bookings.stream()
+                .map(b -> toMyBookingResponse(b, cancellations.get(b.getId())))
                 .toList();
     }
 
-    private MyBookingResponseDto toMyBookingResponse(EventBooking booking) {
+    private MyBookingResponseDto toMyBookingResponse(EventBooking booking, BookingStatusHistory cancellation) {
         EventOccurrence occurrence = booking.getOccurrence();
         Event event = occurrence.getEvent();
 
@@ -406,6 +423,12 @@ public class PaymentService {
             dto.setCityName(occurrence.getLocation().getCity() != null
                     ? occurrence.getLocation().getCity().getName()
                     : null);
+        }
+        if (cancellation != null) {
+            dto.setCancelledAt(booking.getCancelledAt() != null ? booking.getCancelledAt() : cancellation.getCreatedAt());
+            // The release job records no user; a professional rejection always does.
+            dto.setCancellationCause(cancellation.getChangedBy() == null ? "EXPIRADA" : "RECHAZADA");
+            dto.setCancellationReason(cancellation.getReason());
         }
         return dto;
     }
