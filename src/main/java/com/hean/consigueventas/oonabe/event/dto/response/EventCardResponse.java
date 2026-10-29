@@ -67,6 +67,7 @@ public record EventCardResponse(
         Boolean isRecurring,
 
         @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
-        EventMood mood
+        EventMood mood,
+        Long occurrenceId
 ) {
 }

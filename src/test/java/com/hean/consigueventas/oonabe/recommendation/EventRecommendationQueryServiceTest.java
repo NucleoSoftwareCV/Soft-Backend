@@ -92,6 +92,7 @@ class EventRecommendationQueryServiceTest {
         assertThat(response.event().experienceTypeId()).isNull();
 
         assertThat(response.occurrenceId()).isEqualTo(50L);
+        assertThat(response.event().occurrenceId()).isEqualTo(response.occurrenceId());
         assertThat(response.score()).isEqualTo(40);
         assertThat(response.reason())
                 .isEqualTo("De un profesional que sigues");
