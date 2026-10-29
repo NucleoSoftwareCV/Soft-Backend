@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.request;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
@@ -70,7 +71,10 @@ public record EventFilterRequest(
         Boolean isRecurring,
 
         @Schema(description = "ID del especialista/organizador")
-        Long specialistId
+        Long specialistId,
+
+        @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
+        EventMood mood
 ) {
         @AssertTrue(message = "La fecha final no puede ser anterior a la fecha inicial")
         @Schema(hidden = true)

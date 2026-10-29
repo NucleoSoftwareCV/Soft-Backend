@@ -104,6 +104,7 @@ public interface EventMapper {
     @Mapping(target = "endsAt", source = "occurrences", qualifiedByName = "nextEndsAt")
     @Mapping(target = "cityName", source = "occurrences", qualifiedByName = "nextCityName")
     @Mapping(target = "isRecurring", source = "event.recurring")
+    @Mapping(target = "mood", source = "event.mood")
     EventCardResponse toCardResponse(
             Event event,
             String coverImageUrl,

@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -63,6 +64,9 @@ public record EventCardResponse(
         String experienceTypeSlug,
 
         @Schema(description = "¿Es recurrente?")
-        Boolean isRecurring
+        Boolean isRecurring,
+
+        @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
+        EventMood mood
 ) {
 }

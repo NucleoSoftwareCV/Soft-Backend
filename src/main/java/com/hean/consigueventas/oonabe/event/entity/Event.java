@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.event.entity;
 
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
@@ -138,4 +139,8 @@ public class Event {
             paymentMethod = EventPaymentMethod.WHATSAPP;
         }
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mood", nullable = true, length = 10)
+    private EventMood mood;
 }

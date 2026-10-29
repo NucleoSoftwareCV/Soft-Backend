@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.event.specification;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
+import com.hean.consigueventas.oonabe.common.enums.EventMood;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
@@ -72,6 +73,9 @@ public final class EventSpecification {
         }
         if (startsAtDirection != null) {
             spec = spec.and(orderByNextProgrammedOccurrence(startsAtDirection));
+        }
+        if (filter.mood() != null) {
+            spec = spec.and(hasMood(filter.mood()));
         }
 
         return spec;
@@ -293,5 +297,10 @@ public final class EventSpecification {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    public static Specification<Event> hasMood(EventMood mood) {
+        return (root, query, cb)
+                -> cb.equal(root.get("mood"), mood);
     }
 }
