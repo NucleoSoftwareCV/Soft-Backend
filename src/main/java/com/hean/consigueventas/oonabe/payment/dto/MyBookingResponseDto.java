@@ -27,4 +27,8 @@ public class MyBookingResponseDto {
     private EventModality modality;
     private String locationName;
     private String cityName;
+    private Instant cancelledAt;
+    /** RECHAZADA when the professional rejected it, EXPIRADA when the system released an unpaid order. */
+    private String cancellationCause;
+    private String cancellationReason;
 }

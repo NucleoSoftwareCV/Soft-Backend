@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.common.exception;
 
+import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.validation.ConstraintViolationException;
@@ -20,6 +21,10 @@ import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(BookingConflictException.class)
+    public ProblemDetail handleBookingConflict(Exception ex, WebRequest request) {
+        return problem(HttpStatus.CONFLICT, "Conflicto de reserva", ex.getMessage(), "booking-conflict", request);
+    }
 
     @ExceptionHandler({EntityNotFoundException.class, ResourceNotFoundException.class})
     public ProblemDetail handleNotFound(RuntimeException ex, WebRequest request) {

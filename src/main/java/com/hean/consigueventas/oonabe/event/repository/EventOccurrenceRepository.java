@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.event.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventOccurrenceRepository extends JpaRepository<EventOccurrence, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from EventOccurrence o where o.id = :id")
+    Optional<EventOccurrence> findLockedById(@Param("id") Long id);
 
     boolean existsByEventId(Long eventId);
 
