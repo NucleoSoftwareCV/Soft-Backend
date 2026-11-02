@@ -12,6 +12,17 @@ import java.time.Instant;
 
 public interface EventMapRepository extends Repository<EventOccurrence, Long> {
 
+    String PROJECTION = """
+                    select new com.hean.consigueventas.oonabe.event.dto.response.EventMapPointResponse(
+                        occurrence.id, event.id, event.title, event.priceFrom, event.currency,
+                        occurrence.startsAt, occurrence.endsAt, location.name,
+                        location.address, city.name, location.latitude, location.longitude,
+                        event.summary, category.id, category.name, experienceType.id,
+                        experienceType.name, specialist.id, specialist.publicName,
+                        event.modality, event.isRecurring, event.mood
+                    )
+                    """;
+
     String VISIBLE_LOCATIONS = """
             from EventOccurrence occurrence
             join occurrence.event event
@@ -38,17 +49,11 @@ public interface EventMapRepository extends Repository<EventOccurrence, Long> {
               and location.longitude between -180 and 180
             """;
 
+    @Query(PROJECTION + VISIBLE_LOCATIONS + " and occurrence.id in :ids")
+    java.util.List<EventMapPointResponse> findTravelDestinations(@Param("now") Instant now, @Param("ids") java.util.List<Long> ids);
+
     @Query(
-            value = """
-                    select new com.hean.consigueventas.oonabe.event.dto.response.EventMapPointResponse(
-                        occurrence.id, event.id, event.title, event.priceFrom, event.currency,
-                        occurrence.startsAt, occurrence.endsAt, location.name,
-                        location.address, city.name, location.latitude, location.longitude,
-                        event.summary, category.id, category.name, experienceType.id,
-                        experienceType.name, specialist.id, specialist.publicName,
-                        event.modality, event.isRecurring, event.mood
-                    )
-                    """ + VISIBLE_LOCATIONS + " order by occurrence.startsAt, occurrence.id",
+            value = PROJECTION + VISIBLE_LOCATIONS + " order by occurrence.startsAt, occurrence.id",
             countQuery = "select count(occurrence) " + VISIBLE_LOCATIONS
     )
     Page<EventMapPointResponse> findAvailableLocations(

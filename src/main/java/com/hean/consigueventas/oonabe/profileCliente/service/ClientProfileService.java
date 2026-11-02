@@ -20,6 +20,9 @@ import com.hean.consigueventas.oonabe.profileCliente.dto.response.ClientSpaceRes
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientEventTypePreference;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientInterestCategory;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientModalityPreference;
+import com.hean.consigueventas.oonabe.profileCliente.dto.request.ReferenceLocationRequest;
+import com.hean.consigueventas.oonabe.profileCliente.dto.response.ReferenceLocationResponse;
+import com.hean.consigueventas.oonabe.profileCliente.entity.ReferenceLocation;
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientProfile;
 import com.hean.consigueventas.oonabe.profileCliente.entity.OnboardingStatus;
 import com.hean.consigueventas.oonabe.profileCliente.mapper.ClientProfileMapper;
@@ -41,6 +44,35 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class ClientProfileService {
+
+    @Transactional(readOnly = true)
+    public ReferenceLocationResponse getReferenceLocation(String username) {
+        return clientProfileRepository.findByUserId(getUserByUsername(username).getId())
+                .map(p -> ReferenceLocationResponse.from(p.getReferenceLocation()))
+                .orElse(null);
+    }
+
+    @Transactional
+    public ReferenceLocationResponse saveReferenceLocation(
+            String username, ReferenceLocationRequest request) {
+        if (!Double.isFinite(request.latitude()) || !Double.isFinite(request.longitude())
+                || Math.abs(request.latitude()) > 90 || Math.abs(request.longitude()) > 180) {
+            throw new BusinessLogicException("Las coordenadas de referencia no son válidas.");
+        }
+        ClientProfile profile = getOrCreateClientProfile(username);
+        profile.setReferenceLocation(new ReferenceLocation(
+                request.label().trim(), request.latitude(), request.longitude(), request.approximate()));
+        clientProfileRepository.save(profile);
+        return ReferenceLocationResponse.from(profile.getReferenceLocation());
+    }
+
+    @Transactional
+    public void clearReferenceLocation(String username) {
+        clientProfileRepository.findByUserId(getUserByUsername(username).getId()).ifPresent(p -> {
+            p.setReferenceLocation(null);
+            clientProfileRepository.save(p);
+        });
+    }
 
     private final ClientProfileRepository clientProfileRepository;
     private final ClientInterestCategoryRepository clientInterestCategoryRepository;

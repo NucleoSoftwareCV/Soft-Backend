@@ -56,6 +56,9 @@ public class ClientProfile {
     @JoinColumn(name = "city_id")
     private City city;
 
+    @jakarta.persistence.Embedded
+    private ReferenceLocation referenceLocation;
+
     @Email(message = "El correo de comunicación no es válido")
     @Size(max = 150)
     @Column(name = "communication_email", length = 150)

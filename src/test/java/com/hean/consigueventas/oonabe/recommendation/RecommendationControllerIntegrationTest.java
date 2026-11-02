@@ -259,7 +259,8 @@ class RecommendationControllerIntegrationTest {
                 null,
                 null,
                 false,
-                null
+                null,
+                50L
         );
 
         return new RecommendedEventResponse(

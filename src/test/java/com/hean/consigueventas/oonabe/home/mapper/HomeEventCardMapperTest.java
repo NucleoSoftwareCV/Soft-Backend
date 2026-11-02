@@ -37,11 +37,13 @@ class HomeEventCardMapperTest {
                 "Clases",
                 "clases",
                 true,
-                null
+                null,
+                50L
         );
 
         HomeEventCardResponse response = mapper.toResponse(source);
 
+        assertThat(response.occurrenceId()).isEqualTo(50L);
         assertThat(response.priceFrom()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.currency()).isEqualTo("EUR");
         assertThat(response.recurrenceLabel()).isEqualTo("RECURRENTE");
