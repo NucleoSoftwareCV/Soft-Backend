@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignEntryService;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
 import com.hean.consigueventas.oonabe.common.enums.PurchaseItemType;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
@@ -35,6 +36,7 @@ public class ExpiredOrderReleaseService {
     private final EventBookingRepository bookings;
     private final EventOccurrenceRepository occurrences;
     private final BookingStatusHistoryRepository history;
+    private final CampaignEntryService campaignEntries;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -73,6 +75,8 @@ public class ExpiredOrderReleaseService {
             booking.setStatus(BookingStatus.CANCELADA);
             booking.setCancelledAt(now);
         }
+        // Accepted-but-unpaid WhatsApp bookings may already hold a campaign entry.
+        campaignEntries.voidForBookings(held, REASON, now);
         if (order.getStatus() == PurchaseOrderStatus.ABIERTA) {
             order.setStatus(PurchaseOrderStatus.EXPIRADA);
         }

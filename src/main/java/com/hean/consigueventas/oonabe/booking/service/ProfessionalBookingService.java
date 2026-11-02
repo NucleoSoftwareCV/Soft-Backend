@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.*;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignEntryService;
 import com.hean.consigueventas.oonabe.common.dto.response.PagedResponse;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
@@ -21,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +37,7 @@ public class ProfessionalBookingService {
     private final PurchaseOrderItemRepository orderItems;
     private final EventOccurrenceRepository occurrences;
     private final UserRepository users;
+    private final CampaignEntryService campaignEntries;
     private final Clock clock;
 
     public PagedResponse<Summary> list(Long userId, BookingStatus status, Long eventId, Long occurrenceId, int page, int size) {
@@ -105,6 +108,12 @@ public class ProfessionalBookingService {
         history.save(change);
         if (decision.status() == BookingStatus.CANCELADA && order != null && !orderClosed) {
             excludeFromOpenOrder(order, booking);
+        }
+        // WhatsApp bookings are never paid online: the professional's acceptance is what confirms them.
+        // Online-paid events get their entry when the payment is approved.
+        if (decision.status() == BookingStatus.CONFIRMADA
+                && occurrence.getEvent().getPaymentMethod() != EventPaymentMethod.ONLINE) {
+            campaignEntries.registerForConfirmedBookings(List.of(booking), clock.instant());
         }
         // Flush also makes the updated occurrence version visible in the response transaction.
         bookings.flush();

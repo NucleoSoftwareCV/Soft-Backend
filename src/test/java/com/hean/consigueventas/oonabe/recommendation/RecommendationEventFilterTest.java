@@ -269,7 +269,8 @@ class RecommendationEventFilterTest {
                     hourTo,
                     isRecurring,
                     specialistId,
-                    mood
+                    mood,
+                    null
             );
         }
     }

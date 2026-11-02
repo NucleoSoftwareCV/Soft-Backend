@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.payment.service;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignDtos.EntrySummary;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignEntryService;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.common.enums.PurchaseItemType;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
@@ -67,6 +69,7 @@ public class PaymentService {
     private final EventBookingRepository eventBookingRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
+    private final CampaignEntryService campaignEntryService;
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
@@ -290,11 +293,16 @@ public class PaymentService {
                     .filter(i -> !rejectedItemIds.contains(i.getId()))
                     .toList();
 
+            List<EventBooking> confirmedBookings = new ArrayList<>();
             for (EventBooking booking : orderBookings) {
                 if (booking.getStatus() == BookingStatus.CANCELADA) continue;
                 booking.setStatus(BookingStatus.CONFIRMADA);
                 eventBookingRepository.save(booking);
+                confirmedBookings.add(booking);
             }
+            // Same transaction as the payment: an entry exists only if the payment is committed.
+            List<EntrySummary> campaignEntries =
+                    campaignEntryService.registerForConfirmedBookings(confirmedBookings, order.getPaidAt());
 
             StringBuilder descBuilder = new StringBuilder("Compra en Oona:\n");
             for (PurchaseOrderItem item : items) {
@@ -308,7 +316,7 @@ public class PaymentService {
 
             digitalReceiptRepository.save(receipt);
 
-            return new PaymentResponseDto("APROBADO", payment.getExternalReference(), null);
+            return new PaymentResponseDto("APROBADO", payment.getExternalReference(), null, campaignEntries);
         } else {
             payment.setStatus(PaymentStatus.RECHAZADO);
             payment.setErrorMessage(errorMessage);

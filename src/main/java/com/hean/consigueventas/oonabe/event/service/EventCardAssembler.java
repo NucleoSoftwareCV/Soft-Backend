@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.event.service;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventImage;
@@ -24,16 +26,19 @@ public class EventCardAssembler {
     private final EventMapper eventMapper;
     private final EventImageRepository eventImageRepository;
     private final EventOccurrenceRepository eventOccurrenceRepository;
+    private final CampaignBadgeLookup campaignBadgeLookup;
     private final Clock clock;
 
     public EventCardAssembler(
             EventMapper eventMapper,
             EventImageRepository eventImageRepository,
             EventOccurrenceRepository eventOccurrenceRepository,
+            CampaignBadgeLookup campaignBadgeLookup,
             Clock clock) {
         this.eventMapper = eventMapper;
         this.eventImageRepository = eventImageRepository;
         this.eventOccurrenceRepository = eventOccurrenceRepository;
+        this.campaignBadgeLookup = campaignBadgeLookup;
         this.clock = clock;
     }
 
@@ -56,11 +61,15 @@ public class EventCardAssembler {
 
         Map<Long, String> coverUrls = findCoverUrls(events);
         Map<Long, List<EventOccurrence>> occurrences = findOccurrences(events);
+        Map<Long, List<CampaignBadgeResponse>> badges = campaignBadgeLookup.openBadges(
+                events.stream().map(Event::getId).distinct().toList(),
+                notBefore);
         return events.stream()
                 .map(event -> eventMapper.toCardResponse(
                         event,
                         coverUrls.get(event.getId()),
                         occurrences.getOrDefault(event.getId(), List.of()),
+                        badges.getOrDefault(event.getId(), List.of()),
                         notBefore))
                 .toList();
     }

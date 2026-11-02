@@ -236,7 +236,7 @@ class EventRecommendationFiltersServiceTest {
                 .thenReturn(List.of(relaxation, energy, unknown, followedEnergy));
         EventFilterRequest filter = new EventFilterRequest(
                 null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, EventMood.ENERGIA);
+                null, null, null, null, null, null, null, EventMood.ENERGIA, null);
 
         var first = service.getRecommendations(USERNAME, PageRequest.of(0, 1), filter, false);
         var second = service.getRecommendations(USERNAME, PageRequest.of(1, 1), filter, false);
@@ -262,6 +262,7 @@ class EventRecommendationFiltersServiceTest {
                 null,
                 null,
                 dateFrom,
+                null,
                 null,
                 null,
                 null,

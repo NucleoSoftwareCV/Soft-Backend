@@ -5,6 +5,7 @@ import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException
 import com.hean.consigueventas.oonabe.booking.repository.*;
 import com.hean.consigueventas.oonabe.booking.service.ExpiredOrderReleaseService;
 import com.hean.consigueventas.oonabe.booking.service.ProfessionalBookingService;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignEntryService;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
@@ -53,6 +54,7 @@ class ProfessionalBookingConcurrencyTest {
     @Autowired BookingStatusHistoryRepository history;
     @Autowired ExpiredOrderReleaseService release;
     @Autowired PurchaseOrderRepository orders;
+    @Autowired CampaignEntryService campaignEntries;
     @Autowired EventOccurrenceRepository occurrences;
     Long professionalId;
     Long clientId;
@@ -129,7 +131,7 @@ class ProfessionalBookingConcurrencyTest {
         String code = reserve();
         String orderCode = tx.execute(status -> bookings.findByCode(code).orElseThrow().getOrderItem().getOrder().getCode());
         // Release runs on a clock in the future, payment still sees the order as open.
-        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, history,
+        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, history, campaignEntries,
                 Clock.offset(Clock.systemUTC(), Duration.ofHours(1)));
         var outcomes = race(() -> {
             PaymentProcessRequestDto request = new PaymentProcessRequestDto();

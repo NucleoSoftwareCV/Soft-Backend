@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.event.service;
 
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.mapper.EventMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
@@ -24,10 +25,12 @@ class EventCardAssemblerTest {
         EventImageRepository imageRepository = mock(EventImageRepository.class);
         EventOccurrenceRepository occurrenceRepository = mock(EventOccurrenceRepository.class);
         Clock clock = Clock.fixed(Instant.parse("2026-07-27T08:00:00Z"), ZoneOffset.UTC);
+        CampaignBadgeLookup badgeLookup = mock(CampaignBadgeLookup.class);
         EventCardAssembler assembler = new EventCardAssembler(
                 eventMapper,
                 imageRepository,
                 occurrenceRepository,
+                badgeLookup,
                 clock);
         Event first = event(1L);
         Event second = event(2L);
@@ -38,6 +41,7 @@ class EventCardAssemblerTest {
 
         verify(imageRepository).findOrderedCandidatesByEventIds(anyCollection());
         verify(occurrenceRepository).findProgrammedByEventIds(anyCollection());
+        verify(badgeLookup).openBadges(List.of(1L, 2L), clock.instant());
     }
 
     private Event event(Long id) {

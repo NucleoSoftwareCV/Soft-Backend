@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,8 @@ public class EventRecommendationQueryService {
 
     private final EventRecommendationService recommendationService;
     private final EventImageRepository imageRepository;
+    private final CampaignBadgeLookup campaignBadgeLookup;
+    private final Clock clock;
 
     public Page<RecommendedEventResponse> getRecommendations(
             String username,
@@ -54,7 +59,7 @@ public class EventRecommendationQueryService {
             Page<RecommendedEvent> recommendations
     ) {
         if (recommendations.isEmpty()) {
-            return recommendations.map(result -> toResponse(result, null));
+            return recommendations.map(result -> toResponse(result, null, List.of()));
         }
 
         List<Long> eventIds = recommendations.getContent()
@@ -72,15 +77,20 @@ public class EventRecommendationQueryService {
             );
         }
 
+        Map<Long, List<CampaignBadgeResponse>> badges =
+                campaignBadgeLookup.openBadges(eventIds, clock.instant());
+
         return recommendations.map(result -> toResponse(
                 result,
-                coverUrls.get(result.event().getId())
+                coverUrls.get(result.event().getId()),
+                badges.getOrDefault(result.event().getId(), List.of())
         ));
     }
 
     private RecommendedEventResponse toResponse(
             RecommendedEvent recommendation,
-            String coverImageUrl
+            String coverImageUrl,
+            List<CampaignBadgeResponse> campaignBadges
     ) {
         Event event = recommendation.event();
         ExperienceType experienceType = event.getExperienceType();
@@ -105,7 +115,8 @@ public class EventRecommendationQueryService {
                 experienceType == null ? null : experienceType.getName(),
                 experienceType == null ? null : experienceType.getSlug(),
                 event.isRecurring(),
-                event.getMood()
+                event.getMood(),
+                campaignBadges
         );
 
         return new RecommendedEventResponse(
