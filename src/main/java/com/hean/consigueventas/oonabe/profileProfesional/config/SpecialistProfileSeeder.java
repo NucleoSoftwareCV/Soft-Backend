@@ -24,9 +24,6 @@ public class SpecialistProfileSeeder {
         this.cityRepository = cityRepository;
     }
 
-    // Sobrecarga historica sin ciudad: mantiene compatibilidad con llamadas
-    // existentes (el perfil se crea sin ciudad y el frontend muestra el
-    // texto de respaldo).
     @Transactional
     public SpecialistProfile seedSpecialist(
             User user,
@@ -52,9 +49,7 @@ public class SpecialistProfileSeeder {
         );
     }
 
-    // Siembra (o actualiza) un perfil profesional asignandole una ciudad por
-    // nombre (debe existir en el catalogo de ciudades, p. ej. "Valencia",
-    // "Barcelona", "Madrid").
+
     @Transactional
     public SpecialistProfile seedSpecialist(
             User user,
@@ -110,6 +105,9 @@ public class SpecialistProfileSeeder {
         }
 
         String name = cityName.trim();
+
+        // Las ciudades sembradas usan nombre == provincia
+        // ("Lima"/"Lima", "Cusco"/"Cusco", "Piura"/"Piura", ...).
         return cityRepository
                 .findByNameAndProvince(name, name)
                 .orElse(null);

@@ -16,6 +16,45 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class MasterDataSeeder {
 
+    private static final String[][] PERU_CITIES = {
+            {"Lima", "Lima"},
+            {"Arequipa", "Arequipa"},
+            {"Trujillo", "Trujillo"},
+            {"Chiclayo", "Chiclayo"},
+            {"Piura", "Piura"},
+            {"Ica", "Ica"},
+            {"Cusco", "Cusco"},
+            {"Tumbes", "Tumbes"},
+            {"Tacna", "Tacna"},
+            {"Puno", "Puno"},
+            {"Huancayo", "Huancayo"},
+            {"Iquitos", "Iquitos"},
+            {"Pucallpa", "Pucallpa"},
+            {"Moyobamba", "Moyobamba"},
+            {"Puerto Maldonado", "Puerto Maldonado"},
+            {"Chachapoyas", "Chachapoyas"},
+            {"Huaraz", "Huaraz"},
+            {"Abancay", "Abancay"},
+            {"Ayacucho", "Ayacucho"},
+            {"Cajamarca", "Cajamarca"},
+            {"Huancavelica", "Huancavelica"},
+            {"Huánuco", "Huánuco"},
+            {"Moquegua", "Moquegua"},
+            {"Cerro de Pasco", "Cerro de Pasco"},
+            {"Callao", "Callao"},
+            {"La Libertad", "La Libertad"},
+            {"Lambayeque", "Lambayeque"},
+            {"Junín", "Junín"},
+            {"Loreto", "Loreto"},
+            {"Ucayali", "Ucayali"},
+            {"San Martín", "San Martín"},
+            {"Madre de Dios", "Madre de Dios"},
+            {"Amazonas", "Amazonas"},
+            {"Áncash", "Áncash"},
+            {"Apurímac", "Apurímac"},
+            {"Pasco", "Pasco"}
+    };
+
     private final CategoryRepository categoryRepository;
     private final CityRepository cityRepository;
     private final LocationRepository locationRepository;
@@ -52,16 +91,16 @@ public class MasterDataSeeder {
         seedCategory("Maternidad y Familia", "Experiencias de bienestar para la maternidad y la familia.", "🤰", createDefaultCategories);
         seedCategory("Emprendimiento", "Experiencias para emprender con bienestar y proposito.", "🚀", createDefaultCategories);
 
-        seedCity("Madrid", "Madrid");
-        seedCity("Barcelona", "Barcelona");
-        seedCity("Valencia", "Valencia");
+        for (String[] ciudad : PERU_CITIES) {
+            seedCity(ciudad[0], ciudad[1]);
+        }
 
         Location loc1 = seedLocation("Centro Holistico Miraflores",
-                "Av. Larco 123", "LINK", "Valencia", "Valencia", true);
+                "Av. Larco 123", "LINK", "Lima", "Lima", true);
         Location loc2 = seedLocation("Casa Bienestar San Isidro",
-                "Av. Javier Prado 456", "LINK", "Barcelona", "Barcelona", true);
+                "Av. Javier Prado 456", "LINK", "Lima", "Lima", true);
         Location loc3 = seedLocation("Cada de vista", "hola", "Acceso",
-                "Madrid", "Madrid", true);
+                "Lima", "Lima", true);
 
         seedWorkTopic("Autoestima", true);
         seedWorkTopic("Motivacion", true);
@@ -185,13 +224,13 @@ public class MasterDataSeeder {
             City newCity = new City();
             newCity.setName(name.trim());
             newCity.setProvince(province.trim());
-            newCity.setCountryCode("ES");
+            newCity.setCountryCode("PE");
             newCity.setIsActive(true);
             cityRepository.save(newCity);
         } else {
             boolean changed = false;
-            if (!"ES".equals(city.getCountryCode())) {
-                city.setCountryCode("ES");
+            if (!"PE".equals(city.getCountryCode())) {
+                city.setCountryCode("PE");
                 changed = true;
             }
             if (!city.getIsActive()) {
