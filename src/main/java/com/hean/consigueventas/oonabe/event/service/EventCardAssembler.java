@@ -8,6 +8,8 @@ import com.hean.consigueventas.oonabe.event.mapper.EventMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import org.springframework.data.domain.Page;
+import com.hean.consigueventas.oonabe.review.service.EventReviewService;
+import com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Component;
 
@@ -25,16 +27,19 @@ public class EventCardAssembler {
     private final EventImageRepository eventImageRepository;
     private final EventOccurrenceRepository eventOccurrenceRepository;
     private final Clock clock;
+    private final EventReviewService reviewService;
 
     public EventCardAssembler(
             EventMapper eventMapper,
             EventImageRepository eventImageRepository,
             EventOccurrenceRepository eventOccurrenceRepository,
-            Clock clock) {
+            Clock clock,
+            EventReviewService reviewService) {
         this.eventMapper = eventMapper;
         this.eventImageRepository = eventImageRepository;
         this.eventOccurrenceRepository = eventOccurrenceRepository;
         this.clock = clock;
+        this.reviewService = reviewService;
     }
 
     public Page<EventCardResponse> toPage(Page<Event> events) {
@@ -56,12 +61,15 @@ public class EventCardAssembler {
 
         Map<Long, String> coverUrls = findCoverUrls(events);
         Map<Long, List<EventOccurrence>> occurrences = findOccurrences(events);
+        Map<Long, EventRatingSummaryResponse> ratings = reviewService.summaries(
+                events.stream().map(Event::getId).toList());
         return events.stream()
                 .map(event -> eventMapper.toCardResponse(
                         event,
                         coverUrls.get(event.getId()),
                         occurrences.getOrDefault(event.getId(), List.of()),
-                        notBefore))
+                        notBefore,
+                        ratings.get(event.getId())))
                 .toList();
     }
 

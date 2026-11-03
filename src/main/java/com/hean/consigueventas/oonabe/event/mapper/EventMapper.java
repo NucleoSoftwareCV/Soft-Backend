@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.event.mapper;
 
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
+import com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse;
 import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.dto.response.EventDetailResponse;
@@ -36,6 +37,7 @@ public interface EventMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
+    @Mapping(target = "mood", ignore = true)
     Event toEntity(EventUpsertRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -49,6 +51,7 @@ public interface EventMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
+    @Mapping(target = "mood", ignore = true)
     void updateEntity(EventUpsertRequest request, @MappingTarget Event event);
 
     @AfterMapping
@@ -106,11 +109,15 @@ public interface EventMapper {
     @Mapping(target = "isRecurring", source = "event.recurring")
     @Mapping(target = "occurrenceId", source = "occurrences", qualifiedByName = "nextOccurrenceId")
     @Mapping(target = "mood", source = "event.mood")
+    @Mapping(target = "averageRating", source = "rating.averageRating")
+    @Mapping(target = "reviewCount", source = "rating.reviewCount")
+    @Mapping(target = "reviewers", source = "rating.reviewers")
     EventCardResponse toCardResponse(
             Event event,
             String coverImageUrl,
             List<EventOccurrence> occurrences,
-            @Context Instant notBefore);
+            @Context Instant notBefore,
+            EventRatingSummaryResponse rating);
 
     @Named("nextOccurrenceId")
     default Long nextOccurrenceId(List<EventOccurrence> occurrences, @Context Instant notBefore) {
@@ -152,3 +159,4 @@ public interface EventMapper {
     }
 
 }
+

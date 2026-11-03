@@ -76,7 +76,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/techniques/active", "/api/v1/techniques/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/profile-images/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/specialist-profiles","/api/v1/specialist-profiles/slug/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/specialist-profiles","/api/v1/specialist-profiles/directory","/api/v1/specialist-profiles/slug/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/one-to-one-services", "/api/v1/one-to-one-services/{id}", "/api/v1/one-to-one-services/slug/{slug}").permitAll()
                         .requestMatchers(HttpMethod.GET,
@@ -85,6 +85,9 @@ public class SecurityConfig {
                                 "/api/v1/events/{id:\\d+}",
                                 "/api/v1/events/{id:\\d+}/similar",
                                 "/api/v1/events/{id:\\d+}/organizer-events").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/events/*/reviews",
+                                "/api/v1/events/*/reviews/summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
