@@ -3,6 +3,7 @@ package com.hean.consigueventas.oonabe.campaign.dto;
 import com.hean.consigueventas.oonabe.campaign.domain.CampaignEntryStatus;
 import com.hean.consigueventas.oonabe.campaign.domain.CampaignPhase;
 import com.hean.consigueventas.oonabe.campaign.domain.CampaignStatus;
+import com.hean.consigueventas.oonabe.common.enums.EventStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -54,7 +55,10 @@ public final class CampaignDtos {
             String legalTerms,
             Integer maxEntriesPerCustomer,
             List<Faq> faqs,
-            @Schema(description = "Experiencias incluidas en la campaña") long eligibleEventCount
+            @Schema(description = "Experiencias incluidas en la campaña") long eligibleEventCount,
+            @Schema(description = "Nombre abreviado de la persona ganadora (p. ej. «María G.»); null si no se ha sorteado")
+            String winnerDisplayName,
+            @Schema(description = "Fecha en la que se realizó el sorteo") Instant drawnAt
     ) {
     }
 
@@ -103,10 +107,33 @@ public final class CampaignDtos {
     public record AdminResponse(
             Long id,
             CampaignStatus status,
+            CampaignPhase phase,
             Detail detail,
             List<Long> eventIds,
+            List<AdminEvent> events,
+            @Schema(description = "Participaciones registradas (válidas y anuladas)") long entryCount,
+            @Schema(description = "Papeletas de las participaciones válidas") long validTickets,
+            @Schema(description = "Clientes con alguna participación válida") long participantCount,
+            @Schema(description = "Con participaciones ya no se pueden cambiar slug, inicio, premio ni quitar experiencias")
+            boolean locked,
+            AdminWinner winner,
             Instant createdAt,
             Instant updatedAt
+    ) {
+    }
+
+    @Schema(description = "Experiencia incluida en una campaña (administración)")
+    public record AdminEvent(Long id, String title, EventStatus status) {
+    }
+
+    @Schema(description = "Resultado del sorteo (administración)")
+    public record AdminWinner(
+            String entryCode,
+            String bookingCode,
+            String customerName,
+            String customerEmail,
+            int ticketCount,
+            Instant drawnAt
     ) {
     }
 

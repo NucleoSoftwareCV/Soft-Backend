@@ -8,12 +8,14 @@ import com.hean.consigueventas.oonabe.campaign.dto.CampaignDtos.StatusRequest;
 import com.hean.consigueventas.oonabe.campaign.dto.CampaignDtos.UpsertRequest;
 import com.hean.consigueventas.oonabe.campaign.service.PromoCampaignService;
 import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
+import com.hean.consigueventas.oonabe.common.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -75,6 +77,22 @@ public class AdminPromoCampaignController {
     @Operation(summary = "Reemplazar las experiencias incluidas")
     public AdminResponse replaceEvents(@PathVariable Long id, @Valid @RequestBody EventsRequest request) {
         return campaignService.replaceEvents(id, request.eventIds());
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Eliminar campaña", description = "Solo campañas en BORRADOR sin participaciones.")
+    public void delete(@PathVariable Long id) {
+        campaignService.delete(id);
+    }
+
+    @PostMapping("/{id}/draw")
+    @Operation(
+            summary = "Realizar el sorteo",
+            description = "Elige una participación válida al azar, ponderada por papeletas, y finaliza la campaña. "
+                    + "Requiere que la campaña esté publicada y que su periodo de participación haya cerrado.")
+    public AdminResponse draw(@PathVariable Long id) {
+        return campaignService.draw(id, SecurityUtils.getAuthenticatedUserId());
     }
 
     @GetMapping("/{id}/entries")

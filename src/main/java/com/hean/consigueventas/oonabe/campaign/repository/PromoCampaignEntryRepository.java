@@ -48,4 +48,29 @@ public interface PromoCampaignEntryRepository extends JpaRepository<PromoCampaig
     List<Long> findBookingIdsWithStatus(
             @Param("bookingIds") Collection<Long> bookingIds,
             @Param("status") CampaignEntryStatus status);
+
+    long countByCampaignId(Long campaignId);
+
+    boolean existsByCampaignId(Long campaignId);
+
+    /** Totales por campaña: [campaignId, participaciones, papeletas válidas, clientes con papeletas válidas]. */
+    @Query("""
+            select e.campaign.id, count(e),
+                   coalesce(sum(case when e.status = :valid then e.ticketCount else 0 end), 0),
+                   count(distinct case when e.status = :valid then e.customer.id end)
+            from PromoCampaignEntry e
+            where e.campaign.id in :campaignIds
+            group by e.campaign.id
+            """)
+    List<Object[]> statsByCampaign(
+            @Param("campaignIds") Collection<Long> campaignIds,
+            @Param("valid") CampaignEntryStatus valid);
+
+    @Query("""
+            select e from PromoCampaignEntry e
+            join fetch e.customer c join fetch c.user
+            where e.campaign.id = :campaignId and e.status = :status
+            order by e.id asc
+            """)
+    List<PromoCampaignEntry> findForDraw(@Param("campaignId") Long campaignId, @Param("status") CampaignEntryStatus status);
 }

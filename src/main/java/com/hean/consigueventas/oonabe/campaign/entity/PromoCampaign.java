@@ -2,16 +2,19 @@ package com.hean.consigueventas.oonabe.campaign.entity;
 
 import com.hean.consigueventas.oonabe.campaign.domain.CampaignPhase;
 import com.hean.consigueventas.oonabe.campaign.domain.CampaignStatus;
+import com.hean.consigueventas.oonabe.user.entity.User;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -101,6 +104,18 @@ public class PromoCampaign {
     @CollectionTable(name = "promo_campaign_faqs", joinColumns = @JoinColumn(name = "campaign_id"))
     @OrderColumn(name = "item_order")
     private List<CampaignFaq> faqs = new ArrayList<>();
+
+    /** Participación ganadora; solo existe tras realizar el sorteo. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_entry_id")
+    private PromoCampaignEntry winnerEntry;
+
+    @Column(name = "drawn_at")
+    private Instant drawnAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "drawn_by")
+    private User drawnBy;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

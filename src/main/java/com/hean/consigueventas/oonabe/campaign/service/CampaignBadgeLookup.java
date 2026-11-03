@@ -29,7 +29,7 @@ public class CampaignBadgeLookup {
         Map<Long, List<CampaignBadgeResponse>> badges = new HashMap<>();
         for (PromoCampaignEventRepository.BadgeRow row : campaignEvents.findOpenBadges(eventIds, CampaignStatus.PUBLICADA, now)) {
             badges.computeIfAbsent(row.getEventId(), id -> new ArrayList<>())
-                    .add(new CampaignBadgeResponse(row.getSlug(), row.getBadgeLabel()));
+                    .add(new CampaignBadgeResponse(row.getSlug(), row.getBadgeLabel(), row.getTitle()));
         }
         return badges;
     }

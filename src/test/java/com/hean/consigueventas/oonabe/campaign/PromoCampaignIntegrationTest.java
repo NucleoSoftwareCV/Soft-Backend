@@ -35,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,10 +44,14 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.random.RandomGenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -69,6 +74,7 @@ class PromoCampaignIntegrationTest {
     @Autowired PurchaseOrderRepository orders;
     @Autowired com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository history;
     @Autowired com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository occurrences;
+    @MockitoBean(name = "campaignDrawRandom") RandomGenerator drawRandom;
 
     User professional;
     User client;
@@ -323,6 +329,165 @@ class PromoCampaignIntegrationTest {
 
         professionalBookings.decide(professional.getId(), booking.getCode(), new Decision(BookingStatus.CANCELADA, "Sin plazas"));
         assertThat(entriesOf(booking)).isEmpty();
+    }
+
+    // --- Gestión: reglas de edición, estados y borrado --------------------------------------
+
+    @Test
+    void campaignWithEntriesProtectsSensitiveFieldsAndEvents() throws Exception {
+        payments.processPayment(order(included, 1), card());
+        UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+        String path = "/api/v1/admin/campaigns/" + campaign.getId();
+        String start = campaign.getParticipationStartsAt().toString();
+        String end = campaign.getParticipationEndsAt().toString();
+        String later = campaign.getParticipationEndsAt().plus(Duration.ofDays(3)).toString();
+
+        mvc.perform(get(path).with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.locked").value(true))
+                .andExpect(jsonPath("$.entryCount").value(1))
+                .andExpect(jsonPath("$.validTickets").value(1))
+                .andExpect(jsonPath("$.participantCount").value(1))
+                .andExpect(jsonPath("$.events[*].title", hasItem("Zzsorteo incluido")));
+
+        mvc.perform(put(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(upsertJson("otro-slug", start, end, "600")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("La campaña ya tiene participaciones: no se puede cambiar el slug"));
+        mvc.perform(put(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(upsertJson(SLUG, start, end, "900")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(upsertJson(SLUG, start, Instant.now().plus(Duration.ofDays(1)).toString(), "600")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(upsertJson(SLUG, start, later, "600")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.detail.summary.title").value("Sorteo"));
+
+        mvc.perform(put(path + "/events").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"eventIds\":[" + includedWhatsApp.getId() + "]}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path + "/events").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"eventIds\":[" + included.getId() + "," + includedWhatsApp.getId() + "," + excluded.getId() + "]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventIds.length()").value(3));
+
+        mvc.perform(patch(path + "/status").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"BORRADOR\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete(path).with(user(admin)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(patch(path + "/status").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"FINALIZADA\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FINALIZADA"));
+        mvc.perform(put(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(upsertJson(SLUG, start, later, "600")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(patch(path + "/status").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"PUBLICADA\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void draftRulesForPublishingIncludingEventsAndDeleting() throws Exception {
+        UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+        PromoCampaign draft = campaign("sorteo-borrador", CampaignStatus.BORRADOR,
+                Instant.now(), Instant.now().plus(Duration.ofDays(5)));
+        Event hidden = event("Zzsorteo oculto", EventPaymentMethod.ONLINE);
+        hidden.setStatus(EventStatus.BORRADOR);
+        em.flush();
+        String path = "/api/v1/admin/campaigns/" + draft.getId();
+
+        mvc.perform(patch(path + "/status").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"PUBLICADA\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Añade al menos una experiencia antes de publicar la campaña"));
+        mvc.perform(put(path + "/events").with(user(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"eventIds\":[" + hidden.getId() + "]}"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(delete(path).with(user(admin)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get(path).with(user(admin)))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/v1/admin/campaigns/" + campaign.getId()).with(user(admin)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- Sorteo -----------------------------------------------------------------------------
+
+    @Test
+    void drawPicksEntryWeightedByTicketsFinalizesAndPublishesWinner() throws Exception {
+        payments.processPayment(order(included, 2), card());
+        String secondOrder = order(included, 3);
+        payments.processPayment(secondOrder, card());
+        campaign.setParticipationEndsAt(Instant.now().minus(Duration.ofMinutes(1)));
+        em.flush();
+        // Papeletas 0-1 → primera reserva, 2-4 → segunda.
+        when(drawRandom.nextLong(anyLong())).thenReturn(2L);
+        UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+        String path = "/api/v1/admin/campaigns/" + campaign.getId();
+
+        mvc.perform(post(path + "/draw").with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FINALIZADA"))
+                .andExpect(jsonPath("$.validTickets").value(5))
+                .andExpect(jsonPath("$.winner.bookingCode").value(bookingOf(secondOrder).getCode()))
+                .andExpect(jsonPath("$.winner.ticketCount").value(3))
+                .andExpect(jsonPath("$.winner.customerEmail").value("campaign-cli@example.com"));
+        verify(drawRandom).nextLong(5L);
+
+        mvc.perform(post(path + "/draw").with(user(admin)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("El sorteo de esta campaña ya se realizó"));
+        mvc.perform(get("/api/v1/campaigns/" + SLUG))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.winnerDisplayName").value("Cliente S."))
+                .andExpect(jsonPath("$.drawnAt").isNotEmpty());
+        mvc.perform(post(path + "/draw").with(user(principal(client.getId(), "ROLE_USER"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void drawRequiresClosedPublishedCampaignWithValidEntries() throws Exception {
+        UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+
+        payments.processPayment(order(included, 1), card());
+        mvc.perform(post("/api/v1/admin/campaigns/" + campaign.getId() + "/draw").with(user(admin)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("El sorteo solo puede realizarse cuando cierre el periodo de participación"));
+
+        PromoCampaign empty = campaign("sorteo-vacio", CampaignStatus.PUBLICADA,
+                Instant.now().minus(Duration.ofDays(5)), Instant.now().minus(Duration.ofDays(1)));
+        em.flush();
+        mvc.perform(post("/api/v1/admin/campaigns/" + empty.getId() + "/draw").with(user(admin)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("La campaña no tiene participaciones válidas para sortear"));
+    }
+
+    // --- Varias campañas --------------------------------------------------------------------
+
+    @Test
+    void overlappingCampaignsEachReceiveEntriesAndActiveListsOpenFirstByClosing() throws Exception {
+        Instant now = Instant.now();
+        PromoCampaign sooner = campaign("sorteo-flash", CampaignStatus.PUBLICADA,
+                now.minus(Duration.ofHours(1)), now.plus(Duration.ofDays(2)));
+        campaign("sorteo-futuro", CampaignStatus.PUBLICADA, now.plus(Duration.ofDays(1)), now.plus(Duration.ofDays(3)));
+        em.persist(new PromoCampaignEvent(sooner, included));
+        em.flush();
+
+        assertThat(payments.processPayment(order(included, 1), card()).getCampaignEntries())
+                .extracting(e -> e.campaignSlug())
+                .containsExactlyInAnyOrder(SLUG, "sorteo-flash");
+
+        mvc.perform(get("/api/v1/campaigns/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].slug").value("sorteo-flash"))
+                .andExpect(jsonPath("$[1].slug").value(SLUG))
+                .andExpect(jsonPath("$[2].slug").value("sorteo-futuro"))
+                .andExpect(jsonPath("$[2].phase").value("PROXIMA"));
     }
 
     // --- Helpers ----------------------------------------------------------------------------

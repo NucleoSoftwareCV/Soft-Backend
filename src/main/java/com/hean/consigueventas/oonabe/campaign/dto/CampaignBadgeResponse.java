@@ -8,6 +8,9 @@ public record CampaignBadgeResponse(
         String slug,
 
         @Schema(description = "Texto del distintivo", example = "Participa en el sorteo")
-        String label
+        String label,
+
+        @Schema(description = "Título de la campaña", example = "Sorteamos un año de bienestar gratis")
+        String title
 ) {
 }
