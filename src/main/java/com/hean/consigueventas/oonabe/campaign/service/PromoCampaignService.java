@@ -24,9 +24,11 @@ import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException
 import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
+import com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -52,6 +54,7 @@ public class PromoCampaignService {
     private final PromoCampaignEntryRepository entries;
     private final EventRepository events;
     private final UserRepository users;
+    private final LocalImageStorageService images;
     private final RandomGenerator drawRandom;
     private final Clock clock;
 
@@ -61,6 +64,7 @@ public class PromoCampaignService {
             PromoCampaignEntryRepository entries,
             EventRepository events,
             UserRepository users,
+            LocalImageStorageService images,
             RandomGenerator campaignDrawRandom,
             Clock clock) {
         this.campaigns = campaigns;
@@ -68,6 +72,7 @@ public class PromoCampaignService {
         this.entries = entries;
         this.events = events;
         this.users = users;
+        this.images = images;
         this.drawRandom = campaignDrawRandom;
         this.clock = clock;
     }
@@ -135,8 +140,25 @@ public class PromoCampaignService {
                         "La campaña ya tiene participaciones: la fecha de cierre solo puede ampliarse");
             }
         }
+        String previousImage = campaign.getHeroImageUrl();
         apply(campaign, request);
-        return admin(campaigns.saveAndFlush(campaign));
+        AdminResponse saved = admin(campaigns.saveAndFlush(campaign));
+        if (previousImage != null && !previousImage.equals(campaign.getHeroImageUrl())) {
+            images.deleteImage(previousImage);
+        }
+        return saved;
+    }
+
+    /** Guarda la imagen principal en el almacenamiento del backend y borra la anterior. */
+    @Transactional
+    public AdminResponse uploadImage(Long id, MultipartFile file) {
+        PromoCampaign campaign = get(id);
+        requireNotFinished(campaign);
+        String previousImage = campaign.getHeroImageUrl();
+        campaign.setHeroImageUrl(images.saveCampaignImage(file, id));
+        AdminResponse saved = admin(campaigns.saveAndFlush(campaign));
+        images.deleteImage(previousImage);
+        return saved;
     }
 
     /** BORRADOR → PUBLICADA → FINALIZADA; volver a borrador solo sin participaciones. FINALIZADA es definitiva. */
@@ -215,6 +237,7 @@ public class PromoCampaignService {
         }
         campaignEvents.deleteByCampaignId(id);
         campaigns.delete(get(id));
+        images.deleteImage(campaign.getHeroImageUrl());
     }
 
     /**

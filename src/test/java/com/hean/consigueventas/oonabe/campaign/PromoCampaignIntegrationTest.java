@@ -35,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,9 @@ import java.util.random.RandomGenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -75,6 +78,7 @@ class PromoCampaignIntegrationTest {
     @Autowired com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository history;
     @Autowired com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository occurrences;
     @MockitoBean(name = "campaignDrawRandom") RandomGenerator drawRandom;
+    @MockitoBean com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService images;
 
     User professional;
     User client;
@@ -413,6 +417,37 @@ class PromoCampaignIntegrationTest {
         mvc.perform(get(path).with(user(admin)))
                 .andExpect(status().isNotFound());
         mvc.perform(delete("/api/v1/admin/campaigns/" + campaign.getId()).with(user(admin)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void uploadsHeroImageReplacingThePreviousOneAndOnlyForAdmins() throws Exception {
+        UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+        PromoCampaign draft = campaign("sorteo-imagen", CampaignStatus.BORRADOR,
+                Instant.now(), Instant.now().plus(Duration.ofDays(5)));
+        draft.setHeroImageUrl("/images/profile-images/1/campaign-hero/antigua.jpg");
+        em.flush();
+        String path = "/api/v1/admin/campaigns/" + draft.getId();
+        MockMultipartFile file = new MockMultipartFile("file", "hero.png", "image/png", new byte[] {1});
+        when(images.saveCampaignImage(any(), eq(draft.getId())))
+                .thenReturn("/images/profile-images/1/campaign-hero/nueva.png");
+
+        mvc.perform(multipart(path + "/image").file(file).with(user(principal(client.getId(), "ROLE_USER"))))
+                .andExpect(status().isForbidden());
+        mvc.perform(multipart(path + "/image").file(file).with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.detail.summary.heroImageUrl")
+                        .value("/images/profile-images/1/campaign-hero/nueva.png"));
+        verify(images).deleteImage("/images/profile-images/1/campaign-hero/antigua.jpg");
+
+        mvc.perform(delete(path).with(user(admin)))
+                .andExpect(status().isNoContent());
+        verify(images).deleteImage("/images/profile-images/1/campaign-hero/nueva.png");
+
+        PromoCampaign finished = campaign("sorteo-acabado", CampaignStatus.FINALIZADA,
+                Instant.now().minus(Duration.ofDays(5)), Instant.now().minus(Duration.ofDays(1)));
+        em.flush();
+        mvc.perform(multipart("/api/v1/admin/campaigns/" + finished.getId() + "/image").file(file).with(user(admin)))
                 .andExpect(status().isBadRequest());
     }
 

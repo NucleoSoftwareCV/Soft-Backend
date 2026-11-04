@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -65,6 +67,12 @@ public class AdminPromoCampaignController {
     @Operation(summary = "Actualizar campaña")
     public AdminResponse update(@PathVariable Long id, @Valid @RequestBody UpsertRequest request) {
         return campaignService.update(id, request);
+    }
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Subir la imagen principal (JPG o PNG); sustituye a la anterior")
+    public AdminResponse uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return campaignService.uploadImage(id, file);
     }
 
     @PatchMapping("/{id}/status")
