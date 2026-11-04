@@ -66,7 +66,7 @@ public class Event {
     private BigDecimal priceFrom;
 
     @Column(name = "currency", nullable = false, length = 3)
-    private String currency = "EUR";
+    private String currency = "PEN";
     @Column(name = "minimum_age")
     private Short minimumAge;
 

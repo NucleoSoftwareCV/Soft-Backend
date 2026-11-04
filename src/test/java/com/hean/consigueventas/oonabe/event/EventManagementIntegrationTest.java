@@ -77,7 +77,7 @@ class EventManagementIntegrationTest {
                                     "whatToBring": [],
                                     "modality": "ONLINE",
                                     "priceFrom": 0,
-                                    "currency": "EUR",
+                                    "currency": "PEN",
                                     "minimumAge": 18,
                                     "featured": false,
                                     "categoryId": %d,

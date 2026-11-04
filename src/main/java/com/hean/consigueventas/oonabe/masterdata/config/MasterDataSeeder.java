@@ -16,15 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class MasterDataSeeder {
 
+    /** 36 ciudades de Peru (codigo de pais PE): 25 capitales + Callao
+     *  y los 11 departamentos cuyo nombre difiere de su capital.
+     *  IMPORTANTE: name == province (asi lo exige resolveCity / findByNameAndProvince). */
     private static final String[][] PERU_CITIES = {
             {"Lima", "Lima"},
+            {"Callao", "Callao"},
             {"Arequipa", "Arequipa"},
             {"Trujillo", "Trujillo"},
             {"Chiclayo", "Chiclayo"},
             {"Piura", "Piura"},
             {"Ica", "Ica"},
             {"Cusco", "Cusco"},
-            {"Tumbes", "Tumbes"},
             {"Tacna", "Tacna"},
             {"Puno", "Puno"},
             {"Huancayo", "Huancayo"},
@@ -41,7 +44,7 @@ public class MasterDataSeeder {
             {"Huánuco", "Huánuco"},
             {"Moquegua", "Moquegua"},
             {"Cerro de Pasco", "Cerro de Pasco"},
-            {"Callao", "Callao"},
+            {"Tumbes", "Tumbes"},
             {"La Libertad", "La Libertad"},
             {"Lambayeque", "Lambayeque"},
             {"Junín", "Junín"},
@@ -91,6 +94,8 @@ public class MasterDataSeeder {
         seedCategory("Maternidad y Familia", "Experiencias de bienestar para la maternidad y la familia.", "🤰", createDefaultCategories);
         seedCategory("Emprendimiento", "Experiencias para emprender con bienestar y proposito.", "🚀", createDefaultCategories);
 
+        // Ciudades del Peru: 25 capitales departamentales + Callao
+        // + los 11 departamentos cuyo nombre difiere de su capital.
         for (String[] ciudad : PERU_CITIES) {
             seedCity(ciudad[0], ciudad[1]);
         }

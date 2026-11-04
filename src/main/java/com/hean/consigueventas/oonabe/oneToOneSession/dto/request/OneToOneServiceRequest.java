@@ -46,7 +46,7 @@ public record OneToOneServiceRequest(
         @DecimalMin(value = "0.0", message = "El precio debe ser mayor o igual a 0")
         BigDecimal price,
 
-        @Schema(description = "Moneda del precio. Si viene vacia se usa EUR.", example = "EUR")
+        @Schema(description = "Moneda del precio. Si viene vacia se usa PEN.", example = "PEN")
         @Pattern(regexp = "^$|[A-Za-z]{3}", message = "La moneda debe tener 3 letras")
         String currency,
 

@@ -21,7 +21,7 @@ public record OneToOneServiceCardResponse(
         @Schema(description = "Precio.", example = "40.00")
         BigDecimal price,
 
-        @Schema(description = "Moneda del precio.", example = "EUR")
+        @Schema(description = "Moneda del precio.", example = "PEN")
         String currency,
 
         @Schema(description = "Duracion en minutos.", example = "90")

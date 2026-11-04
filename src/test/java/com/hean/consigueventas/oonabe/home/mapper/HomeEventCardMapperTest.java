@@ -23,7 +23,7 @@ class HomeEventCardMapperTest {
                 "Resumen que no necesita la home",
                 EventModality.ONLINE,
                 BigDecimal.ZERO,
-                "EUR",
+                "PEN",
                 10L,
                 "Yoga",
                 20L,
@@ -42,7 +42,7 @@ class HomeEventCardMapperTest {
         HomeEventCardResponse response = mapper.toResponse(source);
 
         assertThat(response.priceFrom()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(response.currency()).isEqualTo("EUR");
+        assertThat(response.currency()).isEqualTo("PEN");
         assertThat(response.recurrenceLabel()).isEqualTo("RECURRENTE");
         assertThat(response.modality()).isEqualTo(EventModality.ONLINE);
     }

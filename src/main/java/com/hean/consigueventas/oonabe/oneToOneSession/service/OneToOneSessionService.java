@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 @Service
 public class OneToOneSessionService {
 
-    private static final String DEFAULT_CURRENCY = "EUR";
+    private static final String DEFAULT_CURRENCY = "PEN";
     private static final Pattern NON_ASCII_MARKS = Pattern.compile("\\p{M}+");
 
     private final OneToOneServiceRepository serviceRepository;
