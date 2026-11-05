@@ -8,6 +8,8 @@ import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
 import com.hean.consigueventas.oonabe.recommendation.dto.response.RecommendedEventResponse;
 import lombok.RequiredArgsConstructor;
+import com.hean.consigueventas.oonabe.review.service.EventReviewService;
+import com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class EventRecommendationQueryService {
 
     private final EventRecommendationService recommendationService;
     private final EventImageRepository imageRepository;
+    private final EventReviewService reviewService;
 
     public Page<RecommendedEventResponse> getRecommendations(
             String username,
@@ -54,7 +57,7 @@ public class EventRecommendationQueryService {
             Page<RecommendedEvent> recommendations
     ) {
         if (recommendations.isEmpty()) {
-            return recommendations.map(result -> toResponse(result, null));
+            return recommendations.map(result -> toResponse(result, null, EventRatingSummaryResponse.empty(result.event().getId())));
         }
 
         List<Long> eventIds = recommendations.getContent()
@@ -62,6 +65,7 @@ public class EventRecommendationQueryService {
                 .map(result -> result.event().getId())
                 .toList();
 
+        Map<Long, EventRatingSummaryResponse> ratings = reviewService.summaries(eventIds);
         Map<Long, String> coverUrls = new HashMap<>();
 
         for (EventImage image :
@@ -74,13 +78,15 @@ public class EventRecommendationQueryService {
 
         return recommendations.map(result -> toResponse(
                 result,
-                coverUrls.get(result.event().getId())
+                coverUrls.get(result.event().getId()),
+                ratings.getOrDefault(result.event().getId(), EventRatingSummaryResponse.empty(result.event().getId()))
         ));
     }
 
     private RecommendedEventResponse toResponse(
             RecommendedEvent recommendation,
-            String coverImageUrl
+            String coverImageUrl,
+            EventRatingSummaryResponse rating
     ) {
         Event event = recommendation.event();
         ExperienceType experienceType = event.getExperienceType();
@@ -106,7 +112,8 @@ public class EventRecommendationQueryService {
                 experienceType == null ? null : experienceType.getSlug(),
                 event.isRecurring(),
                 event.getMood(),
-                recommendation.occurrenceId()
+                recommendation.occurrenceId(),
+                rating.averageRating(), rating.reviewCount(), rating.reviewers()
         );
 
         return new RecommendedEventResponse(

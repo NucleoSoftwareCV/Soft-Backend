@@ -38,11 +38,17 @@ class HomeEventCardMapperTest {
                 "clases",
                 true,
                 null,
-                50L
+                50L,
+                4.5,
+                2L,
+                java.util.List.of(new com.hean.consigueventas.oonabe.review.dto.response.EventReviewerPreviewResponse("Cliente", null))
         );
 
         HomeEventCardResponse response = mapper.toResponse(source);
 
+        assertThat(response.averageRating()).isEqualTo(4.5);
+        assertThat(response.reviewCount()).isEqualTo(2L);
+        assertThat(response.reviewers()).hasSize(1);
         assertThat(response.occurrenceId()).isEqualTo(50L);
         assertThat(response.priceFrom()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.currency()).isEqualTo("EUR");
