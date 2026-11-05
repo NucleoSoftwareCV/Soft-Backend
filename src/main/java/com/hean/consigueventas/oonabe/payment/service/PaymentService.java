@@ -80,7 +80,7 @@ public class PaymentService {
         order.setSubtotal(BigDecimal.ZERO);
         order.setTotalDiscount(BigDecimal.ZERO);
         order.setTotalAmount(BigDecimal.ZERO);
-        order.setCurrency("EUR");
+        order.setCurrency("PEN");
         order.setExpiresAt(Instant.now().plus(Duration.ofMinutes(15)));
 
         order = purchaseOrderRepository.save(order);
@@ -108,21 +108,21 @@ public class PaymentService {
                     Event event = occurrence.getEvent();
                     item.setUnitPrice(event.getPriceFrom() != null ? event.getPriceFrom() : BigDecimal.ZERO);
                     item.setDescription("Entrada para evento: " + event.getTitle());
-                    order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "EUR");
+                    order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "PEN");
                 } else {
                     // Fallback directo a Event
                     Event event = eventRepository.findById(itemDto.getReferenceId())
                             .orElseThrow(() -> new ResourceNotFoundException("No se encontró el evento u ocurrencia con ID: " + itemDto.getReferenceId()));
                     item.setUnitPrice(event.getPriceFrom() != null ? event.getPriceFrom() : BigDecimal.ZERO);
                     item.setDescription("Entrada para evento: " + event.getTitle());
-                    order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "EUR");
+                    order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "PEN");
                 }
             } else if (itemDto.getItemType() == PurchaseItemType.SESION) {
                 OneToOneService service = oneToOneServiceRepository.findById(itemDto.getReferenceId())
                         .orElseThrow(() -> new ResourceNotFoundException("No se encontró la sesión 1:1 con ID: " + itemDto.getReferenceId()));
                 item.setUnitPrice(service.getPrice() != null ? service.getPrice() : BigDecimal.ZERO);
                 item.setDescription("Sesión 1:1: " + service.getTitle());
-                order.setCurrency(service.getCurrency() != null ? service.getCurrency() : "EUR");
+                order.setCurrency(service.getCurrency() != null ? service.getCurrency() : "PEN");
             } else {
                 throw new BusinessLogicException("Tipo de ítem no válido: " + itemDto.getItemType());
             }
