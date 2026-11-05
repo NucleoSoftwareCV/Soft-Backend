@@ -41,7 +41,7 @@ public record MatchRequestUpsertRequest(
 
         @NotBlank
         @Size(max = 255)
-        @Schema(example = "Valencia, Sagunto")
+        @Schema(example = "Lima, Miraflores")
         String exactZone,
 
         @NotNull

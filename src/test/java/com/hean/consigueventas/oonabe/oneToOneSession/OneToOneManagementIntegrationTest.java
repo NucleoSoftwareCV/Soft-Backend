@@ -62,7 +62,7 @@ class OneToOneManagementIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.title").value("Sesion de prueba profesional"))
-                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.currency").value("PEN"))
                 .andExpect(jsonPath("$.slug").value("sesion-de-prueba-profesional"));
     }
 
