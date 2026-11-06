@@ -94,6 +94,25 @@ class ClientPreferencesCategoriesIntegrationTest {
         flushAndClear();
     }
 
+
+    @Test
+    void referenceLocationPersistsChangesAndDoesNotLeakToAnotherAccount() {
+        var initial = new com.hean.consigueventas.oonabe.profileCliente.dto.request.ReferenceLocationRequest("Mi barrio", 40.0, -3.0, true);
+        profileService.saveReferenceLocation(USERNAME, initial);
+        flushAndClear();
+        assertThat(profileService.getMyPreferences(USERNAME).referenceLocation().label()).isEqualTo("Mi barrio");
+        profileService.saveReferenceLocation(USERNAME,
+                new com.hean.consigueventas.oonabe.profileCliente.dto.request.ReferenceLocationRequest("Otro punto", 39.0, 0.0, false));
+        savePreferences(Set.of(yogaId));
+        flushAndClear();
+        assertThat(profileService.getReferenceLocation(USERNAME).latitude()).isEqualTo(39.0);
+        User other = new User(); other.setUsername("other_reference"); other.setEmail("other-reference@example.com");
+        entityManager.persist(other); flushAndClear();
+        assertThat(profileService.getReferenceLocation("other_reference")).isNull();
+        profileService.clearReferenceLocation(USERNAME); flushAndClear();
+        assertThat(profileService.getReferenceLocation(USERNAME)).isNull();
+    }
+
     @Test
     void shouldSaveTheSameCategoriesRepeatedlyWithoutDuplicates() {
         Set<Long> selected = Set.of(yogaId, movementId);

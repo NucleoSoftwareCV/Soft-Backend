@@ -70,6 +70,7 @@ public record EventCardResponse(
 
         @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
         EventMood mood,
+        Long occurrenceId,
 
         @Schema(description = "Campañas promocionales abiertas en las que participa el evento (vacía si ninguna)")
         List<CampaignBadgeResponse> campaignBadges
@@ -99,9 +100,10 @@ public record EventCardResponse(
             String eventType,
             String experienceTypeSlug,
             Boolean isRecurring,
-            EventMood mood) {
+            EventMood mood,
+            Long occurrenceId) {
         this(id, title, summary, modality, priceFrom, currency, categoryId, categoryName, organizerId,
                 organizerName, organizerPhotoUrl, coverImageUrl, startsAt, endsAt, cityName, experienceTypeId,
-                eventType, experienceTypeSlug, isRecurring, mood, List.of());
+                eventType, experienceTypeSlug, isRecurring, mood, occurrenceId, List.of());
     }
 }

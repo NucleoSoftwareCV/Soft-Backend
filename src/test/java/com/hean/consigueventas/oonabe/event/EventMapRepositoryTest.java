@@ -92,6 +92,20 @@ class EventMapRepositoryTest {
         occurrence = createOccurrence(NOW.plusSeconds(3600));
     }
 
+
+    @Test
+    void travelDestinationsExcludeOnlinePrivateAndInvalidLocations() {
+        var ids = java.util.List.of(occurrence.getId(), Long.MAX_VALUE);
+        em.flush();
+        assertThat(repository.findTravelDestinations(NOW, ids)).hasSize(1);
+        event.setModality(EventModality.ONLINE); em.flush();
+        assertThat(repository.findTravelDestinations(NOW, ids)).isEmpty();
+        event.setModality(EventModality.PRESENCIAL); event.setStatus(EventStatus.BORRADOR); em.flush();
+        assertThat(repository.findTravelDestinations(NOW, ids)).isEmpty();
+        event.setStatus(EventStatus.PUBLICADO); location.setLatitude(null); em.flush();
+        assertThat(repository.findTravelDestinations(NOW, ids)).isEmpty();
+    }
+
     @Test
     void returnsCoordinatesAndAddressWithoutLoadingEachEventDetail() {
         event.setMood(EventMood.CONECTAR);

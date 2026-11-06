@@ -7,6 +7,8 @@ import com.hean.consigueventas.oonabe.profileCliente.entity.ClientInterestCatego
 import com.hean.consigueventas.oonabe.profileCliente.entity.ClientProfile;
 import org.springframework.stereotype.Component;
 
+import com.hean.consigueventas.oonabe.profileCliente.dto.response.ReferenceLocationResponse;
+
 import java.util.List;
 
 @Component
@@ -33,7 +35,8 @@ public class ClientProfileMapper {
                 clientProfile.getReceivePersonalizedRecommendations(),
                 clientProfile.getReceiveReservationConfirmations(),
                 clientProfile.getReceiveWeeklySummary(),
-                toInterestCategoryResponses(interestCategories)
+                toInterestCategoryResponses(interestCategories),
+                ReferenceLocationResponse.from(clientProfile.getReferenceLocation())
         );
     }
 

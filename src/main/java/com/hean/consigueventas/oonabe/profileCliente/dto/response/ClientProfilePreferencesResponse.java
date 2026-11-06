@@ -44,6 +44,7 @@ public record ClientProfilePreferencesResponse(
         Boolean receiveWeeklySummary,
 
         @Schema(description = "Categorías de interés del cliente")
-        List<ClientInterestCategoryResponse> interestCategories
+        List<ClientInterestCategoryResponse> interestCategories,
+        ReferenceLocationResponse referenceLocation
 ) {
 }

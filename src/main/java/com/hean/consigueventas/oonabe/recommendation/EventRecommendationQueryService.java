@@ -116,6 +116,7 @@ public class EventRecommendationQueryService {
                 experienceType == null ? null : experienceType.getSlug(),
                 event.isRecurring(),
                 event.getMood(),
+                recommendation.occurrenceId(),
                 campaignBadges
         );
 

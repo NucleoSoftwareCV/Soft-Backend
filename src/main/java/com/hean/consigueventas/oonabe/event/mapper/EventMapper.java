@@ -110,6 +110,7 @@ public interface EventMapper {
     @Mapping(target = "endsAt", source = "occurrences", qualifiedByName = "nextEndsAt")
     @Mapping(target = "cityName", source = "occurrences", qualifiedByName = "nextCityName")
     @Mapping(target = "isRecurring", source = "event.recurring")
+    @Mapping(target = "occurrenceId", source = "occurrences", qualifiedByName = "nextOccurrenceId")
     @Mapping(target = "mood", source = "event.mood")
     @Mapping(target = "campaignBadges", source = "campaignBadges")
     EventCardResponse toCardResponse(
@@ -118,6 +119,12 @@ public interface EventMapper {
             List<EventOccurrence> occurrences,
             List<CampaignBadgeResponse> campaignBadges,
             @Context Instant notBefore);
+
+    @Named("nextOccurrenceId")
+    default Long nextOccurrenceId(List<EventOccurrence> occurrences, @Context Instant notBefore) {
+        EventOccurrence occurrence = nextOccurrence(occurrences, notBefore);
+        return occurrence == null ? null : occurrence.getId();
+    }
 
     @Named("nextStartsAt")
     default Instant nextStartsAt(List<EventOccurrence> occurrences, @Context Instant notBefore) {
