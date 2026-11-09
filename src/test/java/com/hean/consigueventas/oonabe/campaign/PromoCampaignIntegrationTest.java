@@ -77,6 +77,8 @@ class PromoCampaignIntegrationTest {
     @Autowired PurchaseOrderRepository orders;
     @Autowired com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository history;
     @Autowired com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository occurrences;
+    @Autowired com.hean.consigueventas.oonabe.booking.service.BookingTransitions transitions;
+    @Autowired com.hean.consigueventas.oonabe.notification.service.NotificationService notifications;
     @MockitoBean(name = "campaignDrawRandom") RandomGenerator drawRandom;
     @MockitoBean com.hean.consigueventas.oonabe.profileProfesional.service.LocalImageStorageService images;
 
@@ -247,7 +249,7 @@ class PromoCampaignIntegrationTest {
 
     @Test
     void approvedOnlinePaymentRegistersOneEntryPerSeatWithoutDuplicates() throws Exception {
-        String orderCode = order(included, 2);
+        String orderCode = accepted(included, 2);
         PaymentResponseDto response = payments.processPayment(orderCode, card());
 
         assertThat(response.getStatus()).isEqualTo("APROBADO");
@@ -270,13 +272,13 @@ class PromoCampaignIntegrationTest {
 
     @Test
     void paymentForNonIncludedEventOrClosedCampaignRegistersNothing() {
-        PaymentResponseDto notIncluded = payments.processPayment(order(excluded, 1), card());
+        PaymentResponseDto notIncluded = payments.processPayment(accepted(excluded, 1), card());
         assertThat(notIncluded.getStatus()).isEqualTo("APROBADO");
         assertThat(notIncluded.getCampaignEntries()).isEmpty();
 
         campaign.setParticipationEndsAt(Instant.now().minus(Duration.ofMinutes(1)));
         em.flush();
-        PaymentResponseDto closed = payments.processPayment(order(included, 1), card());
+        PaymentResponseDto closed = payments.processPayment(accepted(included, 1), card());
         assertThat(closed.getStatus()).isEqualTo("APROBADO");
         assertThat(closed.getCampaignEntries()).isEmpty();
     }
@@ -285,7 +287,7 @@ class PromoCampaignIntegrationTest {
     void rejectedPaymentRegistersNothing() {
         PaymentProcessRequestDto rejectedCard = card();
         rejectedCard.setCardNumber("4111111111114444");
-        String orderCode = order(included, 1);
+        String orderCode = accepted(included, 1);
 
         assertThat(payments.processPayment(orderCode, rejectedCard).getStatus()).isEqualTo("RECHAZADO");
         assertThat(entriesOf(bookingOf(orderCode))).isEmpty();
@@ -296,34 +298,34 @@ class PromoCampaignIntegrationTest {
         campaign.setMaxEntriesPerCustomer(3);
         em.flush();
 
-        assertThat(payments.processPayment(order(included, 2), card()).getCampaignEntries())
+        assertThat(payments.processPayment(accepted(included, 2), card()).getCampaignEntries())
                 .singleElement().satisfies(e -> assertThat(e.ticketCount()).isEqualTo(2));
-        assertThat(payments.processPayment(order(included, 2), card()).getCampaignEntries())
+        assertThat(payments.processPayment(accepted(included, 2), card()).getCampaignEntries())
                 .singleElement().satisfies(e -> assertThat(e.ticketCount()).isEqualTo(1));
-        assertThat(payments.processPayment(order(included, 1), card()).getCampaignEntries()).isEmpty();
+        assertThat(payments.processPayment(accepted(included, 1), card()).getCampaignEntries()).isEmpty();
     }
 
     @Test
-    void whatsAppBookingEntersWhenProfessionalConfirmsAndIsVoidedWhenOrderExpires() {
-        String orderCode = order(includedWhatsApp, 3);
+    void acceptanceAloneCreatesNoEntryAndAnUnpaidBookingExpiresWithoutOne() {
+        String orderCode = accepted(includedWhatsApp, 3);
         EventBooking booking = bookingOf(orderCode);
         assertThat(entriesOf(booking)).isEmpty();
 
-        professionalBookings.decide(professional.getId(), booking.getCode(), new Decision(BookingStatus.CONFIRMADA, null));
-        assertThat(entriesOf(booking)).singleElement().satisfies(e -> {
-            assertThat(e.getTicketCount()).isEqualTo(3);
-            assertThat(e.getStatus()).isEqualTo(CampaignEntryStatus.VALIDA);
-        });
-
-        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, history, entryService,
-                Clock.offset(Clock.systemUTC(), Duration.ofHours(1)));
-        assertThat(futureRelease.release(orderCode)).isEqualTo(1);
+        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, transitions, notifications,
+                Clock.offset(Clock.systemUTC(), Duration.ofHours(25)));
+        assertThat(futureRelease.release(booking.getCode())).isTrue();
         em.flush();
         em.clear();
-        assertThat(entriesOf(booking)).singleElement().satisfies(e -> {
-            assertThat(e.getStatus()).isEqualTo(CampaignEntryStatus.ANULADA);
-            assertThat(e.getVoidReason()).isEqualTo("Orden expirada sin pago");
-        });
+        assertThat(entriesOf(booking)).isEmpty();
+    }
+
+    @Test
+    void freeBookingEntersWhenTheProfessionalAccepts() {
+        included.setPriceFrom(BigDecimal.ZERO);
+        EventBooking booking = bookingOf(accepted(included, 2));
+
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CONFIRMADA);
+        assertThat(entriesOf(booking)).singleElement().satisfies(e -> assertThat(e.getTicketCount()).isEqualTo(2));
     }
 
     @Test
@@ -339,7 +341,7 @@ class PromoCampaignIntegrationTest {
 
     @Test
     void campaignWithEntriesProtectsSensitiveFieldsAndEvents() throws Exception {
-        payments.processPayment(order(included, 1), card());
+        payments.processPayment(accepted(included, 1), card());
         UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
         String path = "/api/v1/admin/campaigns/" + campaign.getId();
         String start = campaign.getParticipationStartsAt().toString();
@@ -455,8 +457,8 @@ class PromoCampaignIntegrationTest {
 
     @Test
     void drawPicksEntryWeightedByTicketsFinalizesAndPublishesWinner() throws Exception {
-        payments.processPayment(order(included, 2), card());
-        String secondOrder = order(included, 3);
+        payments.processPayment(accepted(included, 2), card());
+        String secondOrder = accepted(included, 3);
         payments.processPayment(secondOrder, card());
         campaign.setParticipationEndsAt(Instant.now().minus(Duration.ofMinutes(1)));
         em.flush();
@@ -489,7 +491,7 @@ class PromoCampaignIntegrationTest {
     void drawRequiresClosedPublishedCampaignWithValidEntries() throws Exception {
         UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
 
-        payments.processPayment(order(included, 1), card());
+        payments.processPayment(accepted(included, 1), card());
         mvc.perform(post("/api/v1/admin/campaigns/" + campaign.getId() + "/draw").with(user(admin)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("El sorteo solo puede realizarse cuando cierre el periodo de participación"));
@@ -513,7 +515,7 @@ class PromoCampaignIntegrationTest {
         em.persist(new PromoCampaignEvent(sooner, included));
         em.flush();
 
-        assertThat(payments.processPayment(order(included, 1), card()).getCampaignEntries())
+        assertThat(payments.processPayment(accepted(included, 1), card()).getCampaignEntries())
                 .extracting(e -> e.campaignSlug())
                 .containsExactlyInAnyOrder(SLUG, "sorteo-flash");
 
@@ -527,14 +529,22 @@ class PromoCampaignIntegrationTest {
 
     // --- Helpers ----------------------------------------------------------------------------
 
+    /** Un cliente tiene una sola reserva activa por fecha, así que cada orden usa una fecha nueva. */
     private String order(Event event, int quantity) {
+        EventOccurrence occurrence = occurrence(event);
         CheckoutItemDto item = new CheckoutItemDto();
         item.setItemType(PurchaseItemType.EVENTO);
-        item.setReferenceId(event.getOccurrences().getFirst().getId());
+        item.setReferenceId(occurrence.getId());
         item.setQuantity((short) quantity);
         CheckoutRequestDto request = new CheckoutRequestDto();
         request.setItems(List.of(item));
         return payments.createOrder(client.getId(), request).getCode();
+    }
+
+    private String accepted(Event event, int quantity) {
+        String orderCode = order(event, quantity);
+        professionalBookings.decide(professional.getId(), bookingOf(orderCode).getCode(), new Decision(BookingStatus.ACEPTADA, null));
+        return orderCode;
     }
 
     private EventBooking bookingOf(String orderCode) {
@@ -565,6 +575,12 @@ class PromoCampaignIntegrationTest {
         event.setStatus(EventStatus.PUBLICADO);
         event.setPaymentMethod(paymentMethod);
         em.persist(event);
+        event.setOccurrences(new java.util.ArrayList<>());
+        occurrence(event);
+        return event;
+    }
+
+    private EventOccurrence occurrence(Event event) {
         EventOccurrence occurrence = new EventOccurrence();
         occurrence.setEvent(event);
         occurrence.setCapacity(20);
@@ -573,8 +589,8 @@ class PromoCampaignIntegrationTest {
         occurrence.setEndsAt(Instant.now().plus(Duration.ofDays(2)).plus(Duration.ofHours(1)));
         occurrence.setStatus(EventOccurrenceStatus.PROGRAMADA);
         em.persist(occurrence);
-        event.setOccurrences(new java.util.ArrayList<>(List.of(occurrence)));
-        return event;
+        event.getOccurrences().add(occurrence);
+        return occurrence;
     }
 
     private PromoCampaign campaign(String slug, CampaignStatus status, Instant startsAt, Instant endsAt) {

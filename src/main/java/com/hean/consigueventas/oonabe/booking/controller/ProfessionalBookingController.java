@@ -52,7 +52,7 @@ public class ProfessionalBookingController {
     }
 
     @PatchMapping("/{code}/status")
-    @Operation(summary = "Aceptar o rechazar una reserva pendiente", description = "Aceptar: CONFIRMADA. Rechazar: CANCELADA con motivo. No procesa pagos.")
+    @Operation(summary = "Aceptar o rechazar una reserva pendiente", description = "Aceptar: ACEPTADA, el cliente ya puede pagar (un evento gratuito queda confirmado). Rechazar: CANCELADA con motivo.")
     @ApiResponse(responseCode = "200", description = "Decisión guardada y disponibilidad actualizada")
     @ApiResponse(responseCode = "400", description = "Estado o motivo inválido")
     @ApiResponse(responseCode = "409", description = "La reserva ya cambió, tiene un pago aprobado o la fecha no admite confirmación")

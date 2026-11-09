@@ -10,6 +10,8 @@ import com.hean.consigueventas.oonabe.event.entity.Event;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventRepository;
+import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
+import com.hean.consigueventas.oonabe.notification.service.NotificationService;
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.OneToOneService;
 import com.hean.consigueventas.oonabe.oneToOneSession.repository.OneToOneServiceRepository;
 import com.hean.consigueventas.oonabe.payment.domain.DigitalReceiptStatus;
@@ -25,7 +27,6 @@ import com.hean.consigueventas.oonabe.payment.repository.PaymentRepository;
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderItemRepository;
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
-import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.user.repository.TemporaryCustomerProfileRepository;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
@@ -34,6 +35,7 @@ import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
 import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
 import com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository;
 import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
+import com.hean.consigueventas.oonabe.booking.service.BookingTransitions;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
 import com.hean.consigueventas.oonabe.common.enums.AttendanceStatus;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,6 +58,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PaymentService {
 
+    /** Una fecha admite una sola reserva activa por cliente; las canceladas permiten volver a solicitar. */
+    private static final Set<BookingStatus> ACTIVE =
+            Set.of(BookingStatus.PENDIENTE, BookingStatus.ACEPTADA, BookingStatus.CONFIRMADA);
+
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final PaymentRepository paymentRepository;
@@ -70,6 +74,9 @@ public class PaymentService {
     private final EventAttendeeRepository eventAttendeeRepository;
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
     private final CampaignEntryService campaignEntryService;
+    private final BookingTransitions bookingTransitions;
+    private final NotificationService notificationService;
+    private final Clock clock;
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
@@ -84,7 +91,6 @@ public class PaymentService {
         order.setTotalDiscount(BigDecimal.ZERO);
         order.setTotalAmount(BigDecimal.ZERO);
         order.setCurrency("EUR");
-        order.setExpiresAt(Instant.now().plus(Duration.ofMinutes(15)));
 
         order = purchaseOrderRepository.save(order);
 
@@ -140,6 +146,9 @@ public class PaymentService {
                             || !occurrence.getStartsAt().isAfter(Instant.now())) {
                         throw new BusinessLogicException("Esta fecha ya no está disponible para reservar.");
                     }
+                    if (eventBookingRepository.existsByCustomerIdAndOccurrenceIdAndStatusIn(customer.getId(), occurrence.getId(), ACTIVE)) {
+                        throw new BookingConflictException("Ya tienes una reserva activa para esta fecha.");
+                    }
                     if (occurrence.getReservedSpots() + item.getQuantity() > occurrence.getCapacity()) {
                         throw new BusinessLogicException("No hay suficientes plazas disponibles para la sesión elegida.");
                     }
@@ -157,7 +166,11 @@ public class PaymentService {
                     booking.setCurrency(order.getCurrency());
                     booking.setStatus(BookingStatus.PENDIENTE);
                     booking.setCreatedAt(Instant.now());
+                    // Sin respuesta del profesional, la plaza se retiene hasta que empiece el evento.
+                    booking.setExpiresAt(occurrence.getStartsAt());
                     eventBookingRepository.save(booking);
+                    notificationService.notifyCustomer(booking, NotificationType.SOLICITUD_ENVIADA);
+                    notificationService.notifyProfessional(booking, NotificationType.NUEVA_SOLICITUD);
 
                     if (itemDto.getAttendees() != null && !itemDto.getAttendees().isEmpty()) {
                         for (com.hean.consigueventas.oonabe.payment.dto.AttendeeDto attendeeDto : itemDto.getAttendees()) {
@@ -222,7 +235,7 @@ public class PaymentService {
                 .forEach(id -> eventOccurrenceRepository.findLockedById(id));
         if (order.getStatus() == PurchaseOrderStatus.CANCELADA
                 && orderBookings.stream().anyMatch(b -> b.getStatus() == BookingStatus.CANCELADA)) {
-            throw new BookingConflictException("El profesional rechazó la reserva y la orden fue cancelada.");
+            throw new BookingConflictException("La reserva fue cancelada y su orden ya no se puede pagar.");
         }
         Set<Long> rejectedItemIds = orderBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.CANCELADA && b.getOrderItem() != null)
@@ -239,6 +252,15 @@ public class PaymentService {
             throw new BusinessLogicException("La orden de compra ha expirado.");
         }
 
+        if (orderBookings.stream().anyMatch(b -> b.getStatus() == BookingStatus.PENDIENTE)) {
+            throw new BookingConflictException("El profesional aún no ha aceptado la reserva.");
+        }
+        Instant now = clock.instant();
+        if (orderBookings.stream().anyMatch(b -> b.getStatus() == BookingStatus.ACEPTADA
+                && b.getExpiresAt() != null && b.getExpiresAt().isBefore(now))) {
+            throw new BookingConflictException("El plazo de pago de la reserva ha vencido.");
+        }
+
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setProvider(request.getMethod().toUpperCase());
@@ -248,9 +270,7 @@ public class PaymentService {
         boolean approved = false;
         String errorMessage = null;
 
-        if (request.getMethod().equalsIgnoreCase("WHATSAPP")) {
-            throw new BusinessLogicException("El flujo de WhatsApp no requiere procesamiento de pago en el backend. Use el endpoint correspondiente.");
-        } else if (request.getMethod().equalsIgnoreCase("YAPE")) {
+        if (request.getMethod().equalsIgnoreCase("YAPE")) {
             String phone = request.getYapePhoneNumber();
             String otp = request.getYapeOtp();
             if (phone == null || phone.replaceAll("[^0-9]", "").length() != 9 || otp == null || otp.replaceAll("[^0-9]", "").length() != 6) {
@@ -295,10 +315,13 @@ public class PaymentService {
 
             List<EventBooking> confirmedBookings = new ArrayList<>();
             for (EventBooking booking : orderBookings) {
-                if (booking.getStatus() == BookingStatus.CANCELADA) continue;
-                booking.setStatus(BookingStatus.CONFIRMADA);
+                if (booking.getStatus() != BookingStatus.ACEPTADA) continue;
+                booking.setExpiresAt(null);
+                bookingTransitions.changeStatus(booking, BookingStatus.CONFIRMADA, order.getCustomer().getUser(), null, now);
                 eventBookingRepository.save(booking);
                 confirmedBookings.add(booking);
+                notificationService.notifyCustomer(booking, NotificationType.RESERVA_CONFIRMADA);
+                notificationService.notifyProfessional(booking, NotificationType.PAGO_COMPLETADO);
             }
             // Same transaction as the payment: an entry exists only if the payment is committed.
             List<EntrySummary> campaignEntries =
@@ -324,56 +347,6 @@ public class PaymentService {
 
             return new PaymentResponseDto("RECHAZADO", null, errorMessage);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public WhatsAppRedirectDto generateWhatsAppLink(String orderCode) {
-        PurchaseOrder order = purchaseOrderRepository.findByCode(orderCode)
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró la orden con código: " + orderCode));
-
-        List<PurchaseOrderItem> items = purchaseOrderItemRepository.findAll().stream()
-                .filter(i -> i.getOrder().getId().equals(order.getId()))
-                .toList();
-
-        if (items.isEmpty()) {
-            throw new BusinessLogicException("La orden de compra no contiene ítems.");
-        }
-
-        PurchaseOrderItem firstItem = items.getFirst();
-        SpecialistProfile specialist = null;
-
-        if (firstItem.getItemType() == PurchaseItemType.EVENTO) {
-            EventOccurrence occurrence = eventOccurrenceRepository.findById(firstItem.getReferenceId()).orElse(null);
-            if (occurrence != null) {
-                specialist = occurrence.getEvent().getSpecialist();
-            } else {
-                Event event = eventRepository.findById(firstItem.getReferenceId()).orElse(null);
-                if (event != null) {
-                    specialist = event.getSpecialist();
-                }
-            }
-        } else if (firstItem.getItemType() == PurchaseItemType.SESION) {
-            OneToOneService service = oneToOneServiceRepository.findById(firstItem.getReferenceId()).orElse(null);
-            if (service != null) {
-                specialist = service.getSpecialist();
-            }
-        }
-
-        String phone = "+51999999999"; // Fallback por defecto si no hay número registrado
-        if (specialist != null && specialist.getWhatsappPhone() != null && !specialist.getWhatsappPhone().isBlank()) {
-            phone = specialist.getWhatsappPhone();
-        }
-
-        // Limpiar el teléfono para que solo tenga dígitos para wa.me/
-        String cleanPhone = phone.replaceAll("[^0-9]", "");
-
-        String message = "Hola, me interesa adquirir entradas para " + firstItem.getDescription() + 
-                " en Oona. El código de mi orden de compra es " + order.getCode() + ". ¿Cómo coordinamos el pago?";
-        
-        String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
-        String redirectUrl = "https://wa.me/" + cleanPhone + "?text=" + encodedMessage;
-
-        return new WhatsAppRedirectDto(redirectUrl);
     }
 
     @Transactional(readOnly = true)
@@ -407,16 +380,21 @@ public class PaymentService {
                 .collect(Collectors.toMap(BookingStatusHistory::getBookingId, h -> h,
                         BinaryOperator.maxBy(Comparator.comparing(BookingStatusHistory::getCreatedAt))));
         return bookings.stream()
-                .map(b -> toMyBookingResponse(b, cancellations.get(b.getId())))
+                .map(b -> toMyBookingResponse(b, cancellations.get(b.getId()), userId))
                 .toList();
     }
 
-    private MyBookingResponseDto toMyBookingResponse(EventBooking booking, BookingStatusHistory cancellation) {
+    private MyBookingResponseDto toMyBookingResponse(EventBooking booking, BookingStatusHistory cancellation, Long userId) {
         EventOccurrence occurrence = booking.getOccurrence();
         Event event = occurrence.getEvent();
 
         MyBookingResponseDto dto = new MyBookingResponseDto();
         dto.setCode(booking.getCode());
+        if (booking.getOrderItem() != null) {
+            dto.setOrderCode(booking.getOrderItem().getOrder().getCode());
+        }
+        dto.setOccurrenceId(occurrence.getId());
+        dto.setPaymentDeadline(booking.getStatus() == BookingStatus.ACEPTADA ? booking.getExpiresAt() : null);
         dto.setStatus(booking.getStatus());
         dto.setQuantity(booking.getQuantity());
         dto.setTotalAmount(booking.getTotalAmount());
@@ -434,8 +412,7 @@ public class PaymentService {
         }
         if (cancellation != null) {
             dto.setCancelledAt(booking.getCancelledAt() != null ? booking.getCancelledAt() : cancellation.getCreatedAt());
-            // The release job records no user; a professional rejection always does.
-            dto.setCancellationCause(cancellation.getChangedBy() == null ? "EXPIRADA" : "RECHAZADA");
+            dto.setCancellationCause(BookingTransitions.cancellationCause(cancellation, userId));
             dto.setCancellationReason(cancellation.getReason());
         }
         return dto;
