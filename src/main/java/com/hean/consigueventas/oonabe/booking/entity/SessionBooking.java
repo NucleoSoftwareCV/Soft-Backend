@@ -94,6 +94,24 @@ public class SessionBooking {
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Column(name = "cancelled_by", length = 20)
+    private String cancelledBy;
+
+    @Column(name = "rescheduled_at")
+    private Instant rescheduledAt;
+
+    @Column(name = "previous_starts_at")
+    private Instant previousStartsAt;
+
+    @Column(name = "previous_ends_at")
+    private Instant previousEndsAt;
+
+    @Column(name = "reschedule_reason", length = 500)
+    private String rescheduleReason;
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
