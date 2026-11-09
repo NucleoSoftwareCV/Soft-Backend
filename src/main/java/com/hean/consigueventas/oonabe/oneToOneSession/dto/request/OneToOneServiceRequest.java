@@ -3,13 +3,21 @@ package com.hean.consigueventas.oonabe.oneToOneSession.dto.request;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.enums.SessionModality;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import jakarta.validation.ReportAsSingleViolation;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.CompositionType;
+import org.hibernate.validator.constraints.ConstraintComposition;
 import org.hibernate.validator.constraints.URL;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -26,7 +34,7 @@ public record OneToOneServiceRequest(
         String description,
 
         @Schema(description = "URL de imagen para la tarjeta publica.", example = "https://images.unsplash.com/photo-...")
-        @URL(message = "La URL de imagen no es valida")
+        @SessionImageUrl
         String imageUrl,
 
         @Schema(description = "Duracion en minutos.", example = "60")
@@ -46,7 +54,7 @@ public record OneToOneServiceRequest(
         @DecimalMin(value = "0.0", message = "El precio debe ser mayor o igual a 0")
         BigDecimal price,
 
-        @Schema(description = "Moneda del precio. Si viene vacia se usa EUR.", example = "EUR")
+        @Schema(description = "Moneda del precio. Si viene vacia se usa PEN.", example = "PEN")
         @Pattern(regexp = "^$|[A-Za-z]{3}", message = "La moneda debe tener 3 letras")
         String currency,
 
@@ -59,4 +67,16 @@ public record OneToOneServiceRequest(
         @Schema(description = "IDs de las tecnicas asociadas.")
         Set<Long> techniques
 ) {
+
+    @ConstraintComposition(CompositionType.OR)
+    @URL
+    @Pattern(regexp = "(?:/[A-Za-z0-9_-]+)*/[0-9]+/session-cover/session-cover-[0-9a-f-]{36}\\.[A-Za-z0-9]+")
+    @ReportAsSingleViolation
+    @Constraint(validatedBy = {})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface SessionImageUrl {
+        String message() default "La URL de imagen no es valida";
+        Class<?>[] groups() default {};
+        Class<? extends Payload>[] payload() default {};
+    }
 }

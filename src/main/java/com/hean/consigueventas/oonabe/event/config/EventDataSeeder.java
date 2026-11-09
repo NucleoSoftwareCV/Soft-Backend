@@ -74,7 +74,7 @@ public class EventDataSeeder {
                 "Taller de Porteo Ergonómico Fresco - Edición Verano",
                 "Aprende las opciones más frescas para portear a tu bebé cuando hace calor.",
                 "Taller de porteo ergonómico edición verano. En este taller veremos las opciones más frescas para portear a tu bebé cuando hace calor. Si estás embarazada es el mejor momento para informarte.",
-                EventModality.ONLINE, 10.00, "EUR", (short) 18, catCuerpo, profileAna,
+                EventModality.ONLINE, 10.00, "PEN", (short) 18, catCuerpo, profileAna,
                 "talleres", false);
         seedMood(event1, EventMood.CONECTAR);
         seedOccurrence(event1, null,
@@ -89,7 +89,7 @@ public class EventDataSeeder {
                 "Pilates Aéreo. Llevas tu cuerpo a otro nivel",
                 "Una experiencia de pilates en suspensión para trabajar fuerza y flexibilidad.",
                 "Descubre los beneficios del pilates aéreo trabajando con columpios especiales. Una clase que desafía tu equilibrio y fortalece todo tu core de forma divertida y segura.",
-                EventModality.PRESENCIAL, 20.00, "EUR", (short) 16, catMovimiento, profileCarlos,
+                EventModality.PRESENCIAL, 20.00, "PEN", (short) 16, catMovimiento, profileCarlos,
                 "clases", true);
         seedMood(event2, EventMood.ENERGIA);
         seedOccurrence(event2, loc1,
@@ -103,7 +103,7 @@ public class EventDataSeeder {
                 "Baño de Sonido al Atardecer en Paddle Surf",
                 "Meditación vibracional flotando sobre el agua durante la puesta de sol.",
                 "Una experiencia única que combina el equilibrio y la relajación del Paddle Surf con las vibraciones armónicas de los cuencos tibetanos y gongs al atardecer.",
-                EventModality.PRESENCIAL, 30.00, "EUR", (short) 18, catSonido, profileCarlos,
+                EventModality.PRESENCIAL, 30.00, "PEN", (short) 18, catSonido, profileCarlos,
                 "ceremonias", false);
         seedMood(event3, EventMood.RELAJACION);
         seedOccurrence(event3, loc2,
@@ -117,7 +117,7 @@ public class EventDataSeeder {
                 "Taller de Breathwork & Hielo. Despierta tu fuego interno",
                 "Aprende técnicas avanzadas de respiración y sumérgete en tina de hielo.",
                 "Taller práctico de respiración consciente combinado con la inmersión en tina de hielo. Aprende a dominar tu mente, controlar tu sistema nervioso y potenciar tu sistema inmune.",
-                EventModality.PRESENCIAL, 45.00, "EUR", (short) 18, catHielo, profileAna,
+                EventModality.PRESENCIAL, 45.00, "PEN", (short) 18, catHielo, profileAna,
                 "talleres", false);
         seedMood(event4, EventMood.ENERGIA);
         seedOccurrence(event4, loc1,
@@ -131,7 +131,7 @@ public class EventDataSeeder {
                 "Clase Especial de Yoga Vinyasa al Aire Libre",
                 "Práctica fluida y dinámica de Vinyasa Yoga conectando respiración y movimiento en la playa.",
                 "Disfruta de una sesión de Yoga Vinyasa al aire libre. Fluiremos de postura a postura guiados por la respiración para revitalizar el cuerpo y calmar la mente en un entorno natural.",
-                EventModality.PRESENCIAL, 15.00, "EUR", (short) 12, catYoga, profileCarlos,
+                EventModality.PRESENCIAL, 15.00, "PEN", (short) 12, catYoga, profileCarlos,
                 "clases", true);
         seedMood(event5, EventMood.ENERGIA);
         seedOccurrence(event5, loc1,
@@ -145,7 +145,7 @@ public class EventDataSeeder {
                 "Iniciación a la Meditación Trascendental y del Sonido",
                 "Aprende las bases teóricas y prácticas para establecer una práctica de meditación diaria.",
                 "En este encuentro online aprenderás el origen, los beneficios científicos y las técnicas fundamentales de la meditación trascendental para reducir el ruido mental.",
-                EventModality.ONLINE, 15.00, "EUR", (short) 16, catMeditacion, profileAna,
+                EventModality.ONLINE, 15.00, "PEN", (short) 16, catMeditacion, profileAna,
                 "encuentros-grupales", false);
         seedMood(event6, EventMood.RELAJACION);
         seedOccurrence(event6, null,
@@ -160,7 +160,7 @@ public class EventDataSeeder {
                 "Taller de Nutrición Consciente y Batch Cooking",
                 "Organiza tus comidas de la semana comiendo sano, rico y de forma balanceada.",
                 "Aprende a planificar un menú saludable y a cocinar en un solo bloque de tiempo (batch cooking) con recetas sencillas y nutritivas para toda la semana.",
-                EventModality.ONLINE, 25.00, "EUR", (short) 18, catNutricion, profileAna,
+                EventModality.ONLINE, 25.00, "PEN", (short) 18, catNutricion, profileAna,
                 "talleres", false);
         seedMood(event7, EventMood.CONECTAR);
         seedOccurrence(event7, null,
@@ -169,9 +169,9 @@ public class EventDataSeeder {
 
         Event event8 = seedEvent(
                 "Retiro Urbano de Mindfulness y Naturaleza",
-                "Un día entero de desconexión y presencia plena en el parque del Retiro.",
+                "Un día entero de desconexión y presencia plena en el parque de Lima.",
                 "Una jornada dedicada al cultivo de la atención plena a través de caminatas conscientes, prácticas de escaneo corporal y meditaciones en grupo en medio de la naturaleza.",
-                EventModality.PRESENCIAL, 60.00, "EUR", (short) 18, catMeditacion, profileCarlos,
+                EventModality.PRESENCIAL, 60.00, "PEN", (short) 18, catMeditacion, profileCarlos,
                 "retiros", false);
         seedMood(event8, EventMood.RELAJACION);
         seedOccurrence(event8, loc1,
@@ -181,7 +181,7 @@ public class EventDataSeeder {
                 "Sesión Especial de Baño de Gongs y Armónicos",
                 "Relajación profunda a través del sonido sagrado y las vibraciones del gong.",
                 "Sumérgete en un océano de vibraciones terapéuticas. Los gongs y los cuencos de cuarzo te guiarán a un estado meditativo profundo para restaurar tu energía vital.",
-                EventModality.PRESENCIAL, 25.00, "EUR", (short) 16, catSonido, profileCarlos,
+                EventModality.PRESENCIAL, 25.00, "PEN", (short) 16, catSonido, profileCarlos,
                 "ceremonias", true);
         seedMood(event9, EventMood.RELAJACION);
         seedOccurrence(event9, loc1,
@@ -191,7 +191,7 @@ public class EventDataSeeder {
                 "Yoga Restaurativo para Soltar Tension",
                 "Practica suave de yoga restaurativo para relajar cuerpo y mente.",
                 "Una sesion pausada con posturas sostenidas, respiracion consciente y cierre meditativo para liberar tension acumulada.",
-                EventModality.PRESENCIAL, 18.00, "EUR", (short) 14, catYoga, profileAna,
+                EventModality.PRESENCIAL, 18.00, "PEN", (short) 14, catYoga, profileAna,
                 "clases", false);
         seedMood(event10, EventMood.RELAJACION);
         seedOccurrence(event10, loc2,
@@ -205,7 +205,7 @@ public class EventDataSeeder {
                 "Viaje Sonoro con Cuencos de Cuarzo",
                 "Experiencia de sonido meditativo para descanso y claridad.",
                 "Encuentro de escucha profunda con cuencos de cuarzo, respiracion guiada y relajacion corporal.",
-                EventModality.PRESENCIAL, 22.00, "EUR", (short) 16, catSonido, profileAna,
+                EventModality.PRESENCIAL, 22.00, "PEN", (short) 16, catSonido, profileAna,
                 "ceremonias", false);
         seedMood(event11, EventMood.RELAJACION);
         seedOccurrence(event11, loc2,
@@ -219,7 +219,7 @@ public class EventDataSeeder {
                 "Movimiento Postnatal y Cuidado Corporal",
                 "Clase suave para reconectar con el cuerpo despues del embarazo.",
                 "Practicaremos movilidad, respiracion y ejercicios conscientes para recuperar confianza corporal de forma segura.",
-                EventModality.PRESENCIAL, 20.00, "EUR", (short) 18, catCuerpo, profileCarlos,
+                EventModality.PRESENCIAL, 20.00, "PEN", (short) 18, catCuerpo, profileCarlos,
                 "clases", false);
         seedMood(event12, EventMood.CONECTAR);
         seedOccurrence(event12, loc1,
@@ -233,7 +233,7 @@ public class EventDataSeeder {
                 "Danza Consciente para Liberar Energia",
                 "Movimiento guiado para desbloquear tension and activar vitalidad.",
                 "Una experiencia de movimiento libre con pautas sencillas para conectar con ritmo, respiracion y presencia.",
-                EventModality.PRESENCIAL, 24.00, "EUR", (short) 16, catMovimiento, profileAna,
+                EventModality.PRESENCIAL, 24.00, "PEN", (short) 16, catMovimiento, profileAna,
                 "clases", false);
         seedMood(event13, EventMood.ENERGIA);
         seedOccurrence(event13, loc3,
@@ -269,7 +269,7 @@ public class EventDataSeeder {
                 "Encuentro practico de demostracion con movimiento suave, respiracion y cierre consciente.",
                 EventModality.PRESENCIAL,
                 35.00,
-                "EUR",
+                "PEN",
                 (short) 18,
                 category,
                 profile,

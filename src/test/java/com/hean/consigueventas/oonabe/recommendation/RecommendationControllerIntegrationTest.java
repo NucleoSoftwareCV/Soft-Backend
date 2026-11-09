@@ -260,7 +260,8 @@ class RecommendationControllerIntegrationTest {
                 null,
                 false,
                 null,
-                50L
+                50L,
+                null, 0L, java.util.List.of()
         );
 
         return new RecommendedEventResponse(
