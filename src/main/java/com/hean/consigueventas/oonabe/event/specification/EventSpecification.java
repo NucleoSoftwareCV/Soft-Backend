@@ -1,5 +1,8 @@
 package com.hean.consigueventas.oonabe.event.specification;
 
+import com.hean.consigueventas.oonabe.campaign.domain.CampaignStatus;
+import com.hean.consigueventas.oonabe.campaign.entity.PromoCampaign;
+import com.hean.consigueventas.oonabe.campaign.entity.PromoCampaignEvent;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.config.TimeConfig;
 import com.hean.consigueventas.oonabe.common.enums.EventMood;
@@ -31,7 +34,10 @@ public final class EventSpecification {
     private EventSpecification() {
     }
 
-    public static Specification<Event> publicListing(EventFilterRequest filter, Sort.Direction startsAtDirection) {
+    public static Specification<Event> publicListing(
+            EventFilterRequest filter,
+            Sort.Direction startsAtDirection,
+            Instant now) {
         Specification<Event> spec = isPublished();
 
         if (hasText(filter.search())) {
@@ -77,8 +83,33 @@ public final class EventSpecification {
         if (filter.mood() != null) {
             spec = spec.and(hasMood(filter.mood()));
         }
+        if (hasText(filter.campaignSlug())) {
+            spec = spec.and(inOpenCampaign(filter.campaignSlug(), now));
+        }
 
         return spec;
+    }
+
+    /**
+     * Eventos incluidos en una campaña publicada cuya ventana de participación está abierta.
+     * La regla mira la fecha de la reserva, no la de la ocurrencia, así que no restringe horarios.
+     */
+    public static Specification<Event> inOpenCampaign(String campaignSlug, Instant now) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<PromoCampaignEvent> campaignEvent = subquery.from(PromoCampaignEvent.class);
+            Join<PromoCampaignEvent, PromoCampaign> campaign = campaignEvent.join("campaign", JoinType.INNER);
+
+            subquery.select(campaignEvent.get("id"));
+            subquery.where(
+                    cb.equal(campaignEvent.get("event"), root),
+                    cb.equal(campaign.get("slug"), campaignSlug),
+                    cb.equal(campaign.get("status"), CampaignStatus.PUBLICADA),
+                    cb.lessThanOrEqualTo(campaign.get("participationStartsAt"), now),
+                    cb.greaterThanOrEqualTo(campaign.get("participationEndsAt"), now)
+            );
+            return cb.exists(subquery);
+        };
     }
 
     public static Specification<Event> isPublished() {

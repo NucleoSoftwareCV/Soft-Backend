@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.event.service;
 
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
@@ -52,6 +53,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.security.access.AccessDeniedException;
@@ -78,6 +80,8 @@ public class EventService {
     private final EventCardAssembler eventCardAssembler;
     private final EventImageRepository eventImageRepository;
     private final LocalImageStorageService imageStorageService;
+    private final CampaignBadgeLookup campaignBadgeLookup;
+    private final Clock clock;
 
     public EventService(EventRepository eventRepository,
                         EventOccurrenceRepository occurrenceRepository,
@@ -94,7 +98,9 @@ public class EventService {
                         EventCardAssembler eventCardAssembler,
                         EventAttendeeRepository eventAttendeeRepository,
                         EventImageRepository eventImageRepository,
-                        LocalImageStorageService imageStorageService) {
+                        LocalImageStorageService imageStorageService,
+                        CampaignBadgeLookup campaignBadgeLookup,
+                        Clock clock) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
@@ -111,6 +117,8 @@ public class EventService {
         this.eventAttendeeRepository = eventAttendeeRepository;
         this.eventImageRepository = eventImageRepository;
         this.imageStorageService = imageStorageService;
+        this.campaignBadgeLookup = campaignBadgeLookup;
+        this.clock = clock;
     }
 
     @Transactional
@@ -247,7 +255,8 @@ public class EventService {
         Sort.Order startsAtOrder = startsAtOrder(pageable);
         Specification<Event> spec = EventSpecification.publicListing(
                 filter,
-                startsAtOrder == null ? null : startsAtOrder.getDirection()
+                startsAtOrder == null ? null : startsAtOrder.getDirection(),
+                clock.instant()
         );
         Pageable repositoryPageable = withoutStartsAtSort(pageable);
 
@@ -257,7 +266,11 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(Long id) {
         Event event = getEventOrThrow(id);
-        return eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId()));
+        return eventMapper.toDetailResponse(
+                event,
+                resolveCoverImageUrl(event.getId()),
+                resolveGalleryImages(event.getId()),
+                campaignBadgeLookup.openBadges(event.getId(), clock.instant()));
     }
 
     @Transactional
@@ -399,7 +412,7 @@ public class EventService {
                 .map(occurrenceMapper::toResponse)
                 .toList();
         return new EventManagementResponse(
-                eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId())),
+                eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId()), List.of()),
                 event.getStatus(),
                 event.getSpecialist().getId(),
                 occurrences);

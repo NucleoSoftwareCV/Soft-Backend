@@ -2,10 +2,12 @@ package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventMood;
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Schema(description = "Datos resumidos de un evento para mostrar en tarjetas/listados")
 public record EventCardResponse(
@@ -68,6 +70,40 @@ public record EventCardResponse(
 
         @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
         EventMood mood,
-        Long occurrenceId
+        Long occurrenceId,
+
+        @Schema(description = "Campañas promocionales abiertas en las que participa el evento (vacía si ninguna)")
+        List<CampaignBadgeResponse> campaignBadges
 ) {
+    public EventCardResponse {
+        campaignBadges = campaignBadges == null ? List.of() : List.copyOf(campaignBadges);
+    }
+
+    /** Tarjeta sin distintivos de campaña (listados que no los resuelven). */
+    public EventCardResponse(
+            Long id,
+            String title,
+            String summary,
+            EventModality modality,
+            BigDecimal priceFrom,
+            String currency,
+            Long categoryId,
+            String categoryName,
+            Long organizerId,
+            String organizerName,
+            String organizerPhotoUrl,
+            String coverImageUrl,
+            Instant startsAt,
+            Instant endsAt,
+            String cityName,
+            Long experienceTypeId,
+            String eventType,
+            String experienceTypeSlug,
+            Boolean isRecurring,
+            EventMood mood,
+            Long occurrenceId) {
+        this(id, title, summary, modality, priceFrom, currency, categoryId, categoryName, organizerId,
+                organizerName, organizerPhotoUrl, coverImageUrl, startsAt, endsAt, cityName, experienceTypeId,
+                eventType, experienceTypeSlug, isRecurring, mood, occurrenceId, List.of());
+    }
 }

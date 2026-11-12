@@ -2,7 +2,6 @@ package com.hean.consigueventas.oonabe.booking.repository;
 
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
-import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +29,20 @@ public interface EventBookingRepository extends JpaRepository<EventBooking, Long
             """)
     Optional<OwnedReference> findOwnedReference(@Param("code") String code, @Param("userId") Long userId);
 
+    @Query("""
+            select b.id as id, b.occurrence.id as occurrenceId, o.code as orderCode
+            from EventBooking b left join b.orderItem i left join i.order o
+            where b.code = :code and b.customer.user.id = :userId
+            """)
+    Optional<OwnedReference> findCustomerReference(@Param("code") String code, @Param("userId") Long userId);
+
+    @Query("""
+            select b.id as id, b.occurrence.id as occurrenceId, o.code as orderCode
+            from EventBooking b left join b.orderItem i left join i.order o
+            where b.code = :code
+            """)
+    Optional<OwnedReference> findReferenceByCode(@Param("code") String code);
+
     @EntityGraph(attributePaths = {"customer", "customer.user", "occurrence", "occurrence.event"})
     @Query("select b from EventBooking b where b.code = :code and b.occurrence.event.specialist.user.id = :userId")
     Optional<EventBooking> findOwnedByCode(@Param("code") String code, @Param("userId") Long userId);
@@ -39,15 +52,21 @@ public interface EventBookingRepository extends JpaRepository<EventBooking, Long
     Optional<EventBooking> findOwnedLockedByCode(@Param("code") String code, @Param("userId") Long userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select b from EventBooking b where b.code = :code")
+    Optional<EventBooking> findLockedByCode(@Param("code") String code);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from EventBooking b where b.orderItem.order.id = :orderId order by b.id")
     List<EventBooking> findLockedByOrderId(@Param("orderId") Long orderId);
 
     @Query("""
-            select distinct o.code from EventBooking b join b.orderItem i join i.order o
-            where o.status <> :paid and o.expiresAt < :now and b.status in :held
+            select b.code from EventBooking b left join b.orderItem i left join i.order o
+            where b.status in :held
+              and (coalesce(b.expiresAt, b.occurrence.startsAt) < :now or o.expiresAt < :now)
             """)
-    List<String> findOrderCodesWithExpiredHolds(@Param("now") Instant now, @Param("paid") PurchaseOrderStatus paid,
-            @Param("held") Collection<BookingStatus> held);
+    List<String> findCodesWithExpiredHolds(@Param("now") Instant now, @Param("held") Collection<BookingStatus> held);
+
+    boolean existsByCustomerIdAndOccurrenceIdAndStatusIn(Long customerId, Long occurrenceId, Collection<BookingStatus> statuses);
 
     @Override
     @EntityGraph(attributePaths = {"customer", "occurrence", "occurrence.event"})
@@ -55,6 +74,6 @@ public interface EventBookingRepository extends JpaRepository<EventBooking, Long
 
     Optional<EventBooking> findByCode(String code);
 
-    @EntityGraph(attributePaths = {"occurrence", "occurrence.event", "occurrence.location", "occurrence.location.city"})
+    @EntityGraph(attributePaths = {"orderItem", "orderItem.order", "occurrence", "occurrence.event", "occurrence.location", "occurrence.location.city"})
     List<EventBooking> findByCustomer_User_IdOrderByCreatedAtDesc(Long userId);
 }

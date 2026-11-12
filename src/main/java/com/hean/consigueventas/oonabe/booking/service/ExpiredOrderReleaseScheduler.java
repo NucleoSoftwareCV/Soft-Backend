@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/** Periodically frees the spots of expired unpaid orders. Disabled in tests, which call the service directly. */
+/** Periodically frees the spots of expired bookings. Disabled in tests, which call the service directly. */
 @Component
 @Profile("!test")
 @EnableScheduling
@@ -19,13 +19,12 @@ public class ExpiredOrderReleaseScheduler {
     @Scheduled(initialDelayString = "${app.bookings.expired-release.initial-delay:PT30S}",
             fixedDelayString = "${app.bookings.expired-release.delay:PT1M}")
     public void releaseExpiredOrders() {
-        for (String orderCode : service.findReleasableOrderCodes()) {
+        for (String bookingCode : service.findReleasableBookingCodes()) {
             try {
-                int released = service.release(orderCode);
-                if (released > 0) log.info("Orden {} expirada: {} reserva(s) liberadas", orderCode, released);
+                if (service.release(bookingCode)) log.info("Reserva {} vencida: plaza liberada", bookingCode);
             } catch (RuntimeException ex) {
-                // One failing order must not stop the rest; it is retried on the next run.
-                log.warn("No se pudo liberar la orden expirada {}", orderCode, ex);
+                // One failing booking must not stop the rest; it is retried on the next run.
+                log.warn("No se pudo liberar la reserva vencida {}", bookingCode, ex);
             }
         }
     }

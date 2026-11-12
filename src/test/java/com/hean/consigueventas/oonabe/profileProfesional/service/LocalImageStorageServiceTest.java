@@ -7,6 +7,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -41,6 +42,42 @@ class LocalImageStorageServiceTest {
         assertThatThrownBy(() -> service.saveProfilePhoto(imageFile(126, 126), 9L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("512x512");
+    }
+
+    @Test
+    void savesCampaignImageWithoutDimensionRestriction() throws Exception {
+        LocalImageStorageService service = new LocalImageStorageService(
+                storageDirectory.toString(),
+                "/images/profile-images"
+        );
+
+        String imageUrl = service.saveCampaignImage(imageFile(800, 600), 9L);
+
+        assertThat(imageUrl).startsWith("/images/profile-images/9/campaign-hero/");
+        assertThat(Files.exists(resolveStoredFile(imageUrl))).isTrue();
+    }
+
+    @Test
+    void acceptsWebpOnlyForCampaignImagesAndChecksItsHeader() {
+        LocalImageStorageService service = new LocalImageStorageService(
+                storageDirectory.toString(),
+                "/images/profile-images"
+        );
+        MockMultipartFile webp = new MockMultipartFile(
+                "file", "hero.webp", "image/webp", "RIFF\0\0\0\0WEBPVP8 ".getBytes(StandardCharsets.US_ASCII));
+        MockMultipartFile fake = new MockMultipartFile(
+                "file", "hero.webp", "image/webp", "<html>no soy imagen</html>".getBytes(StandardCharsets.US_ASCII));
+
+        String imageUrl = service.saveCampaignImage(webp, 9L);
+
+        assertThat(imageUrl).startsWith("/images/profile-images/9/campaign-hero/").endsWith(".webp");
+        assertThat(Files.exists(resolveStoredFile(imageUrl))).isTrue();
+        assertThatThrownBy(() -> service.saveCampaignImage(fake, 9L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No se pudo leer");
+        assertThatThrownBy(() -> service.saveGalleryImage(webp, 9L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("JPG, JPEG o PNG");
     }
 
     @Test

@@ -7,6 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -114,6 +116,23 @@ public class LocalImageStorageService {
                 file,
                 sessionId,
                 "session-cover"
+        );
+    }
+
+    public String saveCampaignImage(
+            MultipartFile file,
+            Long campaignId
+    ) {
+        if (isWebpName(file)) {
+            validateWebp(file);
+        } else {
+            validateImage(file, null, null);
+        }
+
+        return saveImage(
+                file,
+                campaignId,
+                "campaign-hero"
         );
     }
 
@@ -252,6 +271,41 @@ public class LocalImageStorageService {
                 );
             }
 
+        } catch (IOException exception) {
+            throw new IllegalArgumentException(
+                    "No se pudo validar la imagen.",
+                    exception
+            );
+        }
+    }
+
+    private boolean isWebpName(MultipartFile file) {
+        String name = file == null ? null : file.getOriginalFilename();
+
+        return name != null
+                && name.toLowerCase(Locale.ROOT).endsWith(".webp");
+    }
+
+    /** ImageIO no decodifica WebP, así que se comprueba la cabecera RIFF....WEBP del archivo. */
+    private void validateWebp(MultipartFile file) {
+        if (file.isEmpty() || !"image/webp".equals(file.getContentType())) {
+            throw new IllegalArgumentException(
+                    "El archivo debe ser una imagen."
+            );
+        }
+
+        try (InputStream input = file.getInputStream()) {
+            byte[] header = input.readNBytes(12);
+
+            if (
+                    header.length < 12
+                            || !"RIFF".equals(new String(header, 0, 4, StandardCharsets.US_ASCII))
+                            || !"WEBP".equals(new String(header, 8, 4, StandardCharsets.US_ASCII))
+            ) {
+                throw new IllegalArgumentException(
+                        "No se pudo leer la imagen."
+                );
+            }
         } catch (IOException exception) {
             throw new IllegalArgumentException(
                     "No se pudo validar la imagen.",

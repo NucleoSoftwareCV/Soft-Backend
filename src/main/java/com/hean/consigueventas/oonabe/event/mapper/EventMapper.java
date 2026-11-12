@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.event.mapper;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
 import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
 import com.hean.consigueventas.oonabe.event.dto.request.EventUpsertRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
@@ -83,7 +84,12 @@ public interface EventMapper {
     @Mapping(target = "isRecurring", source = "event.recurring")
     @Mapping(target = "coverImageUrl", source = "coverImageUrl")
     @Mapping(target = "images", source = "images")
-    EventDetailResponse toDetailResponse(Event event, String coverImageUrl, List<EventImageResponse> images);
+    @Mapping(target = "campaignBadges", source = "campaignBadges")
+    EventDetailResponse toDetailResponse(
+            Event event,
+            String coverImageUrl,
+            List<EventImageResponse> images,
+            List<CampaignBadgeResponse> campaignBadges);
 
     @Mapping(target = "id", source = "image.id")
     @Mapping(target = "url", source = "image.url")
@@ -106,10 +112,12 @@ public interface EventMapper {
     @Mapping(target = "isRecurring", source = "event.recurring")
     @Mapping(target = "occurrenceId", source = "occurrences", qualifiedByName = "nextOccurrenceId")
     @Mapping(target = "mood", source = "event.mood")
+    @Mapping(target = "campaignBadges", source = "campaignBadges")
     EventCardResponse toCardResponse(
             Event event,
             String coverImageUrl,
             List<EventOccurrence> occurrences,
+            List<CampaignBadgeResponse> campaignBadges,
             @Context Instant notBefore);
 
     @Named("nextOccurrenceId")

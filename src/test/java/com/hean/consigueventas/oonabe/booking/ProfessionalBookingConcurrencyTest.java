@@ -3,12 +3,15 @@ package com.hean.consigueventas.oonabe.booking;
 import com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.Decision;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.*;
+import com.hean.consigueventas.oonabe.booking.service.BookingTransitions;
+import com.hean.consigueventas.oonabe.booking.service.ClientBookingService;
 import com.hean.consigueventas.oonabe.booking.service.ExpiredOrderReleaseService;
 import com.hean.consigueventas.oonabe.booking.service.ProfessionalBookingService;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
+import com.hean.consigueventas.oonabe.notification.service.NotificationService;
 import com.hean.consigueventas.oonabe.payment.dto.PaymentProcessRequestDto;
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import com.hean.consigueventas.oonabe.payment.service.PaymentService;
@@ -53,6 +56,9 @@ class ProfessionalBookingConcurrencyTest {
     @Autowired BookingStatusHistoryRepository history;
     @Autowired ExpiredOrderReleaseService release;
     @Autowired PurchaseOrderRepository orders;
+    @Autowired BookingTransitions transitions;
+    @Autowired NotificationService notifications;
+    @Autowired ClientBookingService clientBookings;
     @Autowired EventOccurrenceRepository occurrences;
     Long professionalId;
     Long clientId;
@@ -73,7 +79,7 @@ class ProfessionalBookingConcurrencyTest {
     @Test void twoDecisionsProduceOnlyOneTransitionAndOneCapacityEffect() throws Exception {
         String code = reserve();
         var outcomes = race(
-                () -> { service.decide(professionalId, code, new Decision(BookingStatus.CONFIRMADA, null)); return true; },
+                () -> { service.decide(professionalId, code, new Decision(BookingStatus.ACEPTADA, null)); return true; },
                 () -> { service.decide(professionalId, code, new Decision(BookingStatus.CANCELADA, "No disponible")); return true; });
         assertThat(outcomes).containsExactlyInAnyOrder(true, false);
         tx.executeWithoutResult(status -> {
@@ -94,15 +100,16 @@ class ProfessionalBookingConcurrencyTest {
         assertThat(payments.getMyBookings(clientId)).hasSize(1);
     }
 
-    @Test void paymentAndRejectionCannotBothSucceed() throws Exception {
+    @Test void paymentAndClientCancellationCannotBothSucceed() throws Exception {
         String code = reserve();
+        service.decide(professionalId, code, new Decision(BookingStatus.ACEPTADA, null));
         String orderCode = tx.execute(status -> bookings.findByCode(code).orElseThrow().getOrderItem().getOrder().getCode());
         var outcomes = race(() -> {
             PaymentProcessRequestDto request = new PaymentProcessRequestDto();
             request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
             request.setCardExpiration("12/30"); request.setCardCvv("123");
             payments.processPayment(orderCode, request); return true;
-        }, () -> { service.decide(professionalId, code, new Decision(BookingStatus.CANCELADA, "No disponible")); return true; });
+        }, () -> { clientBookings.cancel(clientId, code); return true; });
         assertThat(outcomes).containsExactlyInAnyOrder(true, false);
         tx.executeWithoutResult(status -> {
             var b = bookings.findByCode(code).orElseThrow();
@@ -114,8 +121,8 @@ class ProfessionalBookingConcurrencyTest {
 
     @Test void expirationReleaseAndRejectionFreeTheSpotsOnlyOnce() throws Exception {
         String code = reserve();
-        String orderCode = expire(code);
-        race(() -> release.release(orderCode) > 0,
+        expire(code);
+        race(() -> release.release(code),
                 () -> { service.decide(professionalId, code, new Decision(BookingStatus.CANCELADA, "No disponible")); return true; });
         tx.executeWithoutResult(status -> {
             var b = bookings.findByCode(code).orElseThrow();
@@ -127,16 +134,17 @@ class ProfessionalBookingConcurrencyTest {
 
     @Test void expirationReleaseAndLatePaymentCannotBothSucceed() throws Exception {
         String code = reserve();
+        service.decide(professionalId, code, new Decision(BookingStatus.ACEPTADA, null));
         String orderCode = tx.execute(status -> bookings.findByCode(code).orElseThrow().getOrderItem().getOrder().getCode());
-        // Release runs on a clock in the future, payment still sees the order as open.
-        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, history,
-                Clock.offset(Clock.systemUTC(), Duration.ofHours(1)));
+        // Release runs on a clock past the deadline, payment still sees the booking as payable.
+        var futureRelease = new ExpiredOrderReleaseService(orders, bookings, occurrences, transitions, notifications,
+                Clock.offset(Clock.systemUTC(), Duration.ofHours(25)));
         var outcomes = race(() -> {
             PaymentProcessRequestDto request = new PaymentProcessRequestDto();
             request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
             request.setCardExpiration("12/30"); request.setCardCvv("123");
             payments.processPayment(orderCode, request); return true;
-        }, () -> tx.execute(status -> futureRelease.release(orderCode)) > 0);
+        }, () -> tx.execute(status -> futureRelease.release(code)));
         tx.executeWithoutResult(status -> {
             var b = bookings.findByCode(code).orElseThrow();
             boolean paid = b.getOrderItem().getOrder().getPaidAt() != null;
@@ -146,12 +154,9 @@ class ProfessionalBookingConcurrencyTest {
         });
     }
 
-    private String expire(String code) {
-        return tx.execute(status -> {
-            var order = bookings.findByCode(code).orElseThrow().getOrderItem().getOrder();
-            order.setExpiresAt(Instant.now().minusSeconds(10));
-            return order.getCode();
-        });
+    private void expire(String code) {
+        tx.executeWithoutResult(status ->
+                bookings.findByCode(code).orElseThrow().getOrderItem().getOrder().setExpiresAt(Instant.now().minusSeconds(10)));
     }
 
     private List<Boolean> race(Supplier<Boolean> first, Supplier<Boolean> second) throws Exception {
