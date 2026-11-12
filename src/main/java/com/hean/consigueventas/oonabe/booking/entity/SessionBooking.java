@@ -79,7 +79,7 @@ public class SessionBooking {
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 30)
     private BookingStatus status = BookingStatus.PENDIENTE;
 
     @Column(name = "expires_at")
@@ -111,6 +111,9 @@ public class SessionBooking {
 
     @Column(name = "reschedule_reason", length = 500)
     private String rescheduleReason;
+
+    @Column(name = "rescheduled_by", length = 20)
+    private String rescheduledBy;
 
     @PrePersist
     void prePersist() {

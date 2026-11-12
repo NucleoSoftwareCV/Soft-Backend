@@ -53,4 +53,10 @@ public class ProfessionalAvailability {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "break_minutes", nullable = false, columnDefinition = "integer not null default 0")
+    private int breakMinutes;
+
+    @Column(name = "virtual_url", columnDefinition = "TEXT")
+    private String virtualUrl;
 }

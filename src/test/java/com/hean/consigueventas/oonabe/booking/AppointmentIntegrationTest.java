@@ -77,6 +77,21 @@ class AppointmentIntegrationTest {
         assertThat(slots.slots()).extracting(Slot::startsAt).containsExactly(start,start.plusSeconds(3600),start.plusSeconds(7200));
         assertThat(appointments.availability(service.getId(),day.plusDays(1),SessionModality.ONLINE,null).slots()).isEmpty();
     }
+    @Test void appliesBreaksAndRevealsTheConfiguredMeetOnlyAfterConfirmation() {
+        var onlineRule=appointments.rules(fixture.professional().getId()).stream()
+                .filter(rule->rule.venue()==null).findFirst().orElseThrow();
+        appointments.removeRule(fixture.professional().getId(),onlineRule.id());
+        String meet="https://meet.google.com/abc-defg-hij";
+        appointments.addRule(fixture.professional().getId(),new RuleInput(1,LocalTime.of(9,0),
+                LocalTime.of(12,0),day,day.plusDays(30),null,15,meet));
+
+        assertThat(appointments.availability(service.getId(),day,SessionModality.ONLINE,null).slots())
+                .extracting(Slot::startsAt).containsExactly(start,start.plusSeconds(4500));
+        var pending=request();
+        assertThat(pending.virtualUrl()).isNull();
+        var confirmed=appointments.decide(fixture.professional().getId(),pending.id(),BookingStatus.CONFIRMADA,null);
+        assertThat(confirmed.virtualUrl()).isEqualTo(meet);
+    }
     @Test void physicalSlotsRequireAnActiveVenueAndRespectServiceVenue() {
         assertThat(appointments.options(service.getId()).venues()).hasSize(1);
         assertThat(appointments.availability(service.getId(),day,SessionModality.PRESENCIAL,location.getId()).slots()).hasSize(3);
@@ -269,6 +284,31 @@ class AppointmentIntegrationTest {
         var other = BookingFixtures.create(em, "client" + UUID.randomUUID().toString().substring(0, 5));
         mvc.perform(get(path).with(user(principal(other.client().getId(), "USER"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test void professionalCanBookAConfirmedAppointmentFromARealContact() throws Exception {
+        var previous=request();
+        var customerId=em.find(SessionBooking.class,previous.id()).getCustomer().getId();
+        appointments.decide(fixture.professional().getId(),previous.id(),BookingStatus.CANCELADA,"Prueba finalizada");
+        var newStart=start.plusSeconds(3600);
+        String body="{\"serviceId\":"+service.getId()+",\"modality\":\"ONLINE\",\"startsAt\":\""
+                +newStart+"\",\"reason\":\"Seguimiento desde contactos\"}";
+
+        mvc.perform(post("/api/v1/professional-agenda/contacts/"+customerId+"/appointments")
+                        .with(user(principal(fixture.professional().getId(),"PROFESSIONAL")))
+                        .contentType("application/json").content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("CONFIRMADA"))
+                .andExpect(jsonPath("$.startsAt").value(newStart.toString()))
+                .andExpect(jsonPath("$.reason").value("Seguimiento desde contactos"));
+
+        assertThat(appointments.contact(fixture.professional().getId(),"CLIENT-"+customerId).history())
+                .extracting(Receipt::status).contains("CONFIRMADA");
+        var other=BookingFixtures.create(em,"contact"+UUID.randomUUID().toString().substring(0,5));
+        assertThatThrownBy(()->appointments.bookContact(other.professional().getId(),customerId,
+                new ContactAppointmentInput(service.getId(),SessionModality.ONLINE,null,
+                        start.plusSeconds(7200),"Intento ajeno")))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test void apiValidatesInputAndReturnsCreatedReceipt() throws Exception {

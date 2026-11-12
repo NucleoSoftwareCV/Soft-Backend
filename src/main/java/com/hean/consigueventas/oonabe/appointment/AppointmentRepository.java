@@ -24,6 +24,11 @@ public class AppointmentRepository {
             .setParameter("id",userId).setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultStream().findFirst()
             .orElseThrow(()->new IllegalArgumentException("Completa tu perfil de cliente antes de solicitar una cita."));
     }
+    public CustomerProfile customerById(Long id) {
+        return em.createQuery("select c from CustomerProfile c where c.id=:id", CustomerProfile.class)
+            .setParameter("id",id).setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultStream().findFirst()
+            .orElseThrow(()->new ResourceNotFoundException("Contacto no encontrado."));
+    }
     public void lock(SpecialistProfile p) { em.lock(p,LockModeType.PESSIMISTIC_WRITE); }
     public <T> T find(Class<T> type, Long id) {
         if(id==null) throw new ResourceNotFoundException("Recurso no encontrado.");
@@ -41,21 +46,40 @@ public class AppointmentRepository {
         return em.createQuery("select b from ScheduleBlock b where b.specialist.id=:id and b.startsAt<:end and b.endsAt>:start",ScheduleBlock.class)
             .setParameter("id",id).setParameter("start",start).setParameter("end",end).getResultList();
     }
+    public List<ScheduleBlock> blocks(Long id, Instant from) {
+        return em.createQuery("select b from ScheduleBlock b where b.specialist.id=:id and b.endsAt>:from order by b.startsAt,b.id", ScheduleBlock.class)
+                .setParameter("id", id).setParameter("from", from).getResultList();
+    }
     public List<SessionBooking> busy(Long professionalId, Long customerId, Instant start, Instant end, Instant now,
                                      Long excludedBookingId) {
         return em.createQuery("""
             select b from SessionBooking b where (b.specialist.id=:professionalId or b.customer.id=:customerId)
             and b.startsAt<:end and b.endsAt>:start
             and (:excludedBookingId is null or b.id<>:excludedBookingId)
-            and (b.status=:confirmed or (b.status=:pending and (b.expiresAt is null or b.expiresAt>:now)))
+            and (b.status=:confirmed or b.status=:proposed or (b.status=:pending and (b.expiresAt is null or b.expiresAt>:now)))
             """,SessionBooking.class).setParameter("professionalId",professionalId).setParameter("customerId",customerId)
             .setParameter("start",start).setParameter("end",end).setParameter("now",now)
             .setParameter("excludedBookingId",excludedBookingId)
-            .setParameter("confirmed",BookingStatus.CONFIRMADA).setParameter("pending",BookingStatus.PENDIENTE).getResultList();
+            .setParameter("confirmed",BookingStatus.CONFIRMADA).setParameter("proposed", BookingStatus.REPROGRAMACION_PROPUESTA)
+            .setParameter("pending",BookingStatus.PENDIENTE).getResultList();
     }
     public List<SessionBooking> agenda(Long id, Instant start, Instant end) {
         return em.createQuery("select b from SessionBooking b where b.specialist.id=:id and b.orderItem is null and b.startsAt<:end and b.endsAt>:start order by b.startsAt,b.id",SessionBooking.class)
             .setParameter("id",id).setParameter("start",start).setParameter("end",end).getResultList();
+    }
+    public List<SessionBooking> allAppointments(Long id) {
+        return em.createQuery("select b from SessionBooking b where b.specialist.id=:id and b.orderItem is null order by b.startsAt desc,b.id desc", SessionBooking.class)
+                .setParameter("id", id).getResultList();
+    }
+
+    public List<SessionBooking> forProfessionalCustomer(Long specialistId, Long customerId) {
+        return em.createQuery("select b from SessionBooking b where b.specialist.id=:sid and b.customer.id=:cid and b.orderItem is null order by b.startsAt desc,b.id desc", SessionBooking.class)
+                .setParameter("sid", specialistId).setParameter("cid", customerId).getResultList();
+    }
+
+    public List<ProfessionalContact> manualContacts(Long specialistId) {
+        return em.createQuery("select c from ProfessionalContact c left join fetch c.customer where c.specialist.id=:id order by lower(c.displayName),c.id", ProfessionalContact.class)
+                .setParameter("id", specialistId).getResultList();
     }
     public Long specialistForCustomerAppointment(Long userId, Long appointmentId) {
         return em.createQuery("""

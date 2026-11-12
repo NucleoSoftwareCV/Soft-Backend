@@ -41,6 +41,12 @@ public class AppointmentController {
         return privateResponse(service.rescheduleMyAppointment(getAuthenticatedUserId(), id, input));
     }
 
+    @PatchMapping("/appointments/requests/{id}/proposal")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Receipt> respondProposal(@PathVariable Long id,@Valid @RequestBody ProposalDecision input) {
+        return privateResponse(service.respondProposal(getAuthenticatedUserId(),id,input));
+    }
+
     @PostMapping("/appointments/requests") @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Receipt> request(@Valid @RequestBody Request input) {
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(service.request(getAuthenticatedUserId(),input));
@@ -51,6 +57,12 @@ public class AppointmentController {
     public ResponseEntity<Rule> rule(@Valid @RequestBody RuleInput input) { return privateResponse(service.addRule(getAuthenticatedUserId(),input)); }
     @DeleteMapping("/professional-agenda/availability/{id}") @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<Void> remove(@PathVariable Long id) { service.removeRule(getAuthenticatedUserId(),id); return ResponseEntity.noContent().build(); }
+    @GetMapping("/professional-agenda/blocks") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<List<Block>> blocks() { return privateResponse(service.blocks(getAuthenticatedUserId())); }
+    @PostMapping("/professional-agenda/blocks") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Block> addBlock(@Valid @RequestBody BlockInput input) { return privateResponse(service.addBlock(getAuthenticatedUserId(),input)); }
+    @DeleteMapping("/professional-agenda/blocks/{id}") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Void> removeBlock(@PathVariable Long id) { service.removeBlock(getAuthenticatedUserId(),id); return ResponseEntity.noContent().build(); }
     @GetMapping("/professional-agenda/requests") @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<List<Receipt>> agenda(@RequestParam LocalDate date) { return privateResponse(service.agenda(getAuthenticatedUserId(),date)); }
     @GetMapping("/professional-agenda/requests/range")
@@ -64,6 +76,29 @@ public class AppointmentController {
     public ResponseEntity<List<Receipt>> pending() {
         return privateResponse(service.pending(getAuthenticatedUserId()));
     }
+
+    @GetMapping("/professional-agenda/summary") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Summary> summary() { return privateResponse(service.summary(getAuthenticatedUserId())); }
+
+    @PatchMapping("/professional-agenda/requests/{id}/reschedule") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Receipt> propose(@PathVariable Long id,@Valid @RequestBody Reschedule input) {
+        return privateResponse(service.proposeReschedule(getAuthenticatedUserId(),id,input));
+    }
+
+    @GetMapping("/professional-agenda/contacts") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<List<Contact>> contacts() { return privateResponse(service.contacts(getAuthenticatedUserId())); }
+    @PostMapping("/professional-agenda/contacts") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Contact> addContact(@Valid @RequestBody ContactInput input) { return privateResponse(service.addContact(getAuthenticatedUserId(),input)); }
+    @GetMapping("/professional-agenda/contacts/{key}") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<ContactDetail> contact(@PathVariable String key) { return privateResponse(service.contact(getAuthenticatedUserId(),key)); }
+    @PostMapping("/professional-agenda/contacts/{customerId}/appointments") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Receipt> bookContact(@PathVariable Long customerId,
+                                                @Valid @RequestBody ContactAppointmentInput input) {
+        return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore())
+                .body(service.bookContact(getAuthenticatedUserId(),customerId,input));
+    }
+    @DeleteMapping("/professional-agenda/contacts/{id}") @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Void> removeContact(@PathVariable Long id) { service.removeContact(getAuthenticatedUserId(),id); return ResponseEntity.noContent().build(); }
 
     @PatchMapping("/professional-agenda/requests/{id}") @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<Receipt> decide(@PathVariable Long id,@Valid @RequestBody Decision input) { return privateResponse(service.decide(getAuthenticatedUserId(),id,input.status(),input.reason())); }
