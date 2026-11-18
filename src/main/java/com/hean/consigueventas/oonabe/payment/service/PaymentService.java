@@ -24,6 +24,8 @@ import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderItemReposi
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import com.hean.consigueventas.oonabe.profileCliente.entity.CustomerProfile;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.rewards.Dto.Request.RedeemPointsRequest;
+import com.hean.consigueventas.oonabe.rewards.Service.RewardsService;
 import com.hean.consigueventas.oonabe.user.repository.TemporaryCustomerProfileRepository;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
@@ -67,6 +69,7 @@ public class PaymentService {
     private final EventBookingRepository eventBookingRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
+    private final RewardsService rewardsService;
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
@@ -94,6 +97,10 @@ public class PaymentService {
                 .map(CheckoutItemDto::getReferenceId).distinct().sorted()
                 .forEach(id -> eventOccurrenceRepository.findLockedById(id));
 
+        // Variables auxiliares para actualizar el ítem si se aplican puntos
+        PurchaseOrderItem savedEventItem = null;
+        Long resolvedEventId = null;
+
         for (CheckoutItemDto itemDto : checkoutRequest.getItems()) {
             PurchaseOrderItem item = new PurchaseOrderItem();
             item.setOrder(order);
@@ -106,6 +113,7 @@ public class PaymentService {
                 EventOccurrence occurrence = eventOccurrenceRepository.findById(itemDto.getReferenceId()).orElse(null);
                 if (occurrence != null) {
                     Event event = occurrence.getEvent();
+                    resolvedEventId = event.getId();
                     item.setUnitPrice(event.getPriceFrom() != null ? event.getPriceFrom() : BigDecimal.ZERO);
                     item.setDescription("Entrada para evento: " + event.getTitle());
                     order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "PEN");
@@ -113,6 +121,7 @@ public class PaymentService {
                     // Fallback directo a Event
                     Event event = eventRepository.findById(itemDto.getReferenceId())
                             .orElseThrow(() -> new ResourceNotFoundException("No se encontró el evento u ocurrencia con ID: " + itemDto.getReferenceId()));
+                    resolvedEventId = event.getId();
                     item.setUnitPrice(event.getPriceFrom() != null ? event.getPriceFrom() : BigDecimal.ZERO);
                     item.setDescription("Entrada para evento: " + event.getTitle());
                     order.setCurrency(event.getCurrency() != null ? event.getCurrency() : "PEN");
@@ -131,6 +140,7 @@ public class PaymentService {
             item = purchaseOrderItemRepository.save(item);
 
             if (item.getItemType() == PurchaseItemType.EVENTO) {
+                savedEventItem = item;
                 EventOccurrence occurrence = eventOccurrenceRepository.findById(item.getReferenceId()).orElse(null);
                 if (occurrence != null) {
                     if (occurrence.getStatus() != EventOccurrenceStatus.PROGRAMADA
@@ -194,6 +204,41 @@ public class PaymentService {
         }
 
         order.setSubtotal(totalSubtotal);
+
+        if (checkoutRequest.getRedeemPoints() != null && checkoutRequest.getRedeemPoints() > 0 && resolvedEventId != null) {
+            RedeemPointsRequest redeemPointsRequest = RedeemPointsRequest.builder()
+                    .userId(customerUserId)
+                    .eventId(resolvedEventId) // <-- Ahora usa el eventId real, no el occurrenceId
+                    .redeemPoints(checkoutRequest.getRedeemPoints())
+                    .build();
+
+            BigDecimal discount = rewardsService.getRedemptionByPoints(redeemPointsRequest);
+
+            // Evitar que el descuento supere el subtotal
+            if (discount.compareTo(totalSubtotal) > 0) {
+                discount = totalSubtotal;
+            }
+            order.setTotalDiscount(discount);
+
+            // Actualizar el PurchaseOrderItem con el monto ya descontado
+            if (savedEventItem != null) {
+                BigDecimal discountedItemTotal = savedEventItem.getTotalAmount().subtract(discount).max(BigDecimal.ZERO);
+                savedEventItem.setTotalAmount(discountedItemTotal);
+                purchaseOrderItemRepository.save(savedEventItem);
+
+                // Actualizar también la lista de respuesta del DTO para mantener consistencia
+                responseItems.clear();
+                responseItems.add(new CheckoutResponseItemDto(
+                        savedEventItem.getReferenceId(),
+                        savedEventItem.getItemType(),
+                        savedEventItem.getDescription(),
+                        savedEventItem.getQuantity(),
+                        savedEventItem.getUnitPrice(),
+                        savedEventItem.getTotalAmount()
+                ));
+            }
+        }
+
         order.setTotalAmount(totalSubtotal.subtract(order.getTotalDiscount()));
         order = purchaseOrderRepository.save(order);
 
