@@ -63,9 +63,8 @@ public interface EventMapper {
         if (event.getWhatToBring() == null) {
             event.setWhatToBring(new ArrayList<>());
         }
-        if (event.getPaymentMethod() == null) {
-            event.setPaymentMethod(com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod.WHATSAPP);
-        }
+        // WhatsApp ya no es un mecanismo de reserva: se ignora lo que envíe el cliente.
+        event.setPaymentMethod(com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod.ONLINE);
     }
 
     @Mapping(target = "categoryId", source = "category.id")

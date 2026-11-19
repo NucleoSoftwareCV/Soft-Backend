@@ -10,7 +10,10 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/** ddl-auto=update no amplía el CHECK que Hibernate creó sobre event_bookings.status. */
+/**
+ * ddl-auto=update no amplía el CHECK que Hibernate creó sobre event_bookings.status. También pasa al flujo
+ * interno los eventos que aún tenían WhatsApp como mecanismo de reserva.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor
@@ -25,6 +28,12 @@ public class BookingStatusSchemaMigration implements ApplicationRunner {
         String product = jdbc.execute((ConnectionCallback<String>) c -> c.getMetaData().getDatabaseProductName());
         if (!"PostgreSQL".equals(product)) {
             return;
+        }
+        if (jdbc.queryForObject("select to_regclass('events') is not null", Boolean.class)) {
+            int unified = jdbc.update("UPDATE events SET payment_method = 'ONLINE' WHERE payment_method IS DISTINCT FROM 'ONLINE'");
+            if (unified > 0) {
+                log.info("{} evento(s) pasan del flujo por WhatsApp al flujo interno de reservas", unified);
+            }
         }
         String definition = jdbc.query(
                 "select pg_get_constraintdef(oid) from pg_constraint where conname = ? and conrelid = to_regclass('event_bookings')",
