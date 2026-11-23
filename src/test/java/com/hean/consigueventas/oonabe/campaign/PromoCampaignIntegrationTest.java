@@ -212,18 +212,21 @@ class PromoCampaignIntegrationTest {
                 .andExpect(status().isForbidden());
 
         UserDetailsImpl admin = principal(professional.getId(), "ROLE_ADMIN");
+        // Fechas relativas: la campaña debe seguir abierta el día en que se ejecuta la prueba.
+        String start = Instant.now().minus(Duration.ofDays(1)).toString();
+        String end = Instant.now().plus(Duration.ofDays(9)).toString();
         mvc.perform(post("/api/v1/admin/campaigns").with(user(admin))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(upsertJson("sorteo-nuevo", "2026-11-10T00:00:00Z", "2026-11-01T00:00:00Z", "600")))
+                        .content(upsertJson("sorteo-nuevo", end, start, "600")))
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/admin/campaigns").with(user(admin))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(upsertJson(SLUG, "2026-11-01T00:00:00Z", "2026-11-10T00:00:00Z", "600")))
+                        .content(upsertJson(SLUG, start, end, "600")))
                 .andExpect(status().isBadRequest());
 
         String created = mvc.perform(post("/api/v1/admin/campaigns").with(user(admin))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(upsertJson("sorteo-nuevo", "2026-11-01T00:00:00Z", "2026-11-10T00:00:00Z", "600")))
+                        .content(upsertJson("sorteo-nuevo", start, end, "600")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("BORRADOR"))
                 .andExpect(jsonPath("$.detail.summary.badgeLabel").value("Participa en el sorteo"))
