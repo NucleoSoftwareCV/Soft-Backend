@@ -8,6 +8,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,7 +42,7 @@ class HomeEventCardMapperTest {
                 50L,
                 4.5,
                 2L,
-                java.util.List.of(new com.hean.consigueventas.oonabe.review.dto.response.EventReviewerPreviewResponse("Cliente", null))
+                List.of(new com.hean.consigueventas.oonabe.review.dto.response.EventReviewerPreviewResponse("Cliente", null))
         );
 
         HomeEventCardResponse response = mapper.toResponse(source);

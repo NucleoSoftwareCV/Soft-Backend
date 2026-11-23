@@ -37,6 +37,7 @@ public interface EventMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
+    @Mapping(target = "mood", ignore = true)
     Event toEntity(EventUpsertRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -50,6 +51,7 @@ public interface EventMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "experienceType", ignore = true)
     @Mapping(target = "recurring", ignore = true)
+    @Mapping(target = "mood", ignore = true)
     void updateEntity(EventUpsertRequest request, @MappingTarget Event event);
 
     @AfterMapping
@@ -157,3 +159,4 @@ public interface EventMapper {
     }
 
 }
+
