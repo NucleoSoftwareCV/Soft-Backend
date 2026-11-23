@@ -9,7 +9,7 @@ import java.time.ZoneId;
 @Configuration
 public class TimeConfig {
 
-    public static final ZoneId BUSINESS_ZONE = ZoneId.of("Europe/Madrid");
+    public static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Lima");
 
     @Bean
     public Clock businessClock() {

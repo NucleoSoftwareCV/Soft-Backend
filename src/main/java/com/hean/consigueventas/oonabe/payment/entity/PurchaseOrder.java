@@ -48,7 +48,7 @@ public class PurchaseOrder {
     private BigDecimal totalAmount;
 
     @Column(name = "currency", nullable = false, length = 3)
-    private String currency = "EUR";
+    private String currency = "PEN";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)

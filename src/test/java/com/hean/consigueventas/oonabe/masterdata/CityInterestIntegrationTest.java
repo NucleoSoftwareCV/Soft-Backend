@@ -36,41 +36,41 @@ class CityInterestIntegrationTest {
 
     @Test
     void anyoneCanRegisterInterestForAnActiveCity() throws Exception {
-        City valencia = activeCity("Valencia");
+        City city = activeCity("Lima");
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "usuario@email.com")))
+                        .content(payload(city.getId(), "usuario@email.com")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value(
                         "Gracias por tu interes. Te avisaremos cuando Oona llegue a tu ciudad."))
                 .andExpect(jsonPath("$.id").doesNotExist())
                 .andExpect(jsonPath("$.email").doesNotExist());
 
-        assertThat(cityInterestRepository.existsByCityIdAndEmailIgnoreCase(valencia.getId(), "usuario@email.com"))
+        assertThat(cityInterestRepository.existsByCityIdAndEmailIgnoreCase(city.getId(), "usuario@email.com"))
                 .isTrue();
     }
 
     @Test
     void emailIsNormalizedBeforeStoring() throws Exception {
-        City valencia = activeCity("Valencia");
+        City city = activeCity("Lima");
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "Usuario@Email.COM")))
+                        .content(payload(city.getId(), "Usuario@Email.COM")))
                 .andExpect(status().isCreated());
 
-        assertThat(cityInterestRepository.existsByCityIdAndEmailIgnoreCase(valencia.getId(), "usuario@email.com"))
+        assertThat(cityInterestRepository.existsByCityIdAndEmailIgnoreCase(city.getId(), "usuario@email.com"))
                 .isTrue();
     }
 
     @Test
     void invalidEmailIsRejected() throws Exception {
-        City valencia = activeCity("Valencia");
+        City city = activeCity("Lima");
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "not-an-email")))
+                        .content(payload(city.getId(), "not-an-email")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://api.oona.local/errors/validation-error"));
     }
@@ -86,29 +86,29 @@ class CityInterestIntegrationTest {
 
     @Test
     void inactiveCityIsRejected() throws Exception {
-        City valencia = activeCity("Valencia");
-        valencia.setIsActive(false);
-        cityRepository.saveAndFlush(valencia);
+        City city = activeCity("Lima");
+        city.setIsActive(false);
+        cityRepository.saveAndFlush(city);
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "usuario@email.com")))
+                        .content(payload(city.getId(), "usuario@email.com")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://api.oona.local/errors/business-rule"));
     }
 
     @Test
     void duplicateInterestForSameCityAndEmailIsRejected() throws Exception {
-        City valencia = activeCity("Valencia");
+        City city = activeCity("Lima");
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "usuario@email.com")))
+                        .content(payload(city.getId(), "usuario@email.com")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(valencia.getId(), "usuario@email.com")))
+                        .content(payload(city.getId(), "usuario@email.com")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://api.oona.local/errors/business-rule"));
 

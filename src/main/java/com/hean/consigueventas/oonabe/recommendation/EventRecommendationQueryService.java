@@ -117,6 +117,9 @@ public class EventRecommendationQueryService {
                 event.isRecurring(),
                 event.getMood(),
                 recommendation.occurrenceId(),
+                null,
+                0L,
+                List.of(),
                 campaignBadges
         );
 

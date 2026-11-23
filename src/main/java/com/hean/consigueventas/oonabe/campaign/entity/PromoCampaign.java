@@ -69,7 +69,7 @@ public class PromoCampaign {
     private BigDecimal prizeAmount;
 
     @Column(name = "prize_currency", nullable = false, length = 3)
-    private String prizeCurrency = "EUR";
+    private String prizeCurrency = "PEN";
 
     @Column(name = "prize_description", columnDefinition = "TEXT")
     private String prizeDescription;

@@ -130,7 +130,7 @@ public class PromoCampaignService {
             if (!campaign.getParticipationStartsAt().equals(request.participationStartsAt())) {
                 throw locked("la fecha de inicio de la participación");
             }
-            String currency = request.prizeCurrency() == null ? "EUR" : request.prizeCurrency();
+            String currency = request.prizeCurrency() == null ? "PEN" : request.prizeCurrency();
             if (campaign.getPrizeAmount().compareTo(request.prizeAmount()) != 0
                     || !campaign.getPrizeCurrency().equals(currency)) {
                 throw locked("el premio");
@@ -309,7 +309,7 @@ public class PromoCampaignService {
                 ? DEFAULT_BADGE_LABEL : request.badgeLabel().strip());
         campaign.setHeroImageUrl(blankToNull(request.heroImageUrl()));
         campaign.setPrizeAmount(request.prizeAmount());
-        campaign.setPrizeCurrency(request.prizeCurrency() == null ? "EUR" : request.prizeCurrency());
+        campaign.setPrizeCurrency(request.prizeCurrency() == null ? "PEN" : request.prizeCurrency());
         campaign.setPrizeDescription(blankToNull(request.prizeDescription()));
         campaign.setParticipationStartsAt(request.participationStartsAt());
         campaign.setParticipationEndsAt(request.participationEndsAt());

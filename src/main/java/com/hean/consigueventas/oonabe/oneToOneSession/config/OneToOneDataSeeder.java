@@ -41,56 +41,56 @@ public class OneToOneDataSeeder {
             Location loc2) {
         seedOneToOneService(profileAna, "Terapia Psicologica de Acompanamiento",
                 "Sesion de terapia individual enfocada en ansiedad y manejo del estres in la vida diaria.", 60,
-                SessionModality.ONLINE, null, 65.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.ONLINE, null, 65.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Autoestima", "Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileAna, "Evaluacion de Perfil Cognitivo",
                 "Evaluacion integral de funciones cognitivas y atencion para adultos mayores.", 90,
-                SessionModality.PRESENCIAL, loc1, 120.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.PRESENCIAL, loc1, 120.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Resiliencia"), Set.of("Terapia"));
         seedOneToOneService(profileCarlos, "Clase Personalizada de Hatha Yoga",
                 "Sesion individual adaptada a tu nivel y objetivos fisicos y espirituales.", 75,
-                SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.PRESENCIAL, loc2, 50.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"), Set.of("Yoga"));
         seedOneToOneService(profileCarlos, "Asesoria de Meditacion Guiada y Mindfulness",
                 "Iniciacion teorica y practica en mindfulness y respiracion consciente.", 45,
-                SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.ONLINE, null, 40.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar", "Resiliencia"), Set.of("Terapia"));
         seedOneToOneService(profileCarlos, "Borrrador Clase Vinyasa Yoga",
-                "Esta clase aun esta en borrador.", 60, SessionModality.ONLINE, null, 45.00, "EUR",
+                "Esta clase aun esta en borrador.", 60, SessionModality.ONLINE, null, 45.00, "PEN",
                 PublicationStatus.BORRADOR, Set.of("Bienestar"), Set.of("Yoga"));
 
         seedOneToOneService(profileAna, "Asesoria porteo ergonomico",
                 "Acompanamiento individual para elegir y ajustar portabebes de forma comoda y segura.", 60,
-                SessionModality.ONLINE, null, 60.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.ONLINE, null, 60.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileAna,
                 "Identifica la herida de infancia que condiciona tus relaciones",
                 "Sesion individual para reconocer patrones emocionales y trabajarlos con herramientas terapeuticas.",
-                60, SessionModality.ONLINE, null, 70.00, "EUR", PublicationStatus.PUBLICADO,
+                60, SessionModality.ONLINE, null, 70.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Autoestima", "Resiliencia"), Set.of("Terapia"));
         seedOneToOneService(profileCarlos, "Bano de sonido para parejas - Sound Healing",
                 "Experiencia personalizada de sonido y relajacion profunda para dos personas.", 120,
-                SessionModality.PRESENCIAL, loc2, 80.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.PRESENCIAL, loc2, 80.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileAna, "Constelacion individual para desbloquear avances",
                 "Sesion de acompanamiento sistemico enfocada en claridad emocional y toma de decisiones.", 60,
-                SessionModality.ONLINE, null, 100.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.ONLINE, null, 100.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Resiliencia"), Set.of("Terapia"));
         seedOneToOneService(profileCarlos, "Cafe Aromatico",
                 "Sesion sensorial para reconectar con presencia, respiracion y rituales de pausa consciente.", 60,
-                SessionModality.PRESENCIAL, loc1, 15.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.PRESENCIAL, loc1, 15.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileCarlos, "ETERUM FLOW EXPERIENCE",
                 "Sesion individual de movimiento consciente adaptada a tu energia y objetivos corporales.", 90,
-                SessionModality.PRESENCIAL, loc2, 50.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.PRESENCIAL, loc2, 50.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Motivacion", "Bienestar"), Set.of("Yoga"));
         seedOneToOneService(profileAna, "Descubre tu piel asesoria cosmetica fresca",
                 "Asesoria personalizada para crear una rutina de cuidado facial simple y consciente.", 60,
-                SessionModality.ONLINE, null, 0.00, "EUR", PublicationStatus.PUBLICADO,
+                SessionModality.ONLINE, null, 0.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"), Set.of("Terapia"));
         seedOneToOneService(profileAna, "Embarazo acompanamiento emocional",
                 "Sesion individual para transitar embarazo y maternidad con herramientas de regulacion emocional.",
-                90, SessionModality.ONLINE, null, 40.00, "EUR", PublicationStatus.PUBLICADO,
+                90, SessionModality.ONLINE, null, 40.00, "PEN", PublicationStatus.PUBLICADO,
                 Set.of("Autoestima", "Bienestar"), Set.of("Terapia"));
     }
 
@@ -104,7 +104,7 @@ public class OneToOneDataSeeder {
                 SessionModality.PRESENCIAL,
                 location,
                 55.00,
-                "EUR",
+                "PEN",
                 PublicationStatus.PUBLICADO,
                 Set.of("Bienestar"),
                 Set.of("Terapia"));

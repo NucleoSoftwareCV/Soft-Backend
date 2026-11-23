@@ -75,7 +75,7 @@ public class CampaignDataSeeder {
                 + "y entra en el sorteo de 600 € para disfrutar de bienestar durante 12 meses.");
         campaign.setBadgeLabel("Participa en el sorteo");
         campaign.setPrizeAmount(new BigDecimal("600.00"));
-        campaign.setPrizeCurrency("EUR");
+        campaign.setPrizeCurrency("PEN");
         campaign.setPrizeDescription("Crédito Oona para disfrutar de experiencias de bienestar durante 12 meses "
                 + "desde su activación, en una o varias reservas elegibles.");
         campaign.setParticipationStartsAt(startsAt.toInstant());

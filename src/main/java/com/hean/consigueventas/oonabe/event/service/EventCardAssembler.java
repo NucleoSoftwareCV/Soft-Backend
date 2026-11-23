@@ -10,6 +10,8 @@ import com.hean.consigueventas.oonabe.event.mapper.EventMapper;
 import com.hean.consigueventas.oonabe.event.repository.EventImageRepository;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
 import org.springframework.data.domain.Page;
+import com.hean.consigueventas.oonabe.review.service.EventReviewService;
+import com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Component;
 
@@ -28,18 +30,21 @@ public class EventCardAssembler {
     private final EventOccurrenceRepository eventOccurrenceRepository;
     private final CampaignBadgeLookup campaignBadgeLookup;
     private final Clock clock;
+    private final EventReviewService reviewService;
 
     public EventCardAssembler(
             EventMapper eventMapper,
             EventImageRepository eventImageRepository,
             EventOccurrenceRepository eventOccurrenceRepository,
             CampaignBadgeLookup campaignBadgeLookup,
-            Clock clock) {
+            Clock clock,
+            EventReviewService reviewService) {
         this.eventMapper = eventMapper;
         this.eventImageRepository = eventImageRepository;
         this.eventOccurrenceRepository = eventOccurrenceRepository;
         this.campaignBadgeLookup = campaignBadgeLookup;
         this.clock = clock;
+        this.reviewService = reviewService;
     }
 
     public Page<EventCardResponse> toPage(Page<Event> events) {
@@ -61,16 +66,17 @@ public class EventCardAssembler {
 
         Map<Long, String> coverUrls = findCoverUrls(events);
         Map<Long, List<EventOccurrence>> occurrences = findOccurrences(events);
-        Map<Long, List<CampaignBadgeResponse>> badges = campaignBadgeLookup.openBadges(
-                events.stream().map(Event::getId).distinct().toList(),
-                notBefore);
+        List<Long> eventIds = events.stream().map(Event::getId).distinct().toList();
+        Map<Long, List<CampaignBadgeResponse>> badges = campaignBadgeLookup.openBadges(eventIds, notBefore);
+        Map<Long, EventRatingSummaryResponse> ratings = reviewService.summaries(eventIds);
         return events.stream()
                 .map(event -> eventMapper.toCardResponse(
                         event,
                         coverUrls.get(event.getId()),
                         occurrences.getOrDefault(event.getId(), List.of()),
                         badges.getOrDefault(event.getId(), List.of()),
-                        notBefore))
+                        notBefore,
+                        ratings.get(event.getId())))
                 .toList();
     }
 

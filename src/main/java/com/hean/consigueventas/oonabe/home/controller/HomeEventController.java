@@ -49,8 +49,8 @@ public class HomeEventController {
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public ResponseEntity<HomeEventSectionsResponse> getEventSections(
-            @Parameter(description = "Ciudad para los eventos presenciales", example = "Valencia")
-            @RequestParam(defaultValue = "Valencia")
+            @Parameter(description = "Ciudad para los eventos presenciales", example = "Arequipa")
+            @RequestParam(defaultValue = "Arequipa")
             @NotBlank
             @Size(max = 100)
             String cityName,
