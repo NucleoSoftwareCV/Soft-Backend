@@ -8,6 +8,8 @@ import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.masterdata.entity.Location;
+import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
+import com.hean.consigueventas.oonabe.notification.repository.NotificationRepository;
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.*;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,6 +43,7 @@ class AppointmentIntegrationTest {
     @Autowired AppointmentService appointments;
     @Autowired EntityManager em;
     @Autowired MockMvc mvc;
+    @Autowired NotificationRepository notifications;
     BookingFixtures.Fixture fixture;
     OneToOneService service;
     Location location;
@@ -107,6 +111,25 @@ class AppointmentIntegrationTest {
         assertThat(saved.getEndsAt()).isEqualTo(start.plusSeconds(3600)); assertThat(saved.getStatus()).isEqualTo(BookingStatus.PENDIENTE);
         assertThat(saved.getExpiresAt()).isEqualTo(Instant.parse("2026-11-06T12:00:00Z"));
         assertThat(saved.getOrderItem()).isNull();
+    }
+
+    @Test void sendsNotificationsForAppointmentRequestAndConfirmation() {
+        var receipt = request();
+        em.flush();
+
+        assertThat(notifications.findByUserId(fixture.client().getId(), PageRequest.of(0, 10)).getContent())
+                .extracting(notification -> notification.getType())
+                .contains(NotificationType.CITA_SOLICITADA);
+        assertThat(notifications.findByUserId(fixture.professional().getId(), PageRequest.of(0, 10)).getContent())
+                .extracting(notification -> notification.getType())
+                .contains(NotificationType.NUEVA_CITA_SOLICITADA);
+
+        appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        em.flush();
+
+        assertThat(notifications.findByUserId(fixture.client().getId(), PageRequest.of(0, 10)).getContent())
+                .extracting(notification -> notification.getType())
+                .contains(NotificationType.CITA_CONFIRMADA);
     }
     @Test void blocksDuplicateAndCrossModalityBookings() {
         request();
@@ -218,6 +241,43 @@ class AppointmentIntegrationTest {
         mvc.perform(patch(path).with(user(principal(fixture.client().getId(), "USER")))
                         .contentType("application/json").content(body))
                 .andExpect(status().isConflict());
+    }
+
+    @Test void professionalRescheduleAvailabilityUsesTheCustomersCalendarAndExcludesTheCurrentRequest() throws Exception {
+        var receipt = request();
+        var current = em.find(SessionBooking.class, receipt.id());
+        var other = BookingFixtures.create(em, "calendar" + UUID.randomUUID().toString().substring(0, 4));
+        var customerConflict = new SessionBooking();
+        customerConflict.setCode("CITA-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+        customerConflict.setCustomer(current.getCustomer());
+        customerConflict.setService(service);
+        customerConflict.setSpecialist(other.occurrence().getEvent().getSpecialist());
+        customerConflict.setStartsAt(start.plusSeconds(3600));
+        customerConflict.setEndsAt(start.plusSeconds(7200));
+        customerConflict.setModality(SessionModality.ONLINE);
+        customerConflict.setPrice(service.getPrice());
+        customerConflict.setCurrency(service.getCurrency());
+        customerConflict.setStatus(BookingStatus.CONFIRMADA);
+        customerConflict.setCustomerNotes("Otra cita del cliente");
+        em.persist(customerConflict);
+        em.flush();
+
+        assertThat(appointments.availability(service.getId(), day, SessionModality.ONLINE, null).slots())
+                .extracting(Slot::startsAt).contains(start.plusSeconds(3600));
+        assertThat(appointments.professionalRescheduleAvailability(fixture.professional().getId(), receipt.id(),
+                day, SessionModality.ONLINE, null).slots()).extracting(Slot::startsAt)
+                .containsExactly(start, start.plusSeconds(7200));
+
+        String path = "/api/v1/professional-agenda/requests/" + receipt.id() + "/availability";
+        mvc.perform(get(path).with(user(principal(fixture.professional().getId(), "PROFESSIONAL")))
+                        .param("date", day.toString()).param("modality", "ONLINE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slots.length()").value(2))
+                .andExpect(jsonPath("$.slots[0].startsAt").value(start.toString()))
+                .andExpect(jsonPath("$.slots[1].startsAt").value(start.plusSeconds(7200).toString()));
+        mvc.perform(get(path).with(user(principal(other.professional().getId(), "PROFESSIONAL")))
+                        .param("date", day.toString()).param("modality", "ONLINE"))
+                .andExpect(status().isNotFound());
     }
 
     @Test void doesNotCompleteAFutureAppointment() {

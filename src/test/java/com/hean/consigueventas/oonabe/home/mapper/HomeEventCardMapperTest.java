@@ -8,6 +8,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -25,7 +25,7 @@ public final class AppointmentDtos {
                           Venue venue, BigDecimal price, String currency, String status, Instant expiresAt,
                           String reason, Instant cancelledAt, String cancellationReason, String cancelledBy,
                           Instant rescheduledAt, Instant previousStartsAt, Instant previousEndsAt,
-                          String rescheduleReason, String rescheduledBy, String virtualUrl) {}
+                          String rescheduleReason, String rescheduledBy, String virtualUrl, String imageUrl) {}
     public record RuleInput(@Min(1) @Max(7) int dayOfWeek, @NotNull LocalTime startTime,
                             @NotNull LocalTime endTime, @NotNull LocalDate validFrom, LocalDate validUntil,
                             Long locationId, @Min(0) @Max(240) int breakMinutes,

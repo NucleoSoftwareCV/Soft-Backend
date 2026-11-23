@@ -77,6 +77,21 @@ public class AppointmentController {
         return privateResponse(service.pending(getAuthenticatedUserId()));
     }
 
+    @GetMapping("/professional-agenda/requests/code/{code}")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Receipt> appointmentByCode(@PathVariable String code) {
+        return privateResponse(service.appointmentByCode(getAuthenticatedUserId(), code));
+    }
+
+    @GetMapping("/professional-agenda/requests/{id}/availability")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<Availability> rescheduleAvailability(@PathVariable Long id,
+            @RequestParam LocalDate date, @RequestParam SessionModality modality,
+            @RequestParam(required=false) Long locationId) {
+        return privateResponse(service.professionalRescheduleAvailability(
+                getAuthenticatedUserId(), id, date, modality, locationId));
+    }
+
     @GetMapping("/professional-agenda/summary") @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<Summary> summary() { return privateResponse(service.summary(getAuthenticatedUserId())); }
 
