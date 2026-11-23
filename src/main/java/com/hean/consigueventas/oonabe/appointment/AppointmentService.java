@@ -13,6 +13,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
+import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
+import com.hean.consigueventas.oonabe.notification.service.NotificationService;
 import java.time.*;
 import java.util.*;
 
@@ -22,10 +24,11 @@ public class AppointmentService {
     private final AppointmentRepository data;
     private final Clock clock;
     private final int holdMinutes;
-    public AppointmentService(AppointmentRepository data, Clock clock,
+    private final NotificationService notifications;
+    public AppointmentService(AppointmentRepository data, Clock clock, NotificationService notifications,
                               @Value("${oona.appointments.hold-minutes:1440}") int holdMinutes) {
         if(holdMinutes<5 || holdMinutes>4320) throw new IllegalArgumentException("La retención de citas debe estar entre 5 y 4320 minutos.");
-        this.data=data; this.clock=clock; this.holdMinutes=holdMinutes;
+        this.data=data; this.clock=clock; this.notifications=notifications; this.holdMinutes=holdMinutes;
     }
     private LocalDate today() { return clock.instant().atZone(BUSINESS_ZONE).toLocalDate(); }
     private OneToOneService service(Long id) {
@@ -59,6 +62,17 @@ public class AppointmentService {
     }
     public Availability availability(Long serviceId, LocalDate date, SessionModality modality, Long locationId) {
         return slots(service(serviceId),date,modality,locationId,null,null);
+    }
+
+    public Availability professionalRescheduleAvailability(Long userId, Long appointmentId, LocalDate date,
+                                                            SessionModality modality, Long locationId) {
+        var professional = data.professional(userId, false);
+        var booking = data.find(SessionBooking.class, appointmentId);
+        if (!booking.getSpecialist().getId().equals(professional.getId()) || booking.getOrderItem() != null) {
+            throw new ResourceNotFoundException("Solicitud no encontrada.");
+        }
+        return slots(service(booking.getService().getId()), date, modality, locationId,
+                booking.getCustomer().getId(), booking.getId());
     }
     private Availability slots(OneToOneService s, LocalDate date, SessionModality modality, Long locationId,
                                Long customerId, Long excludedBookingId) {
@@ -112,7 +126,10 @@ public class AppointmentService {
         b.setVirtualUrl(input.modality()==SessionModality.ONLINE ? virtualUrlForSlot(p.getId(), date, input.startsAt()) : null);
         b.setPrice(s.getPrice()); b.setCurrency(s.getCurrency()); b.setStatus(BookingStatus.PENDIENTE);
         b.setCustomerNotes(input.reason().trim()); b.setExpiresAt(clock.instant().plusSeconds(holdMinutes*60L));
-        data.save(b); return receipt(b);
+        data.save(b);
+        notifications.notifyCustomer(b, NotificationType.CITA_SOLICITADA);
+        notifications.notifyProfessional(b, NotificationType.NUEVA_CITA_SOLICITADA);
+        return receipt(b);
     }
     public List<Rule> rules(Long userId) {
         return data.rules(data.professional(userId,false).getId()).stream().map(this::rule).toList();
@@ -192,6 +209,12 @@ public class AppointmentService {
         return data.pending(professional.getId(), clock.instant()).stream().map(this::receipt).toList();
     }
 
+    public Receipt appointmentByCode(Long userId, String code) {
+        var professional = data.professional(userId, false);
+        if (code == null || code.isBlank()) throw new ResourceNotFoundException("Cita no encontrada.");
+        return receipt(data.appointmentByCode(professional.getId(), code.trim()));
+    }
+
     public Summary summary(Long userId) {
         var professional=data.professional(userId,false);
         var all=data.allAppointments(professional.getId());
@@ -267,7 +290,9 @@ public class AppointmentService {
                 ? virtualUrlForSlot(professional.getId(),date,input.startsAt()) : null);
         booking.setPrice(session.getPrice()); booking.setCurrency(session.getCurrency());
         booking.setStatus(BookingStatus.CONFIRMADA); booking.setCustomerNotes(input.reason().trim());
-        booking.setExpiresAt(null); data.save(booking); return receipt(booking);
+        booking.setExpiresAt(null); data.save(booking);
+        notifications.notifyCustomer(booking, NotificationType.CITA_CONFIRMADA);
+        return receipt(booking);
     }
 
     @Transactional
@@ -278,6 +303,7 @@ public class AppointmentService {
         if (booking.getStatus() == BookingStatus.CANCELADA) return receipt(booking);
 
         cancel(booking, clock.instant(), reason, "CLIENTE");
+        notifications.notifyProfessional(booking, NotificationType.CITA_CANCELADA_POR_CLIENTE);
         return receipt(booking);
     }
 
@@ -318,6 +344,7 @@ public class AppointmentService {
         booking.setCancelledAt(null);
         booking.setCancellationReason(null);
         booking.setCancelledBy(null);
+        notifications.notifyProfessional(booking, NotificationType.CITA_REPROGRAMACION_SOLICITADA);
         return receipt(booking);
     }
 
@@ -338,6 +365,7 @@ public class AppointmentService {
         booking.setVirtualUrl(input.modality()==SessionModality.ONLINE ? virtualUrlForSlot(p.getId(),date,input.startsAt()) : null);
         booking.setStatus(BookingStatus.REPROGRAMACION_PROPUESTA); booking.setExpiresAt(now.plusSeconds(holdMinutes*60L));
         booking.setRescheduledAt(now); booking.setRescheduleReason(input.reason().trim()); booking.setRescheduledBy("PROFESIONAL");
+        notifications.notifyCustomer(booking, NotificationType.CITA_REPROGRAMACION_PROPUESTA);
         return receipt(booking);
     }
 
@@ -347,8 +375,13 @@ public class AppointmentService {
         var booking=data.find(SessionBooking.class,id); var now=clock.instant();
         if(booking.getStatus()!=BookingStatus.REPROGRAMACION_PROPUESTA || (booking.getExpiresAt()!=null && !booking.getExpiresAt().isAfter(now)))
             throw new BookingConflictException("La propuesta ya no está disponible.");
-        if(input.accepted()) { booking.setStatus(BookingStatus.CONFIRMADA); booking.setExpiresAt(null); }
-        else { cancel(booking,now,input.reason()==null||input.reason().isBlank()?"Propuesta rechazada por el cliente":input.reason(),"CLIENTE"); }
+        if(input.accepted()) {
+            booking.setStatus(BookingStatus.CONFIRMADA); booking.setExpiresAt(null);
+            notifications.notifyProfessional(booking, NotificationType.CITA_REPROGRAMACION_ACEPTADA);
+        } else {
+            cancel(booking,now,input.reason()==null||input.reason().isBlank()?"Propuesta rechazada por el cliente":input.reason(),"CLIENTE");
+            notifications.notifyProfessional(booking, NotificationType.CITA_REPROGRAMACION_RECHAZADA);
+        }
         return receipt(booking);
     }
 
@@ -375,9 +408,18 @@ public class AppointmentService {
         var now=clock.instant();
         if(b.getStatus()==BookingStatus.PENDIENTE && b.getExpiresAt()!=null && !b.getExpiresAt().isAfter(now))
             throw new BookingConflictException("La solicitud ha vencido.");
-        if(status==BookingStatus.CONFIRMADA && b.getStatus()==BookingStatus.PENDIENTE && b.getStartsAt().isAfter(now)) { b.setStatus(status); b.setExpiresAt(null); }
-        else if(status==BookingStatus.CANCELADA) cancel(b, now, reason, "PROFESIONAL");
-        else if(status==BookingStatus.COMPLETADA && b.getStatus()==BookingStatus.CONFIRMADA && !b.getEndsAt().isAfter(now)) b.setStatus(status);
+        if(status==BookingStatus.CONFIRMADA && b.getStatus()==BookingStatus.PENDIENTE && b.getStartsAt().isAfter(now)) {
+            b.setStatus(status); b.setExpiresAt(null);
+            notifications.notifyCustomer(b, NotificationType.CITA_CONFIRMADA);
+        }
+        else if(status==BookingStatus.CANCELADA) {
+            cancel(b, now, reason, "PROFESIONAL");
+            notifications.notifyCustomer(b, NotificationType.CITA_CANCELADA_POR_PROFESIONAL);
+        }
+        else if(status==BookingStatus.COMPLETADA && b.getStatus()==BookingStatus.CONFIRMADA && !b.getEndsAt().isAfter(now)) {
+            b.setStatus(status);
+            notifications.notifyCustomer(b, NotificationType.CITA_COMPLETADA);
+        }
         else throw new BookingConflictException("El cambio de estado no es válido para esta cita.");
         return receipt(b);
     }
@@ -431,6 +473,7 @@ public class AppointmentService {
             b.getCustomer().getFirstNames()+" "+b.getCustomer().getLastNames(),b.getStartsAt(),b.getEndsAt(),b.getModality(),venue(b.getLocation()),
             b.getPrice(),b.getCurrency(),status,b.getExpiresAt(),b.getCustomerNotes(),b.getCancelledAt(),
             b.getCancellationReason(),b.getCancelledBy(),b.getRescheduledAt(),b.getPreviousStartsAt(),
-            b.getPreviousEndsAt(),b.getRescheduleReason(),b.getRescheduledBy(),visibleVirtualUrl);
+            b.getPreviousEndsAt(),b.getRescheduleReason(),b.getRescheduledBy(),visibleVirtualUrl,
+            b.getService().getImageUrl());
     }
 }

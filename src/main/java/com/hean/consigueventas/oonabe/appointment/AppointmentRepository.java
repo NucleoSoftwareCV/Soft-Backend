@@ -118,4 +118,19 @@ public class AppointmentRepository {
                 .setParameter("now", now)
                 .getResultList();
     }
+
+    public SessionBooking appointmentByCode(Long specialistId, String code) {
+        return em.createQuery("""
+                select b from SessionBooking b
+                join fetch b.service
+                join fetch b.specialist
+                join fetch b.customer
+                left join fetch b.location
+                where b.specialist.id = :specialistId and b.orderItem is null and b.code = :code
+                """, SessionBooking.class)
+                .setParameter("specialistId", specialistId)
+                .setParameter("code", code)
+                .getResultStream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cita no encontrada."));
+    }
 }

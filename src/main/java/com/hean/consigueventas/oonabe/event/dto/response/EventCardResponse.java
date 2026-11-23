@@ -58,6 +58,5 @@ public record EventCardResponse(
         long reviewCount,
         @Schema(description = "Hasta cuatro autores reales de reseñas, con su avatar si existe")
         List<EventReviewerPreviewResponse> reviewers
-
 ) {
 }
