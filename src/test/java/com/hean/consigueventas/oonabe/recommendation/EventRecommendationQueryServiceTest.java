@@ -40,13 +40,15 @@ class EventRecommendationQueryServiceTest {
     @Mock
     private EventImageRepository imageRepository;
 
+    @Mock private com.hean.consigueventas.oonabe.review.service.EventReviewService reviewService;
+
     private EventRecommendationQueryService service;
 
     @BeforeEach
     void setUp() {
         service = new EventRecommendationQueryService(
                 recommendationService,
-                imageRepository
+                imageRepository, reviewService
         );
     }
 
@@ -71,6 +73,9 @@ class EventRecommendationQueryServiceTest {
                         List.of(recommendation), pageable, 1
                 ));
 
+        when(reviewService.summaries(List.of(7L))).thenReturn(java.util.Map.of(7L,
+                new com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse(7L, 4.5, 2L, List.of())));
+
         when(imageRepository.findOrderedCandidatesByEventIds(List.of(7L)))
                 .thenReturn(List.of());
 
@@ -81,6 +86,8 @@ class EventRecommendationQueryServiceTest {
         assertThat(response.event().mood()).isEqualTo(
                 com.hean.consigueventas.oonabe.common.enums.EventMood.ENERGIA);
 
+        assertThat(response.event().averageRating()).isEqualTo(4.5);
+        assertThat(response.event().reviewCount()).isEqualTo(2L);
         assertThat(response.event().id()).isEqualTo(7L);
         assertThat(response.event().title()).isEqualTo("Yoga");
         assertThat(response.event().startsAt()).isEqualTo(START);
