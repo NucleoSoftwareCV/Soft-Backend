@@ -114,7 +114,7 @@ public class ProfessionalDirectoryService {
             LEFT JOIN profile_ratings rating ON rating.specialist_id = p.id
             LEFT JOIN LATERAL (
                 SELECT f.* FROM offerings f WHERE f.specialist_id = p.id AND f.price IS NOT NULL
-                ORDER BY CASE WHEN f.currency = 'EUR' THEN 0 ELSE 1 END, f.currency, f.price, f.starts_at NULLS LAST, f.type, f.id
+                ORDER BY CASE WHEN f.currency = 'PEN' THEN 0 ELSE 1 END, f.currency, f.price, f.starts_at NULLS LAST, f.type, f.id
                 LIMIT 1
             ) cheapest ON true
         ), filtered AS (

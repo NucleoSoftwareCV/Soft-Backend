@@ -188,8 +188,8 @@ class RecommendationEventFilterTest {
     @Test
     void shouldUseBusinessHourForTimeFilters() {
         Filters filters = new Filters();
-        filters.hourFrom = 18;
-        filters.hourTo = 18;
+        filters.hourFrom = 11;
+        filters.hourTo = 11;
 
         assertThat(matcher.matches(occurrence, filters.build())).isTrue();
 

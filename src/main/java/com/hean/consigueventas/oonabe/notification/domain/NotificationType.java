@@ -29,7 +29,28 @@ public enum NotificationType {
     PAGO_COMPLETADO("Pago completado",
             "El cliente completó el pago y la reserva está confirmada.", "Ver reserva"),
     RESERVA_EXPIRADA("Una reserva ha vencido",
-            "La reserva venció sin completarse y la plaza se ha liberado.", "Ver reserva");
+            "La reserva venció sin completarse y la plaza se ha liberado.", "Ver reserva"),
+
+    CITA_SOLICITADA("Solicitud de cita enviada",
+            "Tu solicitud de cita fue enviada. El profesional debe revisarla.", "Ver mi cita"),
+    NUEVA_CITA_SOLICITADA("Nueva solicitud de cita",
+            "Has recibido una solicitud de cita. Revísala desde tu agenda.", "Ver solicitud"),
+    CITA_CONFIRMADA("¡Tu cita fue confirmada!",
+            "El profesional confirmó tu cita. Revisa los detalles de la sesión.", "Ver mi cita"),
+    CITA_CANCELADA_POR_CLIENTE("El cliente canceló la cita",
+            "El horario se liberó y ya puede volver a ofrecerse.", "Ver cita"),
+    CITA_CANCELADA_POR_PROFESIONAL("Tu cita fue cancelada",
+            "El profesional canceló la cita. Puedes solicitar otro horario disponible.", "Ver mi cita"),
+    CITA_REPROGRAMACION_SOLICITADA("Solicitud de reprogramación",
+            "El cliente propuso un nuevo horario. Revisa la solicitud en tu agenda.", "Ver solicitud"),
+    CITA_REPROGRAMACION_PROPUESTA("Nuevo horario propuesto",
+            "El profesional propuso otro horario. Revísalo y responde antes de que venza.", "Ver mi cita"),
+    CITA_REPROGRAMACION_ACEPTADA("Reprogramación aceptada",
+            "El cliente aceptó el horario propuesto. La cita quedó confirmada.", "Ver cita"),
+    CITA_REPROGRAMACION_RECHAZADA("Reprogramación rechazada",
+            "El cliente rechazó el horario propuesto y la cita fue liberada.", "Ver cita"),
+    CITA_COMPLETADA("Cita completada",
+            "La cita se marcó como completada. Gracias por participar.", "Ver mi cita");
 
     private final String title;
     private final String message;
