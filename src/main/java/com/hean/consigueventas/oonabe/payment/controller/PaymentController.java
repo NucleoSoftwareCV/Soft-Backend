@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.payment.controller;
 
+import com.hean.consigueventas.oonabe.booking.service.ClientBookingService;
 import com.hean.consigueventas.oonabe.common.config.OpenApiConfig;
 import com.hean.consigueventas.oonabe.common.security.SecurityUtils;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
@@ -26,6 +27,7 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final ClientBookingService clientBookingService;
     private final PurchaseOrderRepository purchaseOrderRepository;
 
     @PostMapping("/orders")
@@ -62,26 +64,6 @@ public class PaymentController {
         return paymentService.processPayment(code, request);
     }
 
-    @GetMapping("/orders/{code}/whatsapp")
-    @Operation(summary = "Generar link de redirección a WhatsApp para coordinar pago", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponse(responseCode = "200", description = "Link de WhatsApp generado")
-    public WhatsAppRedirectDto getWhatsAppLink(@PathVariable String code) {
-        Long userId = SecurityUtils.getAuthenticatedUserId();
-        if (userId == null) {
-            throw new BusinessLogicException("Debe estar autenticado para coordinar pago por WhatsApp");
-        }
-
-        PurchaseOrder order = purchaseOrderRepository.findByCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró la orden con código: " + code));
-
-        // Validar que la orden pertenece al usuario autenticado
-        if (!order.getCustomer().getUser().getId().equals(userId)) {
-            throw new BusinessLogicException("La orden de compra no pertenece a tu usuario");
-        }
-
-        return paymentService.generateWhatsAppLink(code);
-    }
-
     @GetMapping("/receipts/{orderCode}")
     @Operation(summary = "Recuperar comprobante de pago digital por código de orden", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     @ApiResponse(responseCode = "200", description = "Comprobante digital recuperado exitosamente")
@@ -111,5 +93,18 @@ public class PaymentController {
             throw new BusinessLogicException("Debe estar autenticado para ver sus reservas");
         }
         return paymentService.getMyBookings(userId);
+    }
+
+    @PostMapping("/bookings/me/{code}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Cancelar una reserva propia antes de pagarla", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponse(responseCode = "204", description = "Reserva cancelada y plaza liberada")
+    @ApiResponse(responseCode = "409", description = "La reserva ya está pagada o cancelada")
+    public void cancelMyBooking(@PathVariable String code) {
+        Long userId = SecurityUtils.getAuthenticatedUserId();
+        if (userId == null) {
+            throw new BusinessLogicException("Debe estar autenticado para cancelar una reserva");
+        }
+        clientBookingService.cancel(userId, code);
     }
 }

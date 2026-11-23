@@ -81,7 +81,8 @@ public record EventUpsertRequest(
         @NotNull(message = "La categoría es obligatoria")
         Long categoryId,
 
-        @Schema(description = "Método de pago del evento (WHATSAPP o ONLINE).", example = "WHATSAPP")
+        @Schema(description = "Obsoleto: se ignora. Todos los eventos usan el flujo interno de reservas y pago (ONLINE).",
+                example = "ONLINE", deprecated = true)
         EventPaymentMethod paymentMethod,
 
         @Schema(description = "Tipo de experiencia del catalogo.")

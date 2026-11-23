@@ -93,6 +93,12 @@ class PaymentIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Autowired
+    private com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository eventBookingRepository;
+
+    @Autowired
+    private com.hean.consigueventas.oonabe.booking.service.ProfessionalBookingService professionalBookingService;
+
     @Test
     void authenticatedUserCanCheckoutAndPaySuccessfully() throws Exception {
         // 1. Obtener ítems reales de la base de datos
@@ -142,6 +148,12 @@ class PaymentIntegrationTest {
 
         String responseBody = checkoutResult.getResponse().getContentAsString();
         String orderCode = objectMapper.readTree(responseBody).get("code").asText();
+
+        // El profesional acepta la solicitud antes de que se pueda pagar
+        var booking = eventBookingRepository.findLockedByOrderId(purchaseOrderRepository.findByCode(orderCode).orElseThrow().getId()).getFirst();
+        professionalBookingService.decide(occurrence.getEvent().getSpecialist().getUser().getId(), booking.getCode(),
+                new com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.Decision(
+                        com.hean.consigueventas.oonabe.common.enums.BookingStatus.ACEPTADA, null));
 
         // 4. Pagar orden simulando Tarjeta exitosa
         String cardPaymentPayload = """
@@ -222,33 +234,5 @@ class PaymentIntegrationTest {
         // La orden debe seguir ABIERTA para reintentar
         PurchaseOrder order = purchaseOrderRepository.findByCode(orderCode).orElseThrow();
         org.assertj.core.api.Assertions.assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.ABIERTA);
-    }
-
-    @Test
-    void getWhatsAppRedirectUrlSuccessfully() throws Exception {
-        List<OneToOneService> services = oneToOneServiceRepository.findAll();
-        OneToOneService service = services.get(0);
-
-        CheckoutRequestDto checkoutRequest = new CheckoutRequestDto();
-        CheckoutItemDto item = new CheckoutItemDto();
-        item.setItemType(PurchaseItemType.SESION);
-        item.setReferenceId(service.getId());
-        item.setQuantity((short) 1);
-        checkoutRequest.setItems(List.of(item));
-
-        MvcResult checkoutResult = mockMvc.perform(post(BASE_URL + "/orders")
-                        .with(user(testUser))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(checkoutRequest)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String orderCode = objectMapper.readTree(checkoutResult.getResponse().getContentAsString()).get("code").asText();
-
-        // Obtener redirección de WhatsApp
-        mockMvc.perform(get(BASE_URL + "/orders/" + orderCode + "/whatsapp")
-                        .with(user(testUser)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.redirectUrl").value(org.hamcrest.Matchers.containsString("https://wa.me/")));
     }
 }

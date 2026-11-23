@@ -71,7 +71,7 @@ class ProfessionalBookingIntegrationTest {
             mvc.perform(get(BASE + "/" + code).with(user(professional(other.professional().getId()))))
                     .andExpect(status().isNotFound());
             mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(other.professional().getId())))
-                    .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}"))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}"))
                     .andExpect(status().isNotFound());
         }
         mvc.perform(get(BASE).param("eventId", fixture.occurrence().getEvent().getId().toString())
@@ -87,17 +87,18 @@ class ProfessionalBookingIntegrationTest {
         mvc.perform(get(BASE)).andExpect(status().isUnauthorized());
         mvc.perform(get(BASE).with(user(principal(fixture.client().getId(), "ROLE_USER")))).andExpect(status().isForbidden());
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(principal(fixture.client().getId(), "ROLE_USER")))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}")).andExpect(status().isForbidden());
+                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}")).andExpect(status().isForbidden());
     }
 
     @Test void acceptanceKeepsReservedSpotsAndUpdatesCustomerAndHistory() throws Exception {
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(fixture.professional().getId())))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.booking.status").value("CONFIRMADA"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.booking.status").value("ACEPTADA"))
+                .andExpect(jsonPath("$.booking.paymentDeadline").exists())
                 .andExpect(jsonPath("$.reservedSpots").value(2)).andExpect(jsonPath("$.availableSpots").value(8))
                 .andExpect(jsonPath("$.history[0].changedBy").value(fixture.professional().getUsername()));
         mvc.perform(get("/api/v1/payments/checkout/bookings/me").with(user(principal(fixture.client().getId(), "ROLE_USER"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].status").value("CONFIRMADA"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].status").value("ACEPTADA"));
         assertThat(orders.findByCode(orderCode).orElseThrow().getPaidAt()).isNull();
         assertThat(service.detail(fixture.professional().getId(), code).attendees()).hasSize(1);
     }
@@ -128,6 +129,7 @@ class ProfessionalBookingIntegrationTest {
         PaymentProcessRequestDto request = new PaymentProcessRequestDto();
         request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
         request.setCardCvv("123"); request.setCardExpiration("12/30");
+        service.decide(fixture.professional().getId(), code, new Decision(BookingStatus.ACEPTADA, null));
         payments.processPayment(orderCode, request);
         assertThatThrownBy(() -> service.decide(fixture.professional().getId(), code, new Decision(BookingStatus.CANCELADA, "Rechazar")))
                 .isInstanceOf(BookingConflictException.class);
@@ -150,17 +152,17 @@ class ProfessionalBookingIntegrationTest {
     @Test void cannotAcceptAnOccurrenceThatIsCancelledOrPast() throws Exception {
         fixture.occurrence().setStatus(EventOccurrenceStatus.CANCELADA);
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(fixture.professional().getId())))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}")).andExpect(status().isConflict());
+                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}")).andExpect(status().isConflict());
         fixture.occurrence().setStatus(EventOccurrenceStatus.PROGRAMADA);
         fixture.occurrence().setStartsAt(java.time.Instant.now().minusSeconds(10));
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(fixture.professional().getId())))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}")).andExpect(status().isConflict());
+                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}")).andExpect(status().isConflict());
     }
 
     @Test void expiredOrderCanOnlyBeRejected() throws Exception {
         orders.findByCode(orderCode).orElseThrow().setExpiresAt(java.time.Instant.now().minusSeconds(10));
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(fixture.professional().getId())))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMADA\"}")).andExpect(status().isConflict());
+                .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACEPTADA\"}")).andExpect(status().isConflict());
         assertThat(bookings.findByCode(code).orElseThrow().getStatus()).isEqualTo(BookingStatus.PENDIENTE);
         mvc.perform(patch(BASE + "/" + code + "/status").with(user(professional(fixture.professional().getId())))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELADA\",\"reason\":\"Orden expirada\"}"))
@@ -168,15 +170,17 @@ class ProfessionalBookingIntegrationTest {
     }
 
     @Test void rejectingOneBookingKeepsTheRestOfTheOrderPayable() throws Exception {
+        var first = BookingFixtures.create(em, "first");
         var second = BookingFixtures.create(em, "second");
-        CheckoutRequestDto request = checkout(fixture.occurrence().getId());
+        CheckoutRequestDto request = checkout(first.occurrence().getId());
         request.setItems(List.of(request.getItems().getFirst(), checkout(second.occurrence().getId()).getItems().getFirst()));
         String mixedOrder = payments.createOrder(fixture.client().getId(), request).getCode();
         var mixedBookings = bookings.findLockedByOrderId(orders.findByCode(mixedOrder).orElseThrow().getId());
         String rejected = mixedBookings.get(0).getCode();
         String kept = mixedBookings.get(1).getCode();
 
-        service.decide(fixture.professional().getId(), rejected, new Decision(BookingStatus.CANCELADA, "Sin cupo"));
+        service.decide(first.professional().getId(), rejected, new Decision(BookingStatus.CANCELADA, "Sin cupo"));
+        service.decide(second.professional().getId(), kept, new Decision(BookingStatus.ACEPTADA, null));
         var order = orders.findByCode(mixedOrder).orElseThrow();
         assertThat(order.getStatus()).isEqualTo(com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus.ABIERTA);
         assertThat(order.getTotalAmount()).isEqualByComparingTo("50.00");
@@ -188,39 +192,27 @@ class ProfessionalBookingIntegrationTest {
         assertThat(bookings.findByCode(kept).orElseThrow().getStatus()).isEqualTo(BookingStatus.CONFIRMADA);
     }
 
-    @Test void expiredUnpaidOrderReleasesItsSpotsOnce() throws Exception {
-        service.decide(fixture.professional().getId(), code, new Decision(BookingStatus.CONFIRMADA, null));
-        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
+    @Test void legacyExpiredOrderReleasesItsSpotsOnce() throws Exception {
+        assertThat(release.findReleasableBookingCodes()).doesNotContain(code);
         orders.findByCode(orderCode).orElseThrow().setExpiresAt(java.time.Instant.now().minusSeconds(10));
-        assertThat(release.findReleasableOrderCodes()).contains(orderCode);
+        assertThat(release.findReleasableBookingCodes()).contains(code);
 
-        assertThat(release.release(orderCode)).isEqualTo(1);
-        assertThat(release.release(orderCode)).isZero();
+        assertThat(release.release(code)).isTrue();
+        assertThat(release.release(code)).isFalse();
         var booking = bookings.findByCode(code).orElseThrow();
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELADA);
         assertThat(booking.getCancelledAt()).isNotNull();
         assertThat(fixture.occurrence().getReservedSpots()).isZero();
         assertThat(orders.findByCode(orderCode).orElseThrow().getStatus())
                 .isEqualTo(com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus.EXPIRADA);
-        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
+        assertThat(release.findReleasableBookingCodes()).doesNotContain(code);
         mvc.perform(get(BASE + "/" + code).with(user(professional(fixture.professional().getId()))))
-                .andExpect(jsonPath("$.history[1].reason").value("Orden expirada sin pago"))
-                .andExpect(jsonPath("$.history[1].changedBy").doesNotExist());
+                .andExpect(jsonPath("$.history[0].reason").value("Reserva vencida sin completarse"))
+                .andExpect(jsonPath("$.history[0].changedBy").doesNotExist());
         var mine = payments.getMyBookings(fixture.client().getId()).getFirst();
         assertThat(mine.getStatus()).isEqualTo(BookingStatus.CANCELADA);
         assertThat(mine.getCancellationCause()).isEqualTo("EXPIRADA");
-        assertThat(mine.getCancellationReason()).isEqualTo("Orden expirada sin pago");
-    }
-
-    @Test void paidOrderIsNeverReleased() {
-        PaymentProcessRequestDto request = new PaymentProcessRequestDto();
-        request.setMethod("TARJETA"); request.setCardNumber("4111111111111111");
-        request.setCardCvv("123"); request.setCardExpiration("12/30");
-        payments.processPayment(orderCode, request);
-        orders.findByCode(orderCode).orElseThrow().setExpiresAt(java.time.Instant.now().minusSeconds(10));
-        assertThat(release.findReleasableOrderCodes()).doesNotContain(orderCode);
-        assertThat(release.release(orderCode)).isZero();
-        assertThat(fixture.occurrence().getReservedSpots()).isEqualTo(2);
+        assertThat(mine.getCancellationReason()).isEqualTo("Reserva vencida sin completarse");
     }
 
     @Test void swaggerDocumentsTheProfessionalContract() throws Exception {

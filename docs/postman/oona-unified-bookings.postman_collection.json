@@ -1,0 +1,3111 @@
+{
+  "info": {
+    "name": "Oona · Flujo único de reservas (feature/unified-bookings)",
+    "description": "Pruebas del flujo unificado: solicitud → aceptación → notificación → pago Visa/Yape → confirmación, cancelaciones antes del pago, rechazo, vencimiento, bandeja de notificaciones y supervisión admin.\n\nUso: levanta el backend de la rama feature/unified-bookings (perfil dev, puerto 8083), completa la variable `proPassword` con la contraseña de los profesionales semilla y ejecuta las carpetas 00 → 07 en orden con el Collection Runner. La carpeta 08 es opcional y requiere BOOKING_PAYMENT_WINDOW=PT1M.\n\nCada ejecución crea reservas nuevas: si una fecha se queda sin plazas, la carpeta 01 elegirá otra.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 · Autenticación",
+      "description": "Inicia sesión con los usuarios semilla y guarda los tokens en variables de la colección. Completa `proPassword` antes de ejecutar.",
+      "item": [
+        {
+          "name": "Login cliente 1 (user1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user1Username}}\",\n  \"password\": \"{{user1Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('user1Token', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cliente 2 (user2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user2Username}}\",\n  \"password\": \"{{user2Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('user2Token', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login profesional Ana Gómez",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{anaUsername}}\",\n  \"password\": \"{{proPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('anaToken', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login profesional Carlos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{carlosUsername}}\",\n  \"password\": \"{{proPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('carlosToken', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/admin/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('adminToken', body.token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 · Preparación",
+      "description": "Elige automáticamente una fecha futura con plazas de un evento de pago de cada profesional.",
+      "item": [
+        {
+          "name": "Ana: mis eventos (elige fecha)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/events/my-events?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const now = Date.now();",
+                  "const candidates = [];",
+                  "(page.content || []).forEach(e => {",
+                  "  const ev = e.event || {};",
+                  "  if (Number(ev.priceFrom || 0) <= 0) return; // solo eventos de pago: el flujo completo pasa por Visa/Yape",
+                  "  (e.occurrences || []).forEach(o => {",
+                  "    if (o.status === 'PROGRAMADA' && Date.parse(o.startsAt) > now && (o.availableSpots == null || o.availableSpots >= 2)) {",
+                  "      candidates.push({ eventId: ev.id, occurrenceId: o.id, title: ev.title, published: String(e.status).startsWith('PUBLIC') });",
+                  "    }",
+                  "  });",
+                  "});",
+                  "candidates.sort((a, b) => Number(b.published) - Number(a.published));",
+                  "pm.test('Hay al menos una fecha futura de un evento de pago con plazas', () => pm.expect(candidates.length).to.be.above(0));",
+                  "if (candidates.length) {",
+                  "  pm.collectionVariables.set('anaEventId', candidates[0].eventId);",
+                  "  pm.collectionVariables.set('anaOccurrenceId', candidates[0].occurrenceId);",
+                  "  console.log('ana: usando', candidates[0]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carlos: mis eventos (elige fecha)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/events/my-events?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{carlosToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const now = Date.now();",
+                  "const candidates = [];",
+                  "(page.content || []).forEach(e => {",
+                  "  const ev = e.event || {};",
+                  "  if (Number(ev.priceFrom || 0) <= 0) return; // solo eventos de pago: el flujo completo pasa por Visa/Yape",
+                  "  (e.occurrences || []).forEach(o => {",
+                  "    if (o.status === 'PROGRAMADA' && Date.parse(o.startsAt) > now && (o.availableSpots == null || o.availableSpots >= 2)) {",
+                  "      candidates.push({ eventId: ev.id, occurrenceId: o.id, title: ev.title, published: String(e.status).startsWith('PUBLIC') });",
+                  "    }",
+                  "  });",
+                  "});",
+                  "candidates.sort((a, b) => Number(b.published) - Number(a.published));",
+                  "pm.test('Hay al menos una fecha futura de un evento de pago con plazas', () => pm.expect(candidates.length).to.be.above(0));",
+                  "if (candidates.length) {",
+                  "  pm.collectionVariables.set('carlosEventId', candidates[0].eventId);",
+                  "  pm.collectionVariables.set('carlosOccurrenceId', candidates[0].occurrenceId);",
+                  "  console.log('carlos: usando', candidates[0]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle público del evento de Ana",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/events/{{anaEventId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const ev = pm.response.json();",
+                  "pm.test('El evento contiene la fecha elegida', () => pm.expect((ev.occurrences || []).map(o => o.id)).to.include(Number(pm.collectionVariables.get('anaOccurrenceId'))));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · Flujo Ana Gómez – pago con Visa",
+      "description": "Solicitud → pendiente → aceptación → notificación → pago Visa → confirmada. Cubre las pruebas 1, 4, 5, 6, 8, 10 y 12 del documento.",
+      "item": [
+        {
+          "name": "Cliente solicita reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('anaOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('anaOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('anaBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: notificación «Solicitud enviada»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'SOLICITUD_ENVIADA' && x.bookingCode === pm.collectionVariables.get('anaBookingCode'));",
+                  "pm.test('Existe la notificación SOLICITUD_ENVIADA de esta reserva', () => pm.expect(n, 'SOLICITUD_ENVIADA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: solicitud duplicada misma fecha → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: pagar antes de la aceptación → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{anaOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: solicitudes pendientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me?status=PENDIENTE&size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const codes = (pm.response.json().content || []).map(b => b.code);",
+                  "pm.test('La solicitud aparece como pendiente', () => pm.expect(codes).to.include(pm.collectionVariables.get('anaBookingCode')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: detalle de la solicitud (datos del cliente)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{anaBookingCode}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const d = pm.response.json();",
+                  "pm.test('Incluye cliente, fecha y estado', () => {",
+                  "  pm.expect(d.booking.customerName).to.be.a('string');",
+                  "  pm.expect(d.booking.occurrenceStartsAt).to.exist;",
+                  "  pm.expect(d.booking.status).to.eql('PENDIENTE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: notificación «Nueva solicitud»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'NUEVA_SOLICITUD' && x.bookingCode === pm.collectionVariables.get('anaBookingCode'));",
+                  "pm.test('Existe la notificación NUEVA_SOLICITUD de esta reserva', () => pm.expect(n, 'NUEVA_SOLICITUD').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana acepta la solicitud",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{anaBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACEPTADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const d = pm.response.json();",
+                  "pm.test('Estado ACEPTADA (no CONFIRMADA)', () => pm.expect(d.booking.status).to.eql('ACEPTADA'));",
+                  "pm.test('Tiene plazo de pago', () => pm.expect(d.booking.paymentDeadline).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Mis reservas → ACEPTADA con plazo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('anaOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('anaBookingCode', b.code);",
+                  "  pm.test('Estado ACEPTADA', () => pm.expect(b.status).to.eql('ACEPTADA'));",
+                  "  pm.test('Muestra el plazo de pago', () => pm.expect(b.paymentDeadline).to.exist);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: notificación «¡Tu reserva fue aceptada!»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'RESERVA_ACEPTADA' && x.bookingCode === pm.collectionVariables.get('anaBookingCode'));",
+                  "pm.test('Existe la notificación RESERVA_ACEPTADA de esta reserva', () => pm.expect(n, 'RESERVA_ACEPTADA').to.exist);",
+                  "pm.test('Acción «Realizar pago»', () => pm.expect(n && n.actionLabel).to.eql('Realizar pago'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: pago con tarjeta rechazada (termina en 4444)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{anaOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4000000000004444\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Pago RECHAZADO', () => pm.expect(pm.response.json().status).to.eql('RECHAZADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: la reserva sigue ACEPTADA tras el rechazo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('anaOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('anaBookingCode', b.code);",
+                  "  pm.test('Estado ACEPTADA', () => pm.expect(b.status).to.eql('ACEPTADA'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente paga con Visa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{anaOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Pago APROBADO', () => pm.expect(pm.response.json().status).to.eql('APROBADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Mis reservas → CONFIRMADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('anaOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('anaBookingCode', b.code);",
+                  "  pm.test('Estado CONFIRMADA', () => pm.expect(b.status).to.eql('CONFIRMADA'));",
+                  "  pm.test('Ya no tiene plazo de pago', () => pm.expect(b.paymentDeadline).to.be.oneOf([null, undefined]));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: cancelar reserva pagada → 409",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me/{{anaBookingCode}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: notificación «¡Tu reserva está confirmada!»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'RESERVA_CONFIRMADA' && x.bookingCode === pm.collectionVariables.get('anaBookingCode'));",
+                  "pm.test('Existe la notificación RESERVA_CONFIRMADA de esta reserva', () => pm.expect(n, 'RESERVA_CONFIRMADA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: notificación «Pago completado»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'PAGO_COMPLETADO' && x.bookingCode === pm.collectionVariables.get('anaBookingCode'));",
+                  "pm.test('Existe la notificación PAGO_COMPLETADO de esta reserva', () => pm.expect(n, 'PAGO_COMPLETADO').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: reservas confirmadas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me?status=CONFIRMADA&size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const codes = (pm.response.json().content || []).map(b => b.code);",
+                  "pm.test('La reserva aparece como confirmada', () => pm.expect(codes).to.include(pm.collectionVariables.get('anaBookingCode')));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Flujo otro profesional (Carlos) – pago con Yape",
+      "description": "Mismo flujo que Ana, sin WhatsApp: demuestra que todos los profesionales usan el flujo interno (pruebas 2, 3 y 7).",
+      "item": [
+        {
+          "name": "Cliente solicita reserva a Carlos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{carlosOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('carlosOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('carlosOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('carlosBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carlos: notificación «Nueva solicitud»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{carlosToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'NUEVA_SOLICITUD' && x.bookingCode === pm.collectionVariables.get('carlosBookingCode'));",
+                  "pm.test('Existe la notificación NUEVA_SOLICITUD de esta reserva', () => pm.expect(n, 'NUEVA_SOLICITUD').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carlos acepta la solicitud",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{carlosBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{carlosToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACEPTADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Estado ACEPTADA', () => pm.expect(pm.response.json().booking.status).to.eql('ACEPTADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Yape con OTP inválido → RECHAZADO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{carlosOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"YAPE\",\n  \"yapePhoneNumber\": \"987654321\",\n  \"yapeOtp\": \"12\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Pago RECHAZADO', () => pm.expect(pm.response.json().status).to.eql('RECHAZADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente paga con Yape",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{carlosOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"YAPE\",\n  \"yapePhoneNumber\": \"987654321\",\n  \"yapeOtp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Pago APROBADO', () => pm.expect(pm.response.json().status).to.eql('APROBADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente: Mis reservas → CONFIRMADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('carlosOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('carlosBookingCode', b.code);",
+                  "  pm.test('Estado CONFIRMADA', () => pm.expect(b.status).to.eql('CONFIRMADA'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carlos: notificación «Pago completado»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{carlosToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'PAGO_COMPLETADO' && x.bookingCode === pm.collectionVariables.get('carlosBookingCode'));",
+                  "pm.test('Existe la notificación PAGO_COMPLETADO de esta reserva', () => pm.expect(n, 'PAGO_COMPLETADO').to.exist);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 · Rechazo del profesional",
+      "description": "Cliente 2 solicita en la misma fecha de Ana y Ana rechaza con motivo.",
+      "item": [
+        {
+          "name": "Cliente 2 solicita reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('rejectOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('rejectOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('rejectBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: rechazar sin motivo → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{rejectBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELADA\",\n  \"reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: aceptar con estado no permitido (CONFIRMADA) → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{rejectBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana rechaza con motivo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{rejectBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELADA\",\n  \"reason\": \"No hay disponibilidad para ese horario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Estado CANCELADA', () => pm.expect(pm.response.json().booking.status).to.eql('CANCELADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → Rechazada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('rejectOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('rejectBookingCode', b.code);",
+                  "  pm.test('Estado CANCELADA', () => pm.expect(b.status).to.eql('CANCELADA'));",
+                  "  pm.test('Causa RECHAZADA con motivo', () => { pm.expect(b.cancellationCause).to.eql('RECHAZADA'); pm.expect(b.cancellationReason).to.be.a('string'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: notificación «Tu solicitud fue rechazada»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'RESERVA_RECHAZADA' && x.bookingCode === pm.collectionVariables.get('rejectBookingCode'));",
+                  "pm.test('Existe la notificación RESERVA_RECHAZADA de esta reserva', () => pm.expect(n, 'RESERVA_RECHAZADA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: pagar reserva rechazada → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{rejectOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: decidir otra vez la misma reserva → 409",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{rejectBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACEPTADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 · Cancelación por el cliente antes de pagar",
+      "description": "Tras un rechazo se puede volver a solicitar. Cancela una solicitud pendiente y otra aceptada (prueba 9).",
+      "item": [
+        {
+          "name": "Cliente 2 vuelve a solicitar (permitido tras rechazo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('cancelPendingOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('cancelPendingOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('cancelPendingBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 1 intenta cancelar la reserva ajena → 404",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me/{{cancelPendingBookingCode}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2 cancela su solicitud pendiente",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me/{{cancelPendingBookingCode}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → cancelada por el cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('cancelPendingOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('cancelPendingBookingCode', b.code);",
+                  "  pm.test('Estado CANCELADA', () => pm.expect(b.status).to.eql('CANCELADA'));",
+                  "  pm.test('Causa CLIENTE', () => pm.expect(b.cancellationCause).to.eql('CLIENTE'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: notificación «Solicitud de reserva cancelada»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'SOLICITUD_CANCELADA' && x.bookingCode === pm.collectionVariables.get('cancelPendingBookingCode'));",
+                  "pm.test('Existe la notificación SOLICITUD_CANCELADA de esta reserva', () => pm.expect(n, 'SOLICITUD_CANCELADA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: cancelar otra vez → 409",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me/{{cancelPendingBookingCode}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2 solicita de nuevo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('cancelAcceptedOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('cancelAcceptedOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('cancelAcceptedBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana acepta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{cancelAcceptedBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACEPTADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2 cancela la reserva aceptada sin pagar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me/{{cancelAcceptedBookingCode}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: notificación «Un cliente canceló su reserva»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'CANCELACION_CLIENTE' && x.bookingCode === pm.collectionVariables.get('cancelAcceptedBookingCode'));",
+                  "pm.test('Existe la notificación CANCELACION_CLIENTE de esta reserva', () => pm.expect(n, 'CANCELACION_CLIENTE').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: pagar reserva cancelada → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{cancelAcceptedOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 · Permisos, WhatsApp y admin",
+      "description": "Comprueba roles, aislamiento entre profesionales, que WhatsApp ya no es método de pago y la supervisión del admin.",
+      "item": [
+        {
+          "name": "WhatsApp ya no es método de pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{cancelAcceptedOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"WHATSAPP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No se aprueba un pago por WhatsApp', () => {",
+                  "  const ok = pm.response.code === 200 && pm.response.json().status === 'APROBADO';",
+                  "  pm.expect(ok).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Endpoint WhatsApp eliminado → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{anaOrderCode}}/whatsapp",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ya no existe /whatsapp', () => pm.expect(pm.response.code).to.be.oneOf([404, 405, 500]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente llama al panel profesional → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana consulta una reserva de Carlos → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{carlosBookingCode}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente llama al listado admin → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/bookings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: todas las reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/bookings?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const rows = pm.response.json().content || [];",
+                  "pm.test('Incluye las reservas creadas', () => pm.expect(rows.map(r => r.code)).to.include(pm.collectionVariables.get('anaBookingCode')));",
+                  "pm.test('Incluye estado de la orden (pagos)', () => pm.expect(rows[0]).to.have.property('orderStatus'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: filtrar CONFIRMADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/bookings?status=CONFIRMADA&size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Solo confirmadas', () => (pm.response.json().content || []).forEach(r => pm.expect(r.status).to.eql('CONFIRMADA')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: filtrar CANCELADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/bookings?status=CANCELADA&size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 · Bandeja de notificaciones",
+      "description": "Contador de no leídas, marcar una y marcar todas.",
+      "item": [
+        {
+          "name": "Cliente 1: contador de no leídas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me/unread-count",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Hay notificaciones sin leer', () => pm.expect(pm.response.json().count).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 1: listar (más recientes primero)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const items = pm.response.json().content || [];",
+                  "pm.test('Ordenadas por fecha descendente', () => {",
+                  "  for (let i = 1; i < items.length; i++) pm.expect(Date.parse(items[i - 1].createdAt)).to.be.at.least(Date.parse(items[i].createdAt));",
+                  "});",
+                  "pm.test('Cada aviso enlaza a su reserva', () => items.forEach(n => pm.expect(n.bookingCode).to.be.a('string')));",
+                  "const unread = items.find(n => !n.read);",
+                  "if (unread) pm.collectionVariables.set('notificationId', unread.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 1: marcar una como leída",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Queda leída', () => pm.expect(pm.response.json().read).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: no puede marcar una notificación ajena → 404",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 1: marcar todas como leídas",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me/read-all",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 1: contador en 0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me/unread-count",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Sin notificaciones pendientes', () => pm.expect(pm.response.json().count).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 · Vencimiento del plazo de pago (opcional)",
+      "description": "Solo si el backend corre con BOOKING_PAYMENT_WINDOW=PT1M (plazo de 1 minuto). El scheduler revisa cada minuto, así que la espera es de ~2,5 min. Ejecútalo aparte; con el plazo por defecto (24 h) fallará. Prueba 14 del documento.",
+      "item": [
+        {
+          "name": "Cliente 2 solicita reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"referenceId\": \"{{anaOccurrenceId}}\",\n      \"itemType\": \"EVENTO\",\n      \"quantity\": 1\n    }\n  ],\n  \"billingName\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "pm.test('Orden creada con código', () => pm.expect(body.code).to.be.a('string'));",
+                  "pm.collectionVariables.set('expiryOrderCode', body.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: Mis reservas → PENDIENTE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('expiryOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('expiryBookingCode', b.code);",
+                  "  pm.test('Estado PENDIENTE', () => pm.expect(b.status).to.eql('PENDIENTE'));",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana acepta (empieza el plazo)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/bookings/professional/me/{{expiryBookingCode}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACEPTADA\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Esperar ~2,5 min y revisar la reserva",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/bookings/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera a que venza el plazo (1 min) y corra el scheduler (cada 1 min).",
+                  "setTimeout(() => {}, 150000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const list = pm.response.json();",
+                  "const b = list.find(x => x.orderCode === pm.collectionVariables.get('expiryOrderCode'));",
+                  "pm.test('La reserva de la orden aparece en Mis reservas', () => pm.expect(b, 'reserva').to.exist);",
+                  "if (b) {",
+                  "  pm.collectionVariables.set('expiryBookingCode', b.code);",
+                  "  pm.test('Estado CANCELADA', () => pm.expect(b.status).to.eql('CANCELADA'));",
+                  "  pm.test('Causa EXPIRADA', () => pm.expect(b.cancellationCause).to.eql('EXPIRADA'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: notificación «Tu reserva ha vencido»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'RESERVA_VENCIDA' && x.bookingCode === pm.collectionVariables.get('expiryBookingCode'));",
+                  "pm.test('Existe la notificación RESERVA_VENCIDA de esta reserva', () => pm.expect(n, 'RESERVA_VENCIDA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ana: notificación «Una reserva ha vencido»",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/notifications/me?size=50",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{anaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const page = pm.response.json();",
+                  "const n = (page.content || []).find(x => x.type === 'RESERVA_EXPIRADA' && x.bookingCode === pm.collectionVariables.get('expiryBookingCode'));",
+                  "pm.test('Existe la notificación RESERVA_EXPIRADA de esta reserva', () => pm.expect(n, 'RESERVA_EXPIRADA').to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente 2: pagar después del vencimiento → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/checkout/orders/{{expiryOrderCode}}/pay",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolder\": \"CLIENTE POSTMAN\",\n  \"cardExpiration\": \"12/30\",\n  \"cardCvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "user1Username",
+      "value": "user1",
+      "type": "string"
+    },
+    {
+      "key": "user1Password",
+      "value": "User1?",
+      "type": "string"
+    },
+    {
+      "key": "user2Username",
+      "value": "user2",
+      "type": "string"
+    },
+    {
+      "key": "user2Password",
+      "value": "User2!",
+      "type": "string"
+    },
+    {
+      "key": "anaUsername",
+      "value": "specialist_ana",
+      "type": "string"
+    },
+    {
+      "key": "carlosUsername",
+      "value": "specialist_carlos",
+      "type": "string"
+    },
+    {
+      "key": "proPassword",
+      "value": "COMPLETAR",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "admin_main1",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin1@",
+      "type": "string"
+    },
+    {
+      "key": "user1Token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user2Token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "anaToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carlosToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "anaEventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "anaOccurrenceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carlosEventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carlosOccurrenceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "anaOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "anaBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carlosOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carlosBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rejectOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rejectBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelPendingOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelPendingBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelAcceptedOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelAcceptedBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "expiryOrderCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "expiryBookingCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

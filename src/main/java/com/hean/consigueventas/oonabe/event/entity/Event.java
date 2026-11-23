@@ -87,10 +87,11 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = true, length = 20)
-    private EventPaymentMethod paymentMethod = EventPaymentMethod.WHATSAPP;
+    // Todos los eventos usan el flujo interno de Oona (solicitud, aceptación, pago Visa/Yape).
+    private EventPaymentMethod paymentMethod = EventPaymentMethod.ONLINE;
 
     public EventPaymentMethod getPaymentMethod() {
-        return paymentMethod == null ? EventPaymentMethod.WHATSAPP : paymentMethod;
+        return paymentMethod == null ? EventPaymentMethod.ONLINE : paymentMethod;
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -136,7 +137,7 @@ public class Event {
     @PostLoad
     void postLoad() {
         if (paymentMethod == null) {
-            paymentMethod = EventPaymentMethod.WHATSAPP;
+            paymentMethod = EventPaymentMethod.ONLINE;
         }
     }
 

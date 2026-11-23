@@ -2,27 +2,30 @@ package com.hean.consigueventas.oonabe.booking.service;
 
 import com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.*;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
-import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.*;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignEntryService;
 import com.hean.consigueventas.oonabe.common.dto.response.PagedResponse;
 import com.hean.consigueventas.oonabe.common.enums.*;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
+import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
+import com.hean.consigueventas.oonabe.notification.service.NotificationService;
 import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
 import com.hean.consigueventas.oonabe.payment.entity.PurchaseOrder;
-import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderItemRepository;
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +35,15 @@ public class ProfessionalBookingService {
     private final EventAttendeeRepository attendees;
     private final BookingStatusHistoryRepository history;
     private final PurchaseOrderRepository orders;
-    private final PurchaseOrderItemRepository orderItems;
     private final EventOccurrenceRepository occurrences;
     private final UserRepository users;
+    private final CampaignEntryService campaignEntries;
+    private final BookingTransitions transitions;
+    private final NotificationService notifications;
     private final Clock clock;
+
+    @Value("${app.bookings.payment-window:PT24H}")
+    private Duration paymentWindow = Duration.ofHours(24);
 
     public PagedResponse<Summary> list(Long userId, BookingStatus status, Long eventId, Long occurrenceId, int page, int size) {
         Specification<EventBooking> scope = (root, query, cb) ->
@@ -70,7 +78,7 @@ public class ProfessionalBookingService {
         if (booking.getStatus() != BookingStatus.PENDIENTE) {
             throw new BookingConflictException("La reserva ya no está pendiente. Recarga los datos.");
         }
-        if (decision.status() != BookingStatus.CONFIRMADA && decision.status() != BookingStatus.CANCELADA) {
+        if (decision.status() != BookingStatus.ACEPTADA && decision.status() != BookingStatus.CANCELADA) {
             throw new IllegalArgumentException("Estado de decisión no permitido");
         }
         if (decision.status() == BookingStatus.CANCELADA
@@ -78,48 +86,47 @@ public class ProfessionalBookingService {
             throw new IllegalArgumentException("El motivo es obligatorio al rechazar");
         }
         var occurrence = occurrences.findLockedById(reference.getOccurrenceId()).orElseThrow(this::notFound);
-        if (decision.status() == BookingStatus.CONFIRMADA) {
+        String reason = decision.reason() == null ? null : decision.reason().strip();
+        Instant now = clock.instant();
+        if (decision.status() == BookingStatus.ACEPTADA) {
             // An expired or cancelled order will never be paid; it can only be rejected to free its spots.
             if (orderClosed) {
                 throw new BookingConflictException("La orden del cliente expiró o fue cancelada. Solo puedes rechazar la reserva.");
             }
-            if (occurrence.getStatus() != EventOccurrenceStatus.PROGRAMADA || !occurrence.getStartsAt().isAfter(clock.instant())) {
+            if (occurrence.getStatus() != EventOccurrenceStatus.PROGRAMADA || !occurrence.getStartsAt().isAfter(now)) {
                 throw new BookingConflictException("La fecha ya no está disponible para aceptar reservas.");
             }
+            accept(booking, order, userId, reason, now);
         } else {
             if (occurrence.getReservedSpots() < booking.getQuantity()) {
                 throw new BookingConflictException("La disponibilidad es inconsistente. No se modificó la reserva.");
             }
-            occurrence.setReservedSpots(occurrence.getReservedSpots() - booking.getQuantity());
-            booking.setCancelledAt(clock.instant());
-        }
-        BookingStatusHistory change = new BookingStatusHistory();
-        change.setBookingType(PurchaseItemType.EVENTO);
-        change.setBookingId(booking.getId());
-        change.setPreviousStatus(booking.getStatus().name());
-        change.setNewStatus(decision.status().name());
-        change.setChangedBy(users.getReferenceById(userId));
-        change.setReason(decision.reason() == null ? null : decision.reason().strip());
-        change.setCreatedAt(clock.instant());
-        booking.setStatus(decision.status());
-        history.save(change);
-        if (decision.status() == BookingStatus.CANCELADA && order != null && !orderClosed) {
-            excludeFromOpenOrder(order, booking);
+            transitions.cancel(booking, order, users.getReferenceById(userId), reason, PurchaseOrderStatus.CANCELADA, now);
+            notifications.notifyCustomer(booking, NotificationType.RESERVA_RECHAZADA);
         }
         // Flush also makes the updated occurrence version visible in the response transaction.
         bookings.flush();
         return detail(booking);
     }
 
-    /** The rest of the order stays payable without the rejected booking; an order left empty is cancelled. */
-    private void excludeFromOpenOrder(PurchaseOrder order, EventBooking rejected) {
-        order.setSubtotal(order.getSubtotal().subtract(rejected.getTotalAmount()));
-        order.setTotalAmount(order.getTotalAmount().subtract(rejected.getTotalAmount()));
-        Set<Long> cancelledItems = bookings.findLockedByOrderId(order.getId()).stream()
-                .filter(b -> b.getStatus() == BookingStatus.CANCELADA && b.getOrderItem() != null)
-                .map(b -> b.getOrderItem().getId()).collect(Collectors.toSet());
-        if (orderItems.findByOrderIdOrderByIdAsc(order.getId()).stream().allMatch(i -> cancelledItems.contains(i.getId()))) {
-            order.setStatus(PurchaseOrderStatus.CANCELADA);
+    /** Accepting is not confirming: the booking is confirmed by its payment, or right away if it costs nothing. */
+    private void accept(EventBooking booking, PurchaseOrder order, Long userId, String reason, Instant now) {
+        if (booking.getTotalAmount().signum() > 0) {
+            Instant paymentDeadline = now.plus(paymentWindow);
+            Instant startsAt = booking.getOccurrence().getStartsAt();
+            booking.setExpiresAt(paymentDeadline.isBefore(startsAt) ? paymentDeadline : startsAt);
+            transitions.changeStatus(booking, BookingStatus.ACEPTADA, users.getReferenceById(userId), reason, now);
+            notifications.notifyCustomer(booking, NotificationType.RESERVA_ACEPTADA);
+            return;
+        }
+        booking.setExpiresAt(null);
+        transitions.changeStatus(booking, BookingStatus.CONFIRMADA, users.getReferenceById(userId), reason, now);
+        campaignEntries.registerForConfirmedBookings(List.of(booking), now);
+        notifications.notifyCustomer(booking, NotificationType.RESERVA_GRATUITA_CONFIRMADA);
+        if (order != null && order.getTotalAmount().signum() == 0 && bookings.findLockedByOrderId(order.getId()).stream()
+                .noneMatch(b -> b.getStatus() == BookingStatus.PENDIENTE)) {
+            order.setStatus(PurchaseOrderStatus.PAGADA);
+            order.setPaidAt(now);
         }
     }
 
@@ -127,7 +134,8 @@ public class ProfessionalBookingService {
         var event = b.getOccurrence().getEvent();
         return new Summary(b.getCode(), b.getCustomer().getFirstNames() + " " + b.getCustomer().getLastNames(),
                 event.getId(), event.getTitle(), b.getOccurrence().getId(), b.getOccurrence().getStartsAt(),
-                b.getQuantity(), b.getTotalAmount(), b.getCurrency(), b.getStatus(), b.getCreatedAt());
+                b.getQuantity(), b.getTotalAmount(), b.getCurrency(), b.getStatus(), b.getCreatedAt(),
+                b.getStatus() == BookingStatus.ACEPTADA ? b.getExpiresAt() : null);
     }
 
     private Detail detail(EventBooking b) {

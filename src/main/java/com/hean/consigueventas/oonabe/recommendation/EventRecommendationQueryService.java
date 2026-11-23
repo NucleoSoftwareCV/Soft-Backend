@@ -1,5 +1,7 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.event.dto.request.EventFilterRequest;
 import com.hean.consigueventas.oonabe.event.dto.response.EventCardResponse;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -11,10 +13,12 @@ import lombok.RequiredArgsConstructor;
 import com.hean.consigueventas.oonabe.review.service.EventReviewService;
 import com.hean.consigueventas.oonabe.review.dto.response.EventRatingSummaryResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +30,8 @@ public class EventRecommendationQueryService {
 
     private final EventRecommendationService recommendationService;
     private final EventImageRepository imageRepository;
+    private final CampaignBadgeLookup campaignBadgeLookup;
+    private final Clock clock;
     private final EventReviewService reviewService;
 
     public Page<RecommendedEventResponse> getRecommendations(
@@ -57,7 +63,7 @@ public class EventRecommendationQueryService {
             Page<RecommendedEvent> recommendations
     ) {
         if (recommendations.isEmpty()) {
-            return recommendations.map(result -> toResponse(result, null, EventRatingSummaryResponse.empty(result.event().getId())));
+            return new PageImpl<>(List.of(), recommendations.getPageable(), recommendations.getTotalElements());
         }
 
         List<Long> eventIds = recommendations.getContent()
@@ -76,9 +82,13 @@ public class EventRecommendationQueryService {
             );
         }
 
+        Map<Long, List<CampaignBadgeResponse>> badges =
+                campaignBadgeLookup.openBadges(eventIds, clock.instant());
+
         return recommendations.map(result -> toResponse(
                 result,
                 coverUrls.get(result.event().getId()),
+                badges.getOrDefault(result.event().getId(), List.of()),
                 ratings.getOrDefault(result.event().getId(), EventRatingSummaryResponse.empty(result.event().getId()))
         ));
     }
@@ -86,6 +96,7 @@ public class EventRecommendationQueryService {
     private RecommendedEventResponse toResponse(
             RecommendedEvent recommendation,
             String coverImageUrl,
+            List<CampaignBadgeResponse> campaignBadges,
             EventRatingSummaryResponse rating
     ) {
         Event event = recommendation.event();
@@ -113,7 +124,8 @@ public class EventRecommendationQueryService {
                 event.isRecurring(),
                 event.getMood(),
                 recommendation.occurrenceId(),
-                rating.averageRating(), rating.reviewCount(), rating.reviewers()
+                rating.averageRating(), rating.reviewCount(), rating.reviewers(),
+                campaignBadges
         );
 
         return new RecommendedEventResponse(

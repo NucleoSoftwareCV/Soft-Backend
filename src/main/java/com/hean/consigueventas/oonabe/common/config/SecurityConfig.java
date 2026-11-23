@@ -90,6 +90,7 @@ public class SecurityConfig {
                                 "/api/v1/events/*/reviews",
                                 "/api/v1/events/*/reviews/summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/campaigns/active", "/api/v1/campaigns/{slug}").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
                         .requestMatchers("/api/v1/payments/checkout/**").hasRole("USER")

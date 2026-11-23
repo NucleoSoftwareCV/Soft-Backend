@@ -326,11 +326,11 @@ public class EventDataSeeder {
             newEvent.setRecurring(isRecurring);
             newEvent.setCategory(category);
             newEvent.setSpecialist(specialist);
-            newEvent.setPaymentMethod(modality == EventModality.ONLINE ? EventPaymentMethod.ONLINE : EventPaymentMethod.WHATSAPP);
+            newEvent.setPaymentMethod(EventPaymentMethod.ONLINE);
             return eventRepository.save(newEvent);
         } else {
             boolean changed = false;
-            EventPaymentMethod targetPaymentMethod = modality == EventModality.ONLINE ? EventPaymentMethod.ONLINE : EventPaymentMethod.WHATSAPP;
+            EventPaymentMethod targetPaymentMethod = EventPaymentMethod.ONLINE;
             if (event.getPaymentMethod() != targetPaymentMethod) { event.setPaymentMethod(targetPaymentMethod); changed = true; }
             if (!summary.equals(event.getSummary())) { event.setSummary(summary); changed = true; }
             if (!description.equals(event.getDescription())) { event.setDescription(description); changed = true; }

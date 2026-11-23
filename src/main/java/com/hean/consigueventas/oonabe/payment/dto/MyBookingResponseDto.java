@@ -16,6 +16,11 @@ import java.time.Instant;
 @AllArgsConstructor
 public class MyBookingResponseDto {
     private String code;
+    /** Código con el que se paga la reserva. */
+    private String orderCode;
+    private Long occurrenceId;
+    /** Solo en reservas aceptadas: límite para pagar antes de que se libere la plaza. */
+    private Instant paymentDeadline;
     private BookingStatus status;
     private Short quantity;
     private BigDecimal totalAmount;
@@ -28,7 +33,7 @@ public class MyBookingResponseDto {
     private String locationName;
     private String cityName;
     private Instant cancelledAt;
-    /** RECHAZADA when the professional rejected it, EXPIRADA when the system released an unpaid order. */
+    /** RECHAZADA when the professional rejected it, CLIENTE when the client cancelled it, EXPIRADA when its deadline passed. */
     private String cancellationCause;
     private String cancellationReason;
 }

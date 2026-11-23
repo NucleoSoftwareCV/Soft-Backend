@@ -1,5 +1,8 @@
 package com.hean.consigueventas.oonabe.recommendation;
 
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.event.entity.Event;
@@ -40,6 +43,8 @@ class EventRecommendationQueryServiceTest {
     @Mock
     private EventImageRepository imageRepository;
 
+    @Mock
+    private CampaignBadgeLookup campaignBadgeLookup;
     @Mock private com.hean.consigueventas.oonabe.review.service.EventReviewService reviewService;
 
     private EventRecommendationQueryService service;
@@ -48,7 +53,10 @@ class EventRecommendationQueryServiceTest {
     void setUp() {
         service = new EventRecommendationQueryService(
                 recommendationService,
-                imageRepository, reviewService
+                imageRepository,
+                campaignBadgeLookup,
+                Clock.fixed(START, ZoneOffset.UTC),
+                reviewService
         );
     }
 

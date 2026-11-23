@@ -29,7 +29,7 @@ final class BookingFixtures {
         event.setTitle("Evento " + suffix); event.setDescription("Evento para verificar reservas");
         event.setCategory(category); event.setSpecialist(specialist); event.setModality(EventModality.ONLINE);
         event.setPriceFrom(new BigDecimal("25.00")); event.setStatus(EventStatus.PUBLICADO);
-        event.setPaymentMethod(EventPaymentMethod.WHATSAPP); em.persist(event);
+        event.setPaymentMethod(EventPaymentMethod.ONLINE); em.persist(event);
         EventOccurrence occurrence = new EventOccurrence();
         occurrence.setEvent(event); occurrence.setCapacity(10); occurrence.setReservedSpots(0);
         occurrence.setStartsAt(Instant.now().plusSeconds(86400));

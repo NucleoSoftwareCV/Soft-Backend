@@ -1,5 +1,6 @@
 package com.hean.consigueventas.oonabe.event.dto.response;
 
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventPaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -81,6 +82,12 @@ public record EventDetailResponse(
         String coverImageUrl,
 
         @Schema(description = "Galeria de imagenes del evento, ordenadas")
-        List<EventImageResponse> images
+        List<EventImageResponse> images,
+
+        @Schema(description = "Campañas promocionales abiertas en las que participa el evento (vacía si ninguna)")
+        List<CampaignBadgeResponse> campaignBadges
 ) {
+    public EventDetailResponse {
+        campaignBadges = campaignBadges == null ? List.of() : List.copyOf(campaignBadges);
+    }
 }

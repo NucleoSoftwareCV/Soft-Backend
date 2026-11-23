@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class PaymentProcessRequestDto {
 
-    @NotBlank(message = "El método de pago es obligatorio (YAPE, TARJETA o WHATSAPP)")
+    @NotBlank(message = "El método de pago es obligatorio (YAPE o TARJETA)")
     private String method;
 
     // Campos simulados para YAPE
