@@ -191,6 +191,37 @@ class PaymentIntegrationTest {
     }
 
     @Test
+    void checkoutCreatesCustomerProfileWhenAccountHasNone() throws Exception {
+        User seeded = userRepository.findByUsername("user1").orElseThrow();
+        User fresh = new User();
+        fresh.setUsername("sin_perfil");
+        fresh.setEmail("sin_perfil@oona.test");
+        fresh.setPassword(seeded.getPassword());
+        fresh.setRoles(new java.util.HashSet<>(seeded.getRoles()));
+        fresh.setActive(true);
+        fresh = userRepository.saveAndFlush(fresh);
+        org.assertj.core.api.Assertions.assertThat(customerProfileRepository.findByUserId(fresh.getId())).isEmpty();
+
+        CheckoutItemDto item = new CheckoutItemDto();
+        item.setItemType(PurchaseItemType.SESION);
+        item.setReferenceId(oneToOneServiceRepository.findAll().getFirst().getId());
+        item.setQuantity((short) 1);
+        CheckoutRequestDto checkoutRequest = new CheckoutRequestDto();
+        checkoutRequest.setItems(List.of(item));
+        checkoutRequest.setBillingName("Lucía Pérez Soto");
+
+        mockMvc.perform(post(BASE_URL + "/orders")
+                        .with(user(UserDetailsImpl.build(fresh)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(checkoutRequest)))
+                .andExpect(status().isCreated());
+
+        CustomerProfile profile = customerProfileRepository.findByUserId(fresh.getId()).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(profile.getFirstNames()).isEqualTo("Lucía");
+        org.assertj.core.api.Assertions.assertThat(profile.getLastNames()).isEqualTo("Pérez Soto");
+    }
+
+    @Test
     void paymentWithRejectedCardReturnsError() throws Exception {
         List<OneToOneService> services = oneToOneServiceRepository.findAll();
         OneToOneService service = services.get(0);
