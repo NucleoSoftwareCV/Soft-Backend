@@ -191,6 +191,22 @@ public class EventManagementController {
         return eventService.getOccurrenceAttendees(occurrenceId, principal.getId(), isAdmin(principal));
     }
 
+    @PatchMapping("/occurrences/{occurrenceId}/attendees/{attendeeId}/attendance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSIONAL')")
+    public ResponseEntity<Void> registerAttendance(
+            @PathVariable Long occurrenceId,
+            @PathVariable Long attendeeId,
+            @Valid @RequestBody AttendanceUpdate request,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        eventService.registerAttendance(occurrenceId, attendeeId, request.status(),
+                principal.getId(), isAdmin(principal));
+        return ResponseEntity.noContent().build();
+    }
+
+    public record AttendanceUpdate(
+            @jakarta.validation.constraints.NotNull
+            com.hean.consigueventas.oonabe.common.enums.AttendanceStatus status) {}
+
     private boolean isAdmin(UserDetailsImpl principal) {
         return principal.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));

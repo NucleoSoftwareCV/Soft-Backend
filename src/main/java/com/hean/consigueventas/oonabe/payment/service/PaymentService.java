@@ -85,22 +85,37 @@ public class PaymentService {
      * Las cuentas creadas fuera del registro (semillas, administración) no tienen perfil de cliente;
      * se crea al reservar por primera vez para no bloquear la solicitud.
      */
-    private CustomerProfile createCustomerProfile(Long userId, String billingName) {
-        User user = userRepository.findById(userId)
+    private CustomerProfile findOrCreateCustomerProfile(Long userId, String billingName) {
+        User user = userRepository.findLockedById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + userId));
+        return customerProfileRepository.findByUserId(userId)
+                .orElseGet(() -> createCustomerProfile(user, billingName));
+    }
+
+    private CustomerProfile createCustomerProfile(User user, String billingName) {
         String fullName = billingName == null || billingName.isBlank() ? user.getUsername() : billingName.trim();
+        if (fullName == null || fullName.isBlank()) {
+            String email = user.getEmail();
+            int separator = email.indexOf('@');
+            fullName = separator > 0 ? email.substring(0, separator) : email;
+        }
         int space = fullName.indexOf(' ');
+        String firstName = space > 0 ? fullName.substring(0, space) : fullName;
+        String lastName = space > 0 ? fullName.substring(space + 1).trim() : "";
+        if (firstName.length() > 100 || lastName.length() > 100) {
+            throw new IllegalArgumentException("El nombre y los apellidos no pueden superar 100 caracteres cada uno.");
+        }
         CustomerProfile profile = new CustomerProfile();
         profile.setUser(user);
-        profile.setFirstNames(space > 0 ? fullName.substring(0, space) : fullName);
-        profile.setLastNames(space > 0 ? fullName.substring(space + 1).trim() : "");
+        profile.setFirstNames(firstName);
+        profile.setLastNames(lastName);
         return customerProfileRepository.save(profile);
     }
 
     @Transactional
     public CheckoutResponseDto createOrder(Long customerUserId, CheckoutRequestDto checkoutRequest) {
         CustomerProfile customer = customerProfileRepository.findByUserId(customerUserId)
-                .orElseGet(() -> createCustomerProfile(customerUserId, checkoutRequest.getBillingName()));
+                .orElseGet(() -> findOrCreateCustomerProfile(customerUserId, checkoutRequest.getBillingName()));
 
         PurchaseOrder order = new PurchaseOrder();
         order.setCode("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());

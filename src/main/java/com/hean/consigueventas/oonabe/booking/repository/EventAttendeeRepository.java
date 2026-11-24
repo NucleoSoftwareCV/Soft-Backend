@@ -20,4 +20,7 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
         WHERE b.occurrence.id = :occurrenceId
     """)
     List<EventAttendee> findByOccurrenceId(@Param("occurrenceId") Long occurrenceId);
+
+    @Query("select a from EventAttendee a where a.id = :id and a.eventBooking.occurrence.id = :occurrenceId")
+    java.util.Optional<EventAttendee> findForOccurrence(@Param("id") Long id, @Param("occurrenceId") Long occurrenceId);
 }
