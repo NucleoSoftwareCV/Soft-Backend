@@ -43,10 +43,10 @@ class HomeEventSectionsIntegrationTest {
     @Test
     void publicHomeReturnsOrderedNonEmptySectionsWithLimitedCardsAndCovers() throws Exception {
         mockMvc.perform(get("/api/v1/home/event-sections")
-                        .param("cityName", "Valencia")
+                        .param("cityName", "Lima")
                         .param("limit", "4"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cityName").value("Valencia"))
+                .andExpect(jsonPath("$.cityName").value("Lima"))
                 .andExpect(jsonPath("$.sections", hasSize(7)))
                 .andExpect(jsonPath("$.sections[0].key").value("THIS_WEEK"))
                 .andExpect(jsonPath("$.sections[1].key").value("WEEKEND"))
@@ -58,8 +58,8 @@ class HomeEventSectionsIntegrationTest {
                 .andExpect(jsonPath("$.sections[*].events.length()", everyItem(lessThanOrEqualTo(4))))
                 .andExpect(jsonPath("$.sections[*].events[*].coverImageUrl",
                         everyItem(not(nullValue()))))
-                .andExpect(jsonPath("$.sections[*].events[*].cityName", not(hasItem("Barcelona"))))
-                .andExpect(jsonPath("$.sections[*].events[*].cityName", not(hasItem("Madrid"))))
+                .andExpect(jsonPath("$.sections[*].events[*].cityName", not(hasItem("Arequipa"))))
+                .andExpect(jsonPath("$.sections[*].events[*].cityName", not(hasItem("Cusco"))))
                 .andExpect(jsonPath("$.sections[0].events[0].endsAt").doesNotExist())
                 .andExpect(jsonPath("$.sections[0].events[0].eventType").doesNotExist())
                 .andExpect(jsonPath("$.sections[0].events[0].isRecurring").doesNotExist())
@@ -71,11 +71,14 @@ class HomeEventSectionsIntegrationTest {
 
     @Test
     void homeDateSectionsExposeReusableViewAllFilters() throws Exception {
-        mockMvc.perform(get("/api/v1/home/event-sections"))
+        // Los eventos presenciales de prueba están en Lima (la ciudad por defecto de la home es Arequipa).
+        mockMvc.perform(get("/api/v1/home/event-sections").param("cityName", "Lima"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sections[0].key").value("THIS_WEEK"))
+                .andExpect(jsonPath("$.sections[1].key").value("WEEKEND"))
                 .andExpect(jsonPath("$.sections[0].viewAllFilters.dateFrom").value("2026-07-27"))
                 .andExpect(jsonPath("$.sections[0].viewAllFilters.dateTo").value("2026-08-02"))
-                .andExpect(jsonPath("$.sections[0].viewAllFilters.cityName").value("Valencia"))
+                .andExpect(jsonPath("$.sections[0].viewAllFilters.cityName").value("Lima"))
                 .andExpect(jsonPath("$.sections[0].viewAllFilters.includeOnline").value(true))
                 .andExpect(jsonPath("$.sections[1].viewAllFilters.dateFrom").value("2026-07-31"))
                 .andExpect(jsonPath("$.sections[1].viewAllFilters.dateTo").value("2026-08-02"));
@@ -90,7 +93,7 @@ class HomeEventSectionsIntegrationTest {
 
         mockMvc.perform(get("/api/v1/events")
                         .param("categoryIds", yogaId + "," + breathworkId)
-                        .param("cityName", "Valencia")
+                        .param("cityName", "Lima")
                         .param("includeOnline", "true")
                         .param("size", "20"))
                 .andExpect(status().isOk())

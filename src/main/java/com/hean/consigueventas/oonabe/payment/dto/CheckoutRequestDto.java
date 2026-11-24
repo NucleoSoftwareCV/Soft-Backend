@@ -17,6 +17,4 @@ public class CheckoutRequestDto {
 
     private String billingName;
     private String billingAddress;
-
-    private Integer redeemPoints;
 }

@@ -42,4 +42,3 @@ public class EventItineraryController {
             eventId, requests, principal.getId(), admin);
     }
 }
-

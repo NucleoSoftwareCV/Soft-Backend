@@ -80,6 +80,7 @@ class EventManagementIntegrationTest {
                                     "currency": "EUR",
                                     "minimumAge": 18,
                                     "featured": false,
+                                    "paymentMethod": "WHATSAPP",
                                     "categoryId": %d,
                                     "experienceTypeId": %d,
                                     "specialistId": %d
@@ -110,6 +111,8 @@ class EventManagementIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.event.description")
                         .value("Comprueba que el enlace se persiste despues de la ocurrencia."))
+                // WhatsApp ya no es mecanismo de reserva: todo evento usa el flujo interno.
+                .andExpect(jsonPath("$.event.paymentMethod").value("ONLINE"))
                 .andExpect(jsonPath("$.occurrences[0].startsAt").value("2030-08-05T15:00:00Z"))
                 .andExpect(jsonPath("$.occurrences[0].endsAt").value("2030-08-05T17:00:00Z"))
                 .andExpect(jsonPath("$.occurrences[0].capacity").value(12))

@@ -10,8 +10,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.hean.consigueventas.oonabe.common.config.TimeConfig;
+
 import java.time.LocalDate;
-import java.time.ZoneId;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,7 +41,7 @@ class EventOccurrencePublicCalendarIntegrationTest {
         var occurrence = occurrenceRepository.findByEventIdOrderByStartsAtAsc(event.getId())
                 .stream().findFirst().orElseThrow();
 
-        LocalDate occurrenceDate = occurrence.getStartsAt().atZone(ZoneId.of("Europe/Madrid")).toLocalDate();
+        LocalDate occurrenceDate = occurrence.getStartsAt().atZone(TimeConfig.BUSINESS_ZONE).toLocalDate();
 
         mockMvc.perform(get("/api/v1/event-occurrences/public")
                         .param("specialistId", specialistId.toString())

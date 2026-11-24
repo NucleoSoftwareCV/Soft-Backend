@@ -1,18 +1,15 @@
 package com.hean.consigueventas.oonabe.booking.service;
 
-import com.hean.consigueventas.oonabe.booking.entity.BookingStatusHistory;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
-import com.hean.consigueventas.oonabe.booking.repository.BookingStatusHistoryRepository;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
 import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
-import com.hean.consigueventas.oonabe.common.enums.PurchaseItemType;
-import com.hean.consigueventas.oonabe.event.entity.EventOccurrence;
 import com.hean.consigueventas.oonabe.event.repository.EventOccurrenceRepository;
+import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
+import com.hean.consigueventas.oonabe.notification.service.NotificationService;
 import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
 import com.hean.consigueventas.oonabe.payment.entity.PurchaseOrder;
 import com.hean.consigueventas.oonabe.payment.repository.PurchaseOrderRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
@@ -21,61 +18,57 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Releases the spots held by orders whose payment window expired. Bookings an expired order holds
- * (pending or accepted but unpaid) can never be paid, so they are cancelled and their spots freed.
+ * Releases the spots of bookings whose deadline passed: a request nobody answered before the event
+ * starts, or an accepted booking not paid in time. A confirmed booking is never released.
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ExpiredOrderReleaseService {
-    static final String REASON = "Orden expirada sin pago";
-    private static final Set<BookingStatus> HELD = Set.of(BookingStatus.PENDIENTE, BookingStatus.CONFIRMADA);
+    static final String REASON = "Reserva vencida sin completarse";
+    private static final Set<BookingStatus> HELD = Set.of(BookingStatus.PENDIENTE, BookingStatus.ACEPTADA);
 
     private final PurchaseOrderRepository orders;
     private final EventBookingRepository bookings;
     private final EventOccurrenceRepository occurrences;
-    private final BookingStatusHistoryRepository history;
+    private final BookingTransitions transitions;
+    private final NotificationService notifications;
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public List<String> findReleasableOrderCodes() {
-        return bookings.findOrderCodesWithExpiredHolds(clock.instant(), PurchaseOrderStatus.PAGADA, HELD);
+    public List<String> findReleasableBookingCodes() {
+        return bookings.findCodesWithExpiredHolds(clock.instant(), HELD);
     }
 
-    /** Returns how many bookings were released; 0 when the order was paid or released meanwhile. */
+    /** Returns whether the booking was released; false when it was paid or released meanwhile. */
     @Transactional
-    public int release(String orderCode) {
+    public boolean release(String bookingCode) {
+        var reference = bookings.findReferenceByCode(bookingCode).orElse(null);
+        if (reference == null) {
+            return false;
+        }
         // Same locking order as payment: order, booking(s), occurrence(s).
-        PurchaseOrder order = orders.findLockedByCode(orderCode).orElse(null);
-        Instant now = clock.instant();
-        if (order == null || order.getStatus() == PurchaseOrderStatus.PAGADA
-                || order.getExpiresAt() == null || !order.getExpiresAt().isBefore(now)) {
-            return 0;
-        }
-        List<EventBooking> held = bookings.findLockedByOrderId(order.getId()).stream()
-                .filter(b -> HELD.contains(b.getStatus())).toList();
-        held.stream().map(b -> b.getOccurrence().getId()).distinct().sorted().forEach(occurrences::findLockedById);
-        for (EventBooking booking : held) {
-            EventOccurrence occurrence = booking.getOccurrence();
-            if (occurrence.getReservedSpots() < booking.getQuantity()) {
-                log.warn("Disponibilidad inconsistente al liberar {}: reservadas={}, a liberar={}",
-                        booking.getCode(), occurrence.getReservedSpots(), booking.getQuantity());
+        PurchaseOrder order = null;
+        if (reference.getOrderCode() != null) {
+            order = orders.findLockedByCode(reference.getOrderCode()).orElse(null);
+            if (order != null) {
+                bookings.findLockedByOrderId(order.getId());
             }
-            occurrence.setReservedSpots(Math.max(0, occurrence.getReservedSpots() - booking.getQuantity()));
-            BookingStatusHistory change = new BookingStatusHistory();
-            change.setBookingType(PurchaseItemType.EVENTO);
-            change.setBookingId(booking.getId());
-            change.setPreviousStatus(booking.getStatus().name());
-            change.setNewStatus(BookingStatus.CANCELADA.name());
-            change.setReason(REASON);
-            change.setCreatedAt(now);
-            history.save(change);
-            booking.setStatus(BookingStatus.CANCELADA);
-            booking.setCancelledAt(now);
         }
-        if (order.getStatus() == PurchaseOrderStatus.ABIERTA) {
-            order.setStatus(PurchaseOrderStatus.EXPIRADA);
+        EventBooking booking = bookings.findLockedByCode(bookingCode).orElse(null);
+        Instant now = clock.instant();
+        if (booking == null || !HELD.contains(booking.getStatus()) || !isExpired(booking, order, now)) {
+            return false;
         }
-        return held.size();
+        occurrences.findLockedById(reference.getOccurrenceId());
+        transitions.cancel(booking, order, null, REASON, PurchaseOrderStatus.EXPIRADA, now);
+        notifications.notifyCustomer(booking, NotificationType.RESERVA_VENCIDA);
+        notifications.notifyProfessional(booking, NotificationType.RESERVA_EXPIRADA);
+        return true;
+    }
+
+    private boolean isExpired(EventBooking booking, PurchaseOrder order, Instant now) {
+        Instant deadline = booking.getExpiresAt() != null ? booking.getExpiresAt() : booking.getOccurrence().getStartsAt();
+        // Orders created before the unified flow still carry their own expiry.
+        return deadline.isBefore(now) || order != null && order.getExpiresAt() != null && order.getExpiresAt().isBefore(now);
     }
 }

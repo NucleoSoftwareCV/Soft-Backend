@@ -2,6 +2,7 @@ package com.hean.consigueventas.oonabe.event.dto.response;
 
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
 import com.hean.consigueventas.oonabe.common.enums.EventMood;
+import com.hean.consigueventas.oonabe.campaign.dto.CampaignBadgeResponse;
 import com.hean.consigueventas.oonabe.review.dto.response.EventReviewerPreviewResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -57,6 +58,72 @@ public record EventCardResponse(
         @Schema(description = "Cantidad total de reseñas del evento")
         long reviewCount,
         @Schema(description = "Hasta cuatro autores reales de reseñas, con su avatar si existe")
-        List<EventReviewerPreviewResponse> reviewers
+        List<EventReviewerPreviewResponse> reviewers,
+        @Schema(description = "Campañas promocionales abiertas en las que participa el evento (vacía si ninguna)")
+        List<CampaignBadgeResponse> campaignBadges
 ) {
+    public EventCardResponse {
+        reviewers = reviewers == null ? List.of() : List.copyOf(reviewers);
+        campaignBadges = campaignBadges == null ? List.of() : List.copyOf(campaignBadges);
+    }
+
+    /** Tarjeta con valoraciones pero sin distintivos de campaña (listados que no los resuelven). */
+    public EventCardResponse(
+            Long id,
+            String title,
+            String summary,
+            EventModality modality,
+            BigDecimal priceFrom,
+            String currency,
+            Long categoryId,
+            String categoryName,
+            Long organizerId,
+            String organizerName,
+            String organizerPhotoUrl,
+            String coverImageUrl,
+            Instant startsAt,
+            Instant endsAt,
+            String cityName,
+            Long experienceTypeId,
+            String eventType,
+            String experienceTypeSlug,
+            Boolean isRecurring,
+            EventMood mood,
+            Long occurrenceId,
+            Double averageRating,
+            long reviewCount,
+            List<EventReviewerPreviewResponse> reviewers) {
+        this(id, title, summary, modality, priceFrom, currency, categoryId, categoryName, organizerId,
+                organizerName, organizerPhotoUrl, coverImageUrl, startsAt, endsAt, cityName, experienceTypeId,
+                eventType, experienceTypeSlug, isRecurring, mood, occurrenceId, averageRating, reviewCount,
+                reviewers, List.of());
+    }
+
+    /** Tarjeta sin valoraciones ni distintivos de campaña. */
+    public EventCardResponse(
+            Long id,
+            String title,
+            String summary,
+            EventModality modality,
+            BigDecimal priceFrom,
+            String currency,
+            Long categoryId,
+            String categoryName,
+            Long organizerId,
+            String organizerName,
+            String organizerPhotoUrl,
+            String coverImageUrl,
+            Instant startsAt,
+            Instant endsAt,
+            String cityName,
+            Long experienceTypeId,
+            String eventType,
+            String experienceTypeSlug,
+            Boolean isRecurring,
+            EventMood mood,
+            Long occurrenceId) {
+        this(id, title, summary, modality, priceFrom, currency, categoryId, categoryName, organizerId,
+                organizerName, organizerPhotoUrl, coverImageUrl, startsAt, endsAt, cityName, experienceTypeId,
+                eventType, experienceTypeSlug, isRecurring, mood, occurrenceId, null, 0L, List.of(), List.of());
+    }
 }

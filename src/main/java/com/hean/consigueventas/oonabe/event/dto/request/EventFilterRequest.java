@@ -7,6 +7,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
@@ -74,7 +75,11 @@ public record EventFilterRequest(
         Long specialistId,
 
         @Schema(description = "Mood (RELAJACION | ENERGIA | CONECTAR)")
-        EventMood mood
+        EventMood mood,
+
+        @Schema(description = "Slug de una campaña promocional abierta: solo eventos que participan", example = "sorteo-bienestar")
+        @Pattern(regexp = "[a-z0-9]+(-[a-z0-9]+)*", message = "El slug de campaña no es válido")
+        String campaignSlug
 ) {
         @AssertTrue(message = "La fecha final no puede ser anterior a la fecha inicial")
         @Schema(hidden = true)

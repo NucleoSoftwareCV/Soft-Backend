@@ -15,7 +15,7 @@ public final class ProfessionalBookingDtos {
     @Schema(description = "Reserva de un evento del profesional autenticado")
     public record Summary(String code, String customerName, Long eventId, String eventTitle,
             Long occurrenceId, Instant occurrenceStartsAt, short quantity, BigDecimal totalAmount,
-            String currency, BookingStatus status, Instant createdAt) {}
+            String currency, BookingStatus status, Instant createdAt, Instant paymentDeadline) {}
 
     @Schema(description = "Detalle de reserva, disponibilidad actual y trazabilidad")
     public record Detail(Summary booking, String customerEmail, String customerPhone,
@@ -26,13 +26,13 @@ public final class ProfessionalBookingDtos {
     public record History(String previousStatus, String newStatus, String changedBy,
             String reason, Instant createdAt) {}
 
-    @Schema(description = "Decisión sobre una reserva pendiente: CONFIRMADA o CANCELADA")
+    @Schema(description = "Decisión sobre una reserva pendiente: ACEPTADA o CANCELADA")
     public record Decision(@NotNull BookingStatus status,
             @Size(max = 255) @Schema(description = "Obligatorio al rechazar", example = "La solicitud no puede ser atendida") String reason) {
-        @AssertTrue(message = "Solo se permite confirmar o cancelar una reserva pendiente")
+        @AssertTrue(message = "Solo se permite aceptar o rechazar una reserva pendiente")
         @Schema(hidden = true)
         public boolean isSupportedStatus() {
-            return status == null || status == BookingStatus.CONFIRMADA || status == BookingStatus.CANCELADA;
+            return status == null || status == BookingStatus.ACEPTADA || status == BookingStatus.CANCELADA;
         }
 
         @AssertTrue(message = "El motivo es obligatorio al rechazar")

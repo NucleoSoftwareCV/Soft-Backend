@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cities/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/city-interests").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/contact/email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/work-topics/active", "/api/v1/work-topics/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/techniques/active", "/api/v1/techniques/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/profile-images/**").permitAll()
@@ -89,6 +90,7 @@ public class SecurityConfig {
                                 "/api/v1/events/*/reviews",
                                 "/api/v1/events/*/reviews/summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/home/event-sections").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/campaigns/active", "/api/v1/campaigns/{slug}").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professional-applications/me").hasRole("USER")
                         .requestMatchers("/api/v1/payments/checkout/**").hasRole("USER")

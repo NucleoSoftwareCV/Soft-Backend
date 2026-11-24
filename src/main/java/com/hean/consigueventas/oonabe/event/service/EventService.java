@@ -1,5 +1,12 @@
 package com.hean.consigueventas.oonabe.event.service;
 
+import com.hean.consigueventas.oonabe.common.enums.AttendanceStatus;
+import com.hean.consigueventas.oonabe.common.enums.BookingStatus;
+import com.hean.consigueventas.oonabe.common.enums.EventOccurrenceStatus;
+import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
+import com.hean.consigueventas.oonabe.rewards.Service.AttendancePointsService;
+
+import com.hean.consigueventas.oonabe.campaign.service.CampaignBadgeLookup;
 import com.hean.consigueventas.oonabe.category.entity.Category;
 import com.hean.consigueventas.oonabe.category.repository.CategoryRepository;
 import com.hean.consigueventas.oonabe.common.enums.EventModality;
@@ -52,6 +59,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.security.access.AccessDeniedException;
@@ -70,6 +78,7 @@ public class EventService {
     private final ExperienceTypeRepository experienceTypeRepository;
     private final SpecialistProfileRepository specialistProfileRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
+    private final AttendancePointsService attendancePoints;
 
     private final EventMapper eventMapper;
     private final EventOccurrenceMapper occurrenceMapper;
@@ -78,6 +87,8 @@ public class EventService {
     private final EventCardAssembler eventCardAssembler;
     private final EventImageRepository eventImageRepository;
     private final LocalImageStorageService imageStorageService;
+    private final CampaignBadgeLookup campaignBadgeLookup;
+    private final Clock clock;
 
     public EventService(EventRepository eventRepository,
                         EventOccurrenceRepository occurrenceRepository,
@@ -93,8 +104,11 @@ public class EventService {
                         LocationMapper locationMapper,
                         EventCardAssembler eventCardAssembler,
                         EventAttendeeRepository eventAttendeeRepository,
+                        AttendancePointsService attendancePoints,
                         EventImageRepository eventImageRepository,
-                        LocalImageStorageService imageStorageService) {
+                        LocalImageStorageService imageStorageService,
+                        CampaignBadgeLookup campaignBadgeLookup,
+                        Clock clock) {
         this.eventRepository = eventRepository;
         this.occurrenceRepository = occurrenceRepository;
         this.meetingLinkRepository = meetingLinkRepository;
@@ -109,8 +123,11 @@ public class EventService {
         this.locationMapper = locationMapper;
         this.eventCardAssembler = eventCardAssembler;
         this.eventAttendeeRepository = eventAttendeeRepository;
+        this.attendancePoints = attendancePoints;
         this.eventImageRepository = eventImageRepository;
         this.imageStorageService = imageStorageService;
+        this.campaignBadgeLookup = campaignBadgeLookup;
+        this.clock = clock;
     }
 
     @Transactional
@@ -242,12 +259,43 @@ public class EventService {
         }).toList();
     }
 
+    @Transactional
+    public void registerAttendance(Long occurrenceId, Long attendeeId, AttendanceStatus status,
+                                   Long userId, boolean admin) {
+        getManagedOccurrence(occurrenceId, userId, admin);
+        EventOccurrence occurrence = occurrenceRepository.findLockedById(occurrenceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fecha del evento no encontrada."));
+        if (status == AttendanceStatus.PENDIENTE) {
+            throw new IllegalArgumentException("Indica si el participante asistió.");
+        }
+        var attendee = eventAttendeeRepository.findForOccurrence(attendeeId, occurrenceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Participante no encontrado para esta fecha."));
+        var current = attendee.getAttendanceStatus();
+        if (current == status) {
+            return;
+        }
+        if (current != AttendanceStatus.PENDIENTE
+                || occurrence.getStartsAt().isAfter(clock.instant())
+                || occurrence.getStatus() == EventOccurrenceStatus.CANCELADA) {
+            throw new BookingConflictException("La asistencia no se puede modificar.");
+        }
+        BookingStatus bookingStatus = attendee.getEventBooking().getStatus();
+        if (bookingStatus != BookingStatus.CONFIRMADA && bookingStatus != BookingStatus.COMPLETADA) {
+            throw new BookingConflictException("La reserva debe estar confirmada.");
+        }
+        attendee.setAttendanceStatus(status);
+        if (status == AttendanceStatus.ASISTIO) {
+            attendancePoints.credit(attendee, occurrence.getEvent());
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<EventCardResponse> getAllActiveEvents(EventFilterRequest filter, Pageable pageable) {
         Sort.Order startsAtOrder = startsAtOrder(pageable);
         Specification<Event> spec = EventSpecification.publicListing(
                 filter,
-                startsAtOrder == null ? null : startsAtOrder.getDirection()
+                startsAtOrder == null ? null : startsAtOrder.getDirection(),
+                clock.instant()
         );
         Pageable repositoryPageable = withoutStartsAtSort(pageable);
 
@@ -257,7 +305,11 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(Long id) {
         Event event = getEventOrThrow(id);
-        return eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId()));
+        return eventMapper.toDetailResponse(
+                event,
+                resolveCoverImageUrl(event.getId()),
+                resolveGalleryImages(event.getId()),
+                campaignBadgeLookup.openBadges(event.getId(), clock.instant()));
     }
 
     @Transactional
@@ -399,7 +451,7 @@ public class EventService {
                 .map(occurrenceMapper::toResponse)
                 .toList();
         return new EventManagementResponse(
-                eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId())),
+                eventMapper.toDetailResponse(event, resolveCoverImageUrl(event.getId()), resolveGalleryImages(event.getId()), List.of()),
                 event.getStatus(),
                 event.getSpecialist().getId(),
                 occurrences);

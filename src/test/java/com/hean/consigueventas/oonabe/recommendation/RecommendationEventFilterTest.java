@@ -59,9 +59,9 @@ class RecommendationEventFilterTest {
         occurrence.setEvent(event);
         occurrence.setLocation(location);
 
-        // En Madrid corresponde a las 18:00 del 20 de octubre.
+        // En Lima (zona de negocio) corresponde a las 18:00 del 20 de octubre.
         occurrence.setStartsAt(
-                Instant.parse("2026-10-20T16:00:00Z")
+                Instant.parse("2026-10-20T23:00:00Z")
         );
     }
 
@@ -178,18 +178,18 @@ class RecommendationEventFilterTest {
         assertThat(matcher.matches(occurrence, filters.build())).isTrue();
 
         occurrence.setStartsAt(
-                Instant.parse("2026-10-20T22:30:00Z")
+                Instant.parse("2026-10-21T05:30:00Z")
         );
 
-        // En Madrid ya es el 21 de octubre.
+        // En Lima ya es el 21 de octubre (00:30).
         assertThat(matcher.matches(occurrence, filters.build())).isFalse();
     }
 
     @Test
     void shouldUseBusinessHourForTimeFilters() {
         Filters filters = new Filters();
-        filters.hourFrom = 18;
-        filters.hourTo = 18;
+        filters.hourFrom = 11;
+        filters.hourTo = 11;
 
         assertThat(matcher.matches(occurrence, filters.build())).isTrue();
 
@@ -269,7 +269,8 @@ class RecommendationEventFilterTest {
                     hourTo,
                     isRecurring,
                     specialistId,
-                    mood
+                    mood,
+                    null
             );
         }
     }
