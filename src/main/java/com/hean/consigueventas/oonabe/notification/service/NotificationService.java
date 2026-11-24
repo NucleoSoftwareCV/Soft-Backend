@@ -1,6 +1,7 @@
 package com.hean.consigueventas.oonabe.notification.service;
 
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.booking.entity.SessionBooking;
 import com.hean.consigueventas.oonabe.common.dto.response.PagedResponse;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
 import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
@@ -34,6 +35,17 @@ public class NotificationService {
         save(booking.getOccurrence().getEvent().getSpecialist().getUser(), booking, type);
     }
 
+    /** Avisos de citas 1:1. Se conservan junto con los avisos de reservas de eventos. */
+    @Transactional
+    public void notifyCustomer(SessionBooking booking, NotificationType type) {
+        save(booking.getCustomer().getUser(), type, booking.getService().getTitle(), booking.getCode());
+    }
+
+    @Transactional
+    public void notifyProfessional(SessionBooking booking, NotificationType type) {
+        save(booking.getSpecialist().getUser(), type, booking.getService().getTitle(), booking.getCode());
+    }
+
     public PagedResponse<Item> list(Long userId, int page, int size) {
         return PagedResponse.from(notifications.findByUserId(userId,
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id"))).map(this::item));
@@ -59,13 +71,17 @@ public class NotificationService {
     }
 
     private void save(User recipient, EventBooking booking, NotificationType type) {
+        save(recipient, type, booking.getOccurrence().getEvent().getTitle(), booking.getCode());
+    }
+
+    private void save(User recipient, NotificationType type, String itemTitle, String bookingCode) {
         Notification notification = new Notification();
         notification.setUser(recipient);
         notification.setType(type);
         notification.setTitle(type.getTitle());
         notification.setMessage(type.getMessage());
-        notification.setEventTitle(booking.getOccurrence().getEvent().getTitle());
-        notification.setBookingCode(booking.getCode());
+        notification.setEventTitle(itemTitle);
+        notification.setBookingCode(bookingCode);
         notification.setActionLabel(type.getActionLabel());
         notification.setCreatedAt(clock.instant());
         notifications.save(notification);

@@ -1,6 +1,4 @@
 package com.hean.consigueventas.oonabe.auth;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.hean.consigueventas.oonabe.auth.entity.PasswordResetToken;
 import com.hean.consigueventas.oonabe.auth.repository.PasswordResetTokenRepository;
 import com.hean.consigueventas.oonabe.user.entity.User;
@@ -28,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
+@SpringBootTest(properties = "management.health.mail.enabled=false")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -36,8 +34,9 @@ class PasswordResetIntegrationTest {
 
     private static final String FORGOT_ENDPOINT = "/api/auth/forgot-password";
     private static final String RESET_ENDPOINT = "/api/auth/reset-password";
+
     @MockitoBean
-private JavaMailSender mailSender;
+    private JavaMailSender mailSender;
 
     @Autowired
     private MockMvc mockMvc;

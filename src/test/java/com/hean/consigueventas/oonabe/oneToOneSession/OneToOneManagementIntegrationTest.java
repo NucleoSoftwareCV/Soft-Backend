@@ -103,6 +103,29 @@ class OneToOneManagementIntegrationTest {
     }
 
     @Test
+    void ownerCanEditServiceWithAnUploadedCover() throws Exception {
+        OneToOneService service = serviceForSpecialist("specialist_ana");
+        String cover = "/images/profile-images/" + service.getId()
+                + "/session-cover/session-cover-12345678-abcd-1234-abcd-123456789abc.png";
+
+        mockMvc.perform(put("/api/v1/one-to-one-services/{id}", service.getId())
+                        .with(user(principal("specialist_ana")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Sesion con portada",
+                                  "description": "Sesion actualizada con su portada local.",
+                                  "imageUrl": "%s",
+                                  "durationMinutes": 60,
+                                  "modality": "ONLINE",
+                                  "price": 45.00
+                                }
+                                """.formatted(cover)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(cover));
+    }
+
+    @Test
     void ownerProfessionalCanToggleStatus() throws Exception {
         OneToOneService anaService = serviceForSpecialist("specialist_ana");
 

@@ -79,7 +79,7 @@ public class SessionBooking {
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 30)
     private BookingStatus status = BookingStatus.PENDIENTE;
 
     @Column(name = "expires_at")
@@ -93,6 +93,27 @@ public class SessionBooking {
 
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Column(name = "cancelled_by", length = 20)
+    private String cancelledBy;
+
+    @Column(name = "rescheduled_at")
+    private Instant rescheduledAt;
+
+    @Column(name = "previous_starts_at")
+    private Instant previousStartsAt;
+
+    @Column(name = "previous_ends_at")
+    private Instant previousEndsAt;
+
+    @Column(name = "reschedule_reason", length = 500)
+    private String rescheduleReason;
+
+    @Column(name = "rescheduled_by", length = 20)
+    private String rescheduledBy;
 
     @PrePersist
     void prePersist() {

@@ -162,32 +162,30 @@ class RecommendationControllerIntegrationTest {
     }
 
     private RecommendedEventResponse response() {
-     EventCardResponse card = new EventCardResponse(
-        7L,
-        "Yoga",
-        null,
-        EventModality.ONLINE,
-        null,
-        "EUR",
-        10L,
-        "Yoga",
-        30L,
-        "Ana",
-        null,
-        null,
-        Instant.parse("2026-11-01T12:00:00Z"),
-        Instant.parse("2026-11-01T13:00:00Z"),
-        null,
-        null,
-        null,
-        null,
-        false,
-        null,
-        null,
-        null,
-        0L,
-        List.of()
-);
+        EventCardResponse card = new EventCardResponse(
+                7L,
+                "Yoga",
+                null,
+                EventModality.ONLINE,
+                null,
+                "EUR",
+                10L,
+                "Yoga",
+                30L,
+                "Ana",
+                null,
+                null,
+                Instant.parse("2026-11-01T12:00:00Z"),
+                Instant.parse("2026-11-01T13:00:00Z"),
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                50L,
+                null, 0L, java.util.List.of()
+        );
         return new RecommendedEventResponse(
                 card,
                 50L,
