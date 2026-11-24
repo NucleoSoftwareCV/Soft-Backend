@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.profileProfesional.entity.ProfessionalSoci
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,10 @@ public interface ProfessionalSocialLinkRepository
     //Listar las redes sociales asociadas al perfil
     List<ProfessionalSocialLink> findBySpecialistProfileId(
             Long specialistProfileId
+    );
+
+    List<ProfessionalSocialLink> findBySpecialistProfileIdIn(
+            Collection<Long> specialistProfileIds
     );
 
     //Buscar una plataforma específica dentro del perfil
