@@ -188,8 +188,9 @@ class RecommendationEventFilterTest {
     @Test
     void shouldUseBusinessHourForTimeFilters() {
         Filters filters = new Filters();
-        filters.hourFrom = 11;
-        filters.hourTo = 11;
+        // 23:00 UTC son las 18:00 en Lima.
+        filters.hourFrom = 18;
+        filters.hourTo = 18;
 
         assertThat(matcher.matches(occurrence, filters.build())).isTrue();
 
