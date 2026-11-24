@@ -104,10 +104,15 @@ public class ProfessionalDirectoryService {
             JOIN event_occurrences o ON o.event_id = e.id
             JOIN locations l ON l.id = o.location_id JOIN cities c ON c.id = l.city_id
             WHERE o.status = 'PROGRAMADA' AND o.starts_at >= :now
+        ), directory_cities AS (
+            SELECT specialist_id, name FROM profile_cities
+            UNION ALL
+            SELECT p.id, c.name FROM public_profiles p JOIN cities c ON c.id = p.city_id
+            WHERE NOT EXISTS (SELECT 1 FROM profile_cities pc WHERE pc.specialist_id = p.id)
         ), directory AS (
             SELECT p.id, p.slug, p.public_name, p.profile_category, p.biography, p.photo_url,
                    ARRAY(SELECT t.name FROM taxonomy t WHERE t.specialist_id = p.id ORDER BY t.name) AS specialties,
-                   ARRAY(SELECT c.name FROM profile_cities c WHERE c.specialist_id = p.id ORDER BY c.name) AS city_names,
+                   ARRAY(SELECT c.name FROM directory_cities c WHERE c.specialist_id = p.id ORDER BY c.name) AS city_names,
                    cheapest.price, cheapest.currency, cheapest.starts_at, cheapest.type AS cheapest_type,
                    rating.average_rating, COALESCE(rating.review_count, 0) AS review_count
             FROM public_profiles p

@@ -4,6 +4,7 @@ import com.hean.consigueventas.oonabe.common.enums.ApprovalStatus;
 import com.hean.consigueventas.oonabe.common.enums.PublicationStatus;
 import com.hean.consigueventas.oonabe.common.exception.BusinessLogicException;
 import com.hean.consigueventas.oonabe.common.exception.ResourceNotFoundException;
+import com.hean.consigueventas.oonabe.masterdata.entity.City;
 import com.hean.consigueventas.oonabe.masterdata.entity.Technique;
 import com.hean.consigueventas.oonabe.masterdata.entity.WorkTopic;
 import com.hean.consigueventas.oonabe.masterdata.repository.TechniqueRepository;
@@ -119,22 +120,28 @@ public class SpecialistProfileService {
     /**
      * Crea un perfil profesional mínimo para un usuario recién aprobado, si todavía no tiene uno.
      * Pensado para invocarse automáticamente al aprobar una solicitud profesional, reutilizando los
-     * datos ya declarados en esa solicitud (nombre, WhatsApp) en vez de dejar al usuario sin perfil
+     * datos ya declarados en esa solicitud (nombre, WhatsApp y ciudad) en vez de dejar al usuario sin perfil
      * hasta que complete manualmente el formulario de creación.
      */
     @Transactional
     public void createMinimalProfileIfMissing(
             User user,
             String publicName,
-            String whatsappPhone
+            String whatsappPhone,
+            City city
     ) {
-        if (specialistProfileRepository.findByUserId(user.getId()).isPresent()) {
+        SpecialistProfile existingProfile = specialistProfileRepository.findByUserId(user.getId()).orElse(null);
+        if (existingProfile != null) {
+            if (existingProfile.getCity() == null) {
+                existingProfile.setCity(city);
+            }
             return;
         }
 
         SpecialistProfile profile = new SpecialistProfile();
         profile.setUser(user);
         profile.setPublicName(publicName);
+        profile.setCity(city);
         profile.setSlug(generateUniqueSlug(publicName));
         profile.setProfileCategory("PROFESIONALES");
         // Keep automatic profiles compatible with databases created from the

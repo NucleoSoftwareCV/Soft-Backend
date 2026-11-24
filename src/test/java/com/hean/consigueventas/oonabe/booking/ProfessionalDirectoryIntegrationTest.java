@@ -73,4 +73,25 @@ class ProfessionalDirectoryIntegrationTest {
         mvc.perform(get("/api/v1/specialist-profiles/directory").param("page","-1"))
             .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void usesProfileCityOnlyWhenThereAreNoPublishedLocations() {
+        var specialist = fixture.occurrence().getEvent().getSpecialist();
+        City profileCity = new City();
+        profileCity.setName("Cusco DirCheck");
+        profileCity.setCountryCode("PE");
+        em.persist(profileCity);
+        specialist.setCity(profileCity);
+        em.flush();
+
+        assertThat(directory.get("DirCheck", "Cusco DirCheck", "professionals", "", 0, 20).totalElements()).isZero();
+
+        fixture.occurrence().setLocation(null);
+        em.flush();
+
+        var result = directory.get("DirCheck", "Cusco DirCheck", "professionals", "", 0, 20);
+        assertThat(result.content()).singleElement().satisfies(
+                profile -> assertThat(profile.cityNames()).containsExactly("Cusco DirCheck")
+        );
+    }
 }
