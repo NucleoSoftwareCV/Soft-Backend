@@ -3,6 +3,10 @@ package com.hean.consigueventas.oonabe.booking;
 import com.hean.consigueventas.oonabe.auth.security.UserDetailsImpl;
 import com.hean.consigueventas.oonabe.booking.dto.ProfessionalBookingDtos.Decision;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.booking.repository.EventAttendeeRepository;
+import com.hean.consigueventas.oonabe.experienceType.entity.ExperienceType;
+import com.hean.consigueventas.oonabe.rewards.Entity.EarnPointsRules;
+import com.hean.consigueventas.oonabe.rewards.Repository.RewardsReadRepository;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
 import com.hean.consigueventas.oonabe.booking.service.ClientBookingService;
@@ -59,6 +63,8 @@ class UnifiedBookingFlowIntegrationTest {
     @Autowired ExpiredOrderReleaseService release;
     @Autowired NotificationService notifications;
     @Autowired EventBookingRepository bookings;
+    @Autowired EventAttendeeRepository attendees;
+    @Autowired RewardsReadRepository rewards;
     @Autowired PurchaseOrderRepository orders;
     BookingFixtures.Fixture fixture;
 
@@ -102,6 +108,57 @@ class UnifiedBookingFlowIntegrationTest {
 
     private List<NotificationType> typesFor(Long userId) {
         return notifications.list(userId, 0, 50).content().stream().map(Item::type).toList();
+    }
+
+    @Test void professionalRegistersAttendanceAndCreditsPointsExactlyOnce() throws Exception {
+        ExperienceType experience = new ExperienceType();
+        experience.setName("Asistencia prueba");
+        em.persist(experience);
+        em.persist(EarnPointsRules.builder().experienceType(experience).active(true).reward(20).build());
+        fixture.occurrence().getEvent().setExperienceType(experience);
+        var attendee = paidAttendee();
+        fixture.occurrence().setStartsAt(Instant.now().minusSeconds(60));
+        em.flush();
+
+        var owner = user(principal(fixture.professional().getId(), "ROLE_PROFESSIONAL"));
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(patch(attendancePath(attendee.getId())).with(owner)
+                    .contentType("application/json").content("{\"status\":\"ASISTIO\"}"))
+                    .andExpect(status().isNoContent());
+        }
+        assertThat(rewards.findBalance(fixture.client().getId())).hasValue(20);
+        assertThat(rewards.findHistory(fixture.client().getId(),
+                org.springframework.data.domain.PageRequest.of(0, 10))).hasSize(1);
+    }
+
+    @Test void anotherProfessionalCannotMarkAttendance() throws Exception {
+        var attendee = paidAttendee();
+        var other = BookingFixtures.create(em, "attendance-other");
+        mvc.perform(patch(attendancePath(attendee.getId()))
+                .with(user(principal(other.professional().getId(), "ROLE_PROFESSIONAL")))
+                .contentType("application/json").content("{\"status\":\"ASISTIO\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test void attendanceCannotBeMarkedBeforeTheOccurrenceStarts() throws Exception {
+        var attendee = paidAttendee();
+        mvc.perform(patch(attendancePath(attendee.getId()))
+                .with(user(principal(fixture.professional().getId(), "ROLE_PROFESSIONAL")))
+                .contentType("application/json").content("{\"status\":\"ASISTIO\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    private com.hean.consigueventas.oonabe.booking.entity.EventAttendee paidAttendee() {
+        String order = request();
+        EventBooking booking = bookingOf(order);
+        accept(booking);
+        payments.processPayment(order, yape());
+        return attendees.findByEventBookingId(booking.getId()).getFirst();
+    }
+
+    private String attendancePath(Long attendeeId) {
+        return "/api/v1/events/occurrences/" + fixture.occurrence().getId()
+                + "/attendees/" + attendeeId + "/attendance";
     }
 
     // --- Solicitud, aceptación y pago ---------------------------------------------------------
