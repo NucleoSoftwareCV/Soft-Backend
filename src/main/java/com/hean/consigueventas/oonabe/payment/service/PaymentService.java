@@ -31,6 +31,8 @@ import com.hean.consigueventas.oonabe.user.entity.User;
 import com.hean.consigueventas.oonabe.user.repository.TemporaryCustomerProfileRepository;
 import com.hean.consigueventas.oonabe.user.repository.UserRepository;
 import com.hean.consigueventas.oonabe.booking.entity.EventBooking;
+import com.hean.consigueventas.oonabe.booking.entity.SessionBooking;
+import com.hean.consigueventas.oonabe.booking.repository.SessionBookingRepository;
 import com.hean.consigueventas.oonabe.booking.exception.BookingConflictException;
 import com.hean.consigueventas.oonabe.booking.entity.EventAttendee;
 import com.hean.consigueventas.oonabe.booking.repository.EventBookingRepository;
@@ -74,6 +76,7 @@ public class PaymentService {
     private final EventRepository eventRepository;
     private final OneToOneServiceRepository oneToOneServiceRepository;
     private final EventBookingRepository eventBookingRepository;
+    private final SessionBookingRepository sessionBookingRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
     private final CampaignEntryService campaignEntryService;
@@ -246,10 +249,50 @@ public class PaymentService {
         return response;
     }
 
+    /**
+     * Orden de pago de una cita 1:1 aceptada por el profesional. Se paga igual que una reserva de evento
+     * (Visa o Yape) y al aprobarse el pago la cita queda confirmada.
+     */
+    @Transactional
+    public PurchaseOrderItem openAppointmentOrder(SessionBooking booking) {
+        PurchaseOrder order = new PurchaseOrder();
+        order.setCode("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        order.setCustomer(booking.getCustomer());
+        order.setStatus(PurchaseOrderStatus.ABIERTA);
+        order.setSubtotal(booking.getPrice());
+        order.setTotalDiscount(BigDecimal.ZERO);
+        order.setTotalAmount(booking.getPrice());
+        order.setCurrency(booking.getCurrency() != null ? booking.getCurrency() : "PEN");
+        order = purchaseOrderRepository.save(order);
+
+        PurchaseOrderItem item = new PurchaseOrderItem();
+        item.setOrder(order);
+        item.setItemType(PurchaseItemType.SESION);
+        item.setReferenceId(booking.getService().getId());
+        item.setQuantity((short) 1);
+        item.setUnitPrice(booking.getPrice());
+        item.setTotalAmount(booking.getPrice());
+        item.setDescription("Sesión 1:1: " + booking.getService().getTitle());
+        return purchaseOrderItemRepository.save(item);
+    }
+
     @Transactional
     public PaymentResponseDto processPayment(String orderCode, PaymentProcessRequestDto request) {
         PurchaseOrder order = purchaseOrderRepository.findLockedByCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró la orden con código: " + orderCode));
+
+        List<SessionBooking> orderAppointments = sessionBookingRepository.findLockedByOrderId(order.getId());
+        if (orderAppointments.stream().anyMatch(b -> b.getStatus() == BookingStatus.CANCELADA)) {
+            throw new BookingConflictException("La cita fue cancelada y su orden ya no se puede pagar.");
+        }
+        if (orderAppointments.stream().anyMatch(b -> b.getStatus() != BookingStatus.ACEPTADA)
+                && order.getStatus() == PurchaseOrderStatus.ABIERTA) {
+            throw new BookingConflictException("El profesional aún no ha aceptado la cita.");
+        }
+        if (orderAppointments.stream().anyMatch(b -> b.getExpiresAt() != null
+                && b.getExpiresAt().isBefore(clock.instant()))) {
+            throw new BookingConflictException("El plazo de pago de la cita ha vencido.");
+        }
 
         List<EventBooking> orderBookings = eventBookingRepository.findLockedByOrderId(order.getId());
         orderBookings.stream().map(b -> b.getOccurrence().getId()).distinct().sorted()
@@ -343,6 +386,12 @@ public class PaymentService {
                 confirmedBookings.add(booking);
                 notificationService.notifyCustomer(booking, NotificationType.RESERVA_CONFIRMADA);
                 notificationService.notifyProfessional(booking, NotificationType.PAGO_COMPLETADO);
+            }
+            for (SessionBooking appointment : orderAppointments) {
+                appointment.setStatus(BookingStatus.CONFIRMADA);
+                appointment.setExpiresAt(null);
+                notificationService.notifyCustomer(appointment, NotificationType.CITA_PAGO_CONFIRMADO);
+                notificationService.notifyProfessional(appointment, NotificationType.CITA_PAGO_COMPLETADO);
             }
             // Same transaction as the payment: an entry exists only if the payment is committed.
             List<EntrySummary> campaignEntries =

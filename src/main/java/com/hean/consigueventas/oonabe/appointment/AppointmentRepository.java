@@ -56,24 +56,25 @@ public class AppointmentRepository {
             select b from SessionBooking b where (b.specialist.id=:professionalId or b.customer.id=:customerId)
             and b.startsAt<:end and b.endsAt>:start
             and (:excludedBookingId is null or b.id<>:excludedBookingId)
-            and (b.status=:confirmed or b.status=:proposed or (b.status=:pending and (b.expiresAt is null or b.expiresAt>:now)))
+            and (b.status=:confirmed or b.status=:proposed
+                 or ((b.status=:pending or b.status=:accepted) and (b.expiresAt is null or b.expiresAt>:now)))
             """,SessionBooking.class).setParameter("professionalId",professionalId).setParameter("customerId",customerId)
             .setParameter("start",start).setParameter("end",end).setParameter("now",now)
             .setParameter("excludedBookingId",excludedBookingId)
             .setParameter("confirmed",BookingStatus.CONFIRMADA).setParameter("proposed", BookingStatus.REPROGRAMACION_PROPUESTA)
-            .setParameter("pending",BookingStatus.PENDIENTE).getResultList();
+            .setParameter("pending",BookingStatus.PENDIENTE).setParameter("accepted",BookingStatus.ACEPTADA).getResultList();
     }
     public List<SessionBooking> agenda(Long id, Instant start, Instant end) {
-        return em.createQuery("select b from SessionBooking b where b.specialist.id=:id and b.orderItem is null and b.startsAt<:end and b.endsAt>:start order by b.startsAt,b.id",SessionBooking.class)
+        return em.createQuery("select b from SessionBooking b where b.specialist.id=:id and b.startsAt<:end and b.endsAt>:start order by b.startsAt,b.id",SessionBooking.class)
             .setParameter("id",id).setParameter("start",start).setParameter("end",end).getResultList();
     }
     public List<SessionBooking> allAppointments(Long id) {
-        return em.createQuery("select b from SessionBooking b where b.specialist.id=:id and b.orderItem is null order by b.startsAt desc,b.id desc", SessionBooking.class)
+        return em.createQuery("select b from SessionBooking b where b.specialist.id=:id order by b.startsAt desc,b.id desc", SessionBooking.class)
                 .setParameter("id", id).getResultList();
     }
 
     public List<SessionBooking> forProfessionalCustomer(Long specialistId, Long customerId) {
-        return em.createQuery("select b from SessionBooking b where b.specialist.id=:sid and b.customer.id=:cid and b.orderItem is null order by b.startsAt desc,b.id desc", SessionBooking.class)
+        return em.createQuery("select b from SessionBooking b where b.specialist.id=:sid and b.customer.id=:cid order by b.startsAt desc,b.id desc", SessionBooking.class)
                 .setParameter("sid", specialistId).setParameter("cid", customerId).getResultList();
     }
 
@@ -84,7 +85,7 @@ public class AppointmentRepository {
     public Long specialistForCustomerAppointment(Long userId, Long appointmentId) {
         return em.createQuery("""
                 select b.specialist.id from SessionBooking b
-                where b.id = :id and b.customer.user.id = :userId and b.orderItem is null
+                where b.id = :id and b.customer.user.id = :userId
                 """, Long.class)
                 .setParameter("id", appointmentId)
                 .setParameter("userId", userId)
@@ -99,7 +100,7 @@ public class AppointmentRepository {
                 join fetch b.specialist
                 join fetch b.customer c
                 left join fetch b.location
-                where c.user.id = :userId and b.orderItem is null
+                where c.user.id = :userId
                 order by b.startsAt desc, b.id desc
                 """, SessionBooking.class)
                 .setParameter("userId", userId).getResultList();
@@ -108,7 +109,7 @@ public class AppointmentRepository {
     public List<SessionBooking> pending(Long specialistId, Instant now) {
         return em.createQuery("""
                 select b from SessionBooking b
-                where b.specialist.id = :id and b.orderItem is null
+                where b.specialist.id = :id
                   and b.status = :pending and b.startsAt > :now
                   and (b.expiresAt is null or b.expiresAt > :now)
                 order by b.startsAt, b.id
@@ -126,7 +127,7 @@ public class AppointmentRepository {
                 join fetch b.specialist
                 join fetch b.customer
                 left join fetch b.location
-                where b.specialist.id = :specialistId and b.orderItem is null and b.code = :code
+                where b.specialist.id = :specialistId and b.code = :code
                 """, SessionBooking.class)
                 .setParameter("specialistId", specialistId)
                 .setParameter("code", code)
