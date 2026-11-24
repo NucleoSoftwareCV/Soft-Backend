@@ -125,7 +125,8 @@ public class ProfessionalApplicationService {
             specialistProfileService.createMinimalProfileIfMissing(
                     application.getUser(),
                     application.getFullName(),
-                    application.getWhatsappPhone());
+                    application.getWhatsappPhone(),
+                    application.getCity());
         } else {
             application.setRejectionReason(request.rejectionReason().trim());
         }

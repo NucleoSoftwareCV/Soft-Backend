@@ -61,6 +61,7 @@ public interface SpecialistProfileMapper {
     @Mapping(target = "slug", source = "profile.slug")
     @Mapping(target = "publicName", source = "profile.publicName")
     @Mapping(target = "profileCategory", source = "profile.profileCategory")
+    @Mapping(target = "cityName", source = "profile.city.name")
     @Mapping(target = "biography", source = "profile.biography")
     @Mapping(target = "description", source = "profile.description")    @Mapping(target = "photoUrl", source = "profile.photoUrl")
     @Mapping(target = "bannerUrl", source = "profile.bannerUrl")

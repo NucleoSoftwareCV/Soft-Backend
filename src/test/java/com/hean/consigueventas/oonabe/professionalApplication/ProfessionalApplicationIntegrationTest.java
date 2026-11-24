@@ -1,5 +1,8 @@
 package com.hean.consigueventas.oonabe.professionalApplication;
 
+import com.hean.consigueventas.oonabe.profileProfesional.config.SpecialistProfileCityBackfill;
+import jakarta.persistence.EntityManager;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hean.consigueventas.oonabe.auth.dto.request.TokenRefreshRequest;
 import com.hean.consigueventas.oonabe.auth.dto.response.TokenRefreshResponse;
@@ -80,6 +83,12 @@ class ProfessionalApplicationIntegrationTest {
 
     @Autowired
     private SpecialistProfileRepository specialistProfileRepository;
+
+    @Autowired
+    private SpecialistProfileCityBackfill profileCityBackfill;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void unauthenticatedUserCannotCreateOrReadApplication() throws Exception {
@@ -229,6 +238,26 @@ class ProfessionalApplicationIntegrationTest {
                 specialistProfileService.updateMyProfile("user1", profileRequest);
         assertThat(updated.approvalStatus()).isEqualTo(ApprovalStatus.APROBADO);
         assertThat(updated.publicationStatus()).isEqualTo(PublicationStatus.BORRADOR);
+        assertThat(updated.cityName()).isEqualTo(activeCity().getName());
+    }
+
+    @Test
+    void backfillsCityFromAnApprovedApplicationWhenTheProfileHasNone() throws Exception {
+        Long applicationId = createApplicationAndGetId("user1");
+        decide(applicationId, ProfessionalApplicationStatus.APROBADO, null)
+                .andExpect(status().isOk());
+
+        var user = userRepository.findByUsername("user1").orElseThrow();
+        var profile = specialistProfileRepository.findByUserId(user.getId()).orElseThrow();
+        Long expectedCityId = profile.getCity().getId();
+        profile.setCity(null);
+        specialistProfileRepository.saveAndFlush(profile);
+
+        profileCityBackfill.run(null);
+        entityManager.clear();
+
+        var updated = specialistProfileRepository.findById(profile.getId()).orElseThrow();
+        assertThat(updated.getCity().getId()).isEqualTo(expectedCityId);
     }
 
     @Test
