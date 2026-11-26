@@ -40,6 +40,13 @@ public class NotificationController {
         return service.list(user.getId(), page, size);
     }
 
+    @GetMapping("/me/refund-decisions")
+    public PagedResponse<Item> refundDecisions(@AuthenticationPrincipal UserDetailsImpl user,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return service.unreadRefundDecisions(user.getId(), page, size);
+    }
+
     @GetMapping("/me/unread-count")
     @Operation(summary = "Contar mis notificaciones sin leer")
     public UnreadCount unreadCount(@AuthenticationPrincipal UserDetailsImpl user) {

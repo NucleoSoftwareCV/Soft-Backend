@@ -56,7 +56,11 @@ public enum NotificationType {
     CITA_REPROGRAMACION_RECHAZADA("Reprogramación rechazada",
             "El cliente rechazó el horario propuesto y la cita fue liberada.", "Ver cita"),
     CITA_COMPLETADA("Cita completada",
-            "La cita se marcó como completada. Gracias por participar.", "Ver mi cita");
+            "La cita se marcó como completada. Gracias por participar.", "Ver mi cita"),
+    REEMBOLSO_APROBADO("Solicitud de reembolso aprobada",
+            "Tu solicitud de reembolso de práctica fue aprobada. Consulta la decisión en Mis reembolsos.", "Ver reembolso"),
+    REEMBOLSO_RECHAZADO("Solicitud de reembolso rechazada",
+            "Oona rechazó tu solicitud. Consulta el motivo en Mis reembolsos.", "Ver reembolso");
 
     private final String title;
     private final String message;

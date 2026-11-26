@@ -18,6 +18,8 @@ WORKDIR /app
 
 COPY --from=build /workspace/target/*.jar app.jar
 
+RUN install -d -o spring -g spring /app/private-storage/support
+
 USER spring:spring
 EXPOSE 8083
 
