@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hean.consigueventas.oonabe.profileProfesional.entity.SpecialistProfile;
 import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
 import com.hean.consigueventas.oonabe.notification.service.NotificationService;
+import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
+import com.hean.consigueventas.oonabe.payment.service.PaymentService;
 import java.time.*;
 import java.util.*;
 
@@ -25,10 +27,15 @@ public class AppointmentService {
     private final Clock clock;
     private final int holdMinutes;
     private final NotificationService notifications;
+    private final PaymentService payments;
+    private final Duration paymentWindow;
     public AppointmentService(AppointmentRepository data, Clock clock, NotificationService notifications,
-                              @Value("${oona.appointments.hold-minutes:1440}") int holdMinutes) {
+                              PaymentService payments,
+                              @Value("${oona.appointments.hold-minutes:1440}") int holdMinutes,
+                              @Value("${app.bookings.payment-window:PT24H}") Duration paymentWindow) {
         if(holdMinutes<5 || holdMinutes>4320) throw new IllegalArgumentException("La retención de citas debe estar entre 5 y 4320 minutos.");
-        this.data=data; this.clock=clock; this.notifications=notifications; this.holdMinutes=holdMinutes;
+        this.data=data; this.clock=clock; this.notifications=notifications; this.payments=payments;
+        this.holdMinutes=holdMinutes; this.paymentWindow=paymentWindow;
     }
     private LocalDate today() { return clock.instant().atZone(BUSINESS_ZONE).toLocalDate(); }
     private OneToOneService service(Long id) {
@@ -68,7 +75,7 @@ public class AppointmentService {
                                                             SessionModality modality, Long locationId) {
         var professional = data.professional(userId, false);
         var booking = data.find(SessionBooking.class, appointmentId);
-        if (!booking.getSpecialist().getId().equals(professional.getId()) || booking.getOrderItem() != null) {
+        if (!booking.getSpecialist().getId().equals(professional.getId())) {
             throw new ResourceNotFoundException("Solicitud no encontrada.");
         }
         return slots(service(booking.getService().getId()), date, modality, locationId,
@@ -314,7 +321,7 @@ public class AppointmentService {
         data.lock(data.find(SpecialistProfile.class, specialistId));
         var booking = data.find(SessionBooking.class, id);
         var now = clock.instant();
-        boolean pending = booking.getStatus() == BookingStatus.PENDIENTE || booking.getStatus() == BookingStatus.REPROGRAMACION_PROPUESTA;
+        boolean pending = awaitsAnswerOrPayment(booking);
         boolean expired = pending && booking.getExpiresAt() != null && !booking.getExpiresAt().isAfter(now);
         if ((!pending && booking.getStatus() != BookingStatus.CONFIRMADA) || expired || !booking.getStartsAt().isAfter(now)) {
             throw new BookingConflictException("Solo puedes reprogramar citas futuras y vigentes.");
@@ -351,9 +358,10 @@ public class AppointmentService {
     @Transactional
     public Receipt proposeReschedule(Long userId,Long id,Reschedule input) {
         var p=data.professional(userId,true); var booking=data.find(SessionBooking.class,id); var now=clock.instant();
-        if(!booking.getSpecialist().getId().equals(p.getId()) || booking.getOrderItem()!=null)
+        if(!booking.getSpecialist().getId().equals(p.getId()))
             throw new ResourceNotFoundException("Solicitud no encontrada.");
-        if((booking.getStatus()!=BookingStatus.PENDIENTE && booking.getStatus()!=BookingStatus.CONFIRMADA)
+        if((booking.getStatus()!=BookingStatus.PENDIENTE && booking.getStatus()!=BookingStatus.ACEPTADA
+                && booking.getStatus()!=BookingStatus.CONFIRMADA)
                 || !booking.getStartsAt().isAfter(now)) throw new BookingConflictException("Solo puedes proponer cambios en citas futuras y vigentes.");
         var s=service(booking.getService().getId()); var date=input.startsAt().atZone(BUSINESS_ZONE).toLocalDate();
         var slot=slots(s,date,input.modality(),input.locationId(),booking.getCustomer().getId(),booking.getId()).slots().stream()
@@ -376,7 +384,8 @@ public class AppointmentService {
         if(booking.getStatus()!=BookingStatus.REPROGRAMACION_PROPUESTA || (booking.getExpiresAt()!=null && !booking.getExpiresAt().isAfter(now)))
             throw new BookingConflictException("La propuesta ya no está disponible.");
         if(input.accepted()) {
-            booking.setStatus(BookingStatus.CONFIRMADA); booking.setExpiresAt(null);
+            // Una cita aún sin pagar pasa a pago; una ya pagada (o gratuita) queda confirmada.
+            accept(booking, now);
             notifications.notifyProfessional(booking, NotificationType.CITA_REPROGRAMACION_ACEPTADA);
         } else {
             cancel(booking,now,input.reason()==null||input.reason().isBlank()?"Propuesta rechazada por el cliente":input.reason(),"CLIENTE");
@@ -385,8 +394,36 @@ public class AppointmentService {
         return receipt(booking);
     }
 
+    /** Esperando respuesta del profesional o del cliente, o el pago: vence en {@code expiresAt}. */
+    private static boolean awaitsAnswerOrPayment(SessionBooking booking) {
+        return booking.getStatus() == BookingStatus.PENDIENTE || booking.getStatus() == BookingStatus.ACEPTADA
+                || booking.getStatus() == BookingStatus.REPROGRAMACION_PROPUESTA;
+    }
+
+    /**
+     * Flujo unificado: el profesional acepta y el cliente paga con Visa o Yape para confirmar.
+     * Una cita gratuita, o ya pagada antes de reprogramarse, se confirma sin un nuevo pago.
+     */
+    private void accept(SessionBooking booking, Instant now) {
+        var item = booking.getOrderItem();
+        boolean paid = item != null && item.getOrder().getStatus() == PurchaseOrderStatus.PAGADA;
+        if (paid || booking.getPrice() == null || booking.getPrice().signum() <= 0) {
+            booking.setStatus(BookingStatus.CONFIRMADA);
+            booking.setExpiresAt(null);
+            notifications.notifyCustomer(booking, NotificationType.CITA_CONFIRMADA);
+            return;
+        }
+        if (item == null || item.getOrder().getStatus() != PurchaseOrderStatus.ABIERTA) {
+            booking.setOrderItem(payments.openAppointmentOrder(booking));
+        }
+        Instant deadline = now.plus(paymentWindow);
+        booking.setStatus(BookingStatus.ACEPTADA);
+        booking.setExpiresAt(deadline.isAfter(booking.getStartsAt()) ? booking.getStartsAt() : deadline);
+        notifications.notifyCustomer(booking, NotificationType.CITA_ACEPTADA);
+    }
+
     private void cancel(SessionBooking booking, Instant now, String reason, String actor) {
-        boolean pending = booking.getStatus() == BookingStatus.PENDIENTE || booking.getStatus() == BookingStatus.REPROGRAMACION_PROPUESTA;
+        boolean pending = awaitsAnswerOrPayment(booking);
         boolean expired = pending && booking.getExpiresAt() != null && !booking.getExpiresAt().isAfter(now);
         if ((!pending && booking.getStatus() != BookingStatus.CONFIRMADA)
                 || expired || !booking.getStartsAt().isAfter(now)) {
@@ -399,18 +436,23 @@ public class AppointmentService {
         booking.setCancelledAt(now);
         booking.setCancellationReason(reason.trim());
         booking.setCancelledBy(actor);
+        var item = booking.getOrderItem();
+        if (item != null && item.getOrder().getStatus() == PurchaseOrderStatus.ABIERTA) {
+            item.getOrder().setStatus(PurchaseOrderStatus.CANCELADA);
+        }
     }
 
     @Transactional
     public Receipt decide(Long userId,Long id,BookingStatus status,String reason) {
         var p=data.professional(userId,true); var b=data.find(SessionBooking.class,id);
-        if(!b.getSpecialist().getId().equals(p.getId()) || b.getOrderItem()!=null) throw new ResourceNotFoundException("Solicitud no encontrada.");
+        if(!b.getSpecialist().getId().equals(p.getId())) throw new ResourceNotFoundException("Solicitud no encontrada.");
         var now=clock.instant();
         if(b.getStatus()==BookingStatus.PENDIENTE && b.getExpiresAt()!=null && !b.getExpiresAt().isAfter(now))
             throw new BookingConflictException("La solicitud ha vencido.");
-        if(status==BookingStatus.CONFIRMADA && b.getStatus()==BookingStatus.PENDIENTE && b.getStartsAt().isAfter(now)) {
-            b.setStatus(status); b.setExpiresAt(null);
-            notifications.notifyCustomer(b, NotificationType.CITA_CONFIRMADA);
+        // "Confirmar" desde la agenda equivale a aceptar: el cliente aún debe pagar.
+        if((status==BookingStatus.ACEPTADA || status==BookingStatus.CONFIRMADA)
+                && b.getStatus()==BookingStatus.PENDIENTE && b.getStartsAt().isAfter(now)) {
+            accept(b, now);
         }
         else if(status==BookingStatus.CANCELADA) {
             cancel(b, now, reason, "PROFESIONAL");
@@ -466,7 +508,10 @@ public class AppointmentService {
     }
     private Receipt receipt(SessionBooking b) {
         String status=b.getStatus().name();
-        if(b.getStatus()==BookingStatus.PENDIENTE && b.getExpiresAt()!=null && !b.getExpiresAt().isAfter(clock.instant())) status="EXPIRADA";
+        if((b.getStatus()==BookingStatus.PENDIENTE || b.getStatus()==BookingStatus.ACEPTADA)
+                && b.getExpiresAt()!=null && !b.getExpiresAt().isAfter(clock.instant())) status="EXPIRADA";
+        String orderCode=b.getOrderItem()==null ? null : b.getOrderItem().getOrder().getCode();
+        Instant paymentDeadline=b.getStatus()==BookingStatus.ACEPTADA ? b.getExpiresAt() : null;
         String visibleVirtualUrl=(b.getStatus()==BookingStatus.CONFIRMADA || b.getStatus()==BookingStatus.COMPLETADA)
                 ? b.getVirtualUrl() : null;
         return new Receipt(b.getId(),b.getCode(),b.getService().getId(),b.getService().getTitle(),b.getSpecialist().getPublicName(),
@@ -474,6 +519,6 @@ public class AppointmentService {
             b.getPrice(),b.getCurrency(),status,b.getExpiresAt(),b.getCustomerNotes(),b.getCancelledAt(),
             b.getCancellationReason(),b.getCancelledBy(),b.getRescheduledAt(),b.getPreviousStartsAt(),
             b.getPreviousEndsAt(),b.getRescheduleReason(),b.getRescheduledBy(),visibleVirtualUrl,
-            b.getService().getImageUrl());
+            b.getService().getImageUrl(),orderCode,paymentDeadline);
     }
 }

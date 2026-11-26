@@ -37,6 +37,12 @@ public enum NotificationType {
             "Has recibido una solicitud de cita. Revísala desde tu agenda.", "Ver solicitud"),
     CITA_CONFIRMADA("¡Tu cita fue confirmada!",
             "El profesional confirmó tu cita. Revisa los detalles de la sesión.", "Ver mi cita"),
+    CITA_ACEPTADA("¡Tu cita fue aceptada!",
+            "El profesional aceptó tu cita. Realiza el pago para confirmarla.", "Realizar pago"),
+    CITA_PAGO_CONFIRMADO("¡Tu cita está confirmada!",
+            "Hemos verificado tu pago. Tu cita se encuentra confirmada.", "Ver mi cita"),
+    CITA_PAGO_COMPLETADO("Pago de cita completado",
+            "El cliente completó el pago y la cita está confirmada.", "Ver cita"),
     CITA_CANCELADA_POR_CLIENTE("El cliente canceló la cita",
             "El horario se liberó y ya puede volver a ofrecerse.", "Ver cita"),
     CITA_CANCELADA_POR_PROFESIONAL("Tu cita fue cancelada",
@@ -50,7 +56,11 @@ public enum NotificationType {
     CITA_REPROGRAMACION_RECHAZADA("Reprogramación rechazada",
             "El cliente rechazó el horario propuesto y la cita fue liberada.", "Ver cita"),
     CITA_COMPLETADA("Cita completada",
-            "La cita se marcó como completada. Gracias por participar.", "Ver mi cita");
+            "La cita se marcó como completada. Gracias por participar.", "Ver mi cita"),
+    REEMBOLSO_APROBADO("Solicitud de reembolso aprobada",
+            "Tu solicitud de reembolso de práctica fue aprobada. Consulta la decisión en Mis reembolsos.", "Ver reembolso"),
+    REEMBOLSO_RECHAZADO("Solicitud de reembolso rechazada",
+            "Oona rechazó tu solicitud. Consulta el motivo en Mis reembolsos.", "Ver reembolso");
 
     private final String title;
     private final String message;

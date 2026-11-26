@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +50,19 @@ public class NotificationService {
     public PagedResponse<Item> list(Long userId, int page, int size) {
         return PagedResponse.from(notifications.findByUserId(userId,
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id"))).map(this::item));
+    }
+
+    @Transactional
+    public void notifyRefundDecision(User recipient, Long refundId, String ticketNumber, boolean approved) {
+        save(recipient, approved ? NotificationType.REEMBOLSO_APROBADO : NotificationType.REEMBOLSO_RECHAZADO,
+                ticketNumber, refundId.toString());
+    }
+
+    public PagedResponse<Item> unreadRefundDecisions(Long userId, int page, int size) {
+        var types = List.of(NotificationType.REEMBOLSO_APROBADO, NotificationType.REEMBOLSO_RECHAZADO);
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+        return PagedResponse.from(notifications.findByUserIdAndReadAtIsNullAndTypeIn(userId, types, pageable)
+                .map(this::item));
     }
 
     public long unreadCount(Long userId) {
