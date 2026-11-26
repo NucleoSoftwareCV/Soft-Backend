@@ -11,6 +11,9 @@ import com.hean.consigueventas.oonabe.masterdata.entity.Location;
 import com.hean.consigueventas.oonabe.notification.domain.NotificationType;
 import com.hean.consigueventas.oonabe.notification.repository.NotificationRepository;
 import com.hean.consigueventas.oonabe.oneToOneSession.entity.*;
+import com.hean.consigueventas.oonabe.payment.domain.PurchaseOrderStatus;
+import com.hean.consigueventas.oonabe.payment.dto.PaymentProcessRequestDto;
+import com.hean.consigueventas.oonabe.payment.service.PaymentService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,7 @@ class AppointmentIntegrationTest {
     @Autowired EntityManager em;
     @Autowired MockMvc mvc;
     @Autowired NotificationRepository notifications;
+    @Autowired PaymentService payments;
     BookingFixtures.Fixture fixture;
     OneToOneService service;
     Location location;
@@ -62,6 +66,20 @@ class AppointmentIntegrationTest {
     RuleInput rule(Long locationId) { return new RuleInput(1,LocalTime.of(9,0),LocalTime.of(12,0),day,day.plusDays(30),locationId); }
     Request input() { return new Request(service.getId(),SessionModality.ONLINE,null,start,"Motivo de prueba"); }
     Receipt request() { return appointments.request(fixture.client().getId(),input()); }
+    /** Flujo unificado: el profesional acepta y el cliente paga con tarjeta; la cita queda confirmada. */
+    Receipt confirm(Receipt pending) {
+        var accepted=appointments.decide(fixture.professional().getId(),pending.id(),BookingStatus.CONFIRMADA,null);
+        assertThat(accepted.status()).isEqualTo("ACEPTADA");
+        assertThat(payments.processPayment(accepted.orderCode(),card()).getStatus()).isEqualTo("APROBADO");
+        em.flush();
+        return appointments.myAppointments(fixture.client().getId()).stream()
+                .filter(r->r.id().equals(pending.id())).findFirst().orElseThrow();
+    }
+    PaymentProcessRequestDto card() {
+        var card=new PaymentProcessRequestDto(); card.setMethod("TARJETA"); card.setCardNumber("4111111111111111");
+        card.setCardHolder("Cliente Prueba"); card.setCardExpiration("12/30"); card.setCardCvv("123");
+        return card;
+    }
     UserDetailsImpl principal(Long id,String role) { return new UserDetailsImpl(id,"prueba","prueba@example.test","",true,List.of(new SimpleGrantedAuthority("ROLE_"+role))); }
     @Test void optionsExposeActualOpeningDaysForTheService() {
         var options=appointments.options(service.getId());
@@ -93,7 +111,7 @@ class AppointmentIntegrationTest {
                 .extracting(Slot::startsAt).containsExactly(start,start.plusSeconds(4500));
         var pending=request();
         assertThat(pending.virtualUrl()).isNull();
-        var confirmed=appointments.decide(fixture.professional().getId(),pending.id(),BookingStatus.CONFIRMADA,null);
+        var confirmed=confirm(pending);
         assertThat(confirmed.virtualUrl()).isEqualTo(meet);
     }
     @Test void physicalSlotsRequireAnActiveVenueAndRespectServiceVenue() {
@@ -124,12 +142,76 @@ class AppointmentIntegrationTest {
                 .extracting(notification -> notification.getType())
                 .contains(NotificationType.NUEVA_CITA_SOLICITADA);
 
-        appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
-        em.flush();
+        confirm(receipt);
 
         assertThat(notifications.findByUserId(fixture.client().getId(), PageRequest.of(0, 10)).getContent())
                 .extracting(notification -> notification.getType())
-                .contains(NotificationType.CITA_CONFIRMADA);
+                .contains(NotificationType.CITA_ACEPTADA, NotificationType.CITA_PAGO_CONFIRMADO);
+        assertThat(notifications.findByUserId(fixture.professional().getId(), PageRequest.of(0, 10)).getContent())
+                .extracting(notification -> notification.getType())
+                .contains(NotificationType.CITA_PAGO_COMPLETADO);
+    }
+
+    @Test void acceptedAppointmentWaitsForPaymentAndKeepsTheSlot() {
+        var receipt = request();
+        var accepted = appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+
+        assertThat(accepted.status()).isEqualTo("ACEPTADA");
+        assertThat(accepted.orderCode()).isNotBlank();
+        assertThat(accepted.paymentDeadline()).isEqualTo(Instant.parse("2026-11-06T12:00:00Z"));
+        assertThat(accepted.virtualUrl()).isNull();
+        assertThat(appointments.availability(service.getId(), day, SessionModality.ONLINE, null).slots())
+                .extracting(Slot::startsAt).doesNotContain(start);
+        assertThat(appointments.pending(fixture.professional().getId())).isEmpty();
+
+        var order = em.find(SessionBooking.class, receipt.id()).getOrderItem().getOrder();
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.ABIERTA);
+        assertThat(order.getTotalAmount()).isEqualByComparingTo("50.00");
+        assertThat(order.getCurrency()).isEqualTo("PEN");
+    }
+
+    @Test void cannotPayBeforeAcceptanceNorAfterTheDeadline() {
+        var receipt = request();
+        var accepted = appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        em.find(SessionBooking.class, receipt.id()).setExpiresAt(Instant.parse("2026-11-05T11:00:00Z"));
+        em.flush();
+
+        assertThatThrownBy(() -> payments.processPayment(accepted.orderCode(), card()))
+                .isInstanceOf(BookingConflictException.class).hasMessageContaining("plazo de pago");
+        assertThat(appointments.agenda(fixture.professional().getId(), day)).extracting(Receipt::status)
+                .containsExactly("EXPIRADA");
+        assertThat(appointments.availability(service.getId(), day, SessionModality.ONLINE, null).slots())
+                .extracting(Slot::startsAt).contains(start);
+    }
+
+    @Test void cancellingAnAcceptedAppointmentClosesItsOrder() {
+        var receipt = request();
+        var accepted = appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        appointments.cancelMyAppointment(fixture.client().getId(), receipt.id(), "Ya no puedo asistir");
+        em.flush();
+
+        var order = em.find(SessionBooking.class, receipt.id()).getOrderItem().getOrder();
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.CANCELADA);
+        assertThatThrownBy(() -> payments.processPayment(accepted.orderCode(), card()))
+                .isInstanceOf(BookingConflictException.class);
+    }
+
+    @Test void freeSessionsAreConfirmedWithoutPayment() {
+        service.setPrice(BigDecimal.ZERO); em.flush();
+        var receipt = request();
+        var confirmed = appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        assertThat(confirmed.status()).isEqualTo("CONFIRMADA");
+        assertThat(confirmed.orderCode()).isNull();
+    }
+
+    @Test void reschedulingAPaidAppointmentDoesNotChargeAgain() {
+        var receipt = confirm(request());
+        var newStart = start.plusSeconds(3600);
+        appointments.rescheduleMyAppointment(fixture.client().getId(), receipt.id(),
+                new Reschedule(SessionModality.ONLINE, null, newStart, "Me queda mejor más tarde"));
+        var again = appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        assertThat(again.status()).isEqualTo("CONFIRMADA");
+        assertThat(again.orderCode()).isEqualTo(receipt.orderCode());
     }
     @Test void blocksDuplicateAndCrossModalityBookings() {
         request();
@@ -168,7 +250,7 @@ class AppointmentIntegrationTest {
     }
     @Test void confirmedBookingsRemainBusyAndCancellationReleasesSlot() {
         var receipt=request();
-        assertThat(appointments.decide(fixture.professional().getId(),receipt.id(),BookingStatus.CONFIRMADA,null).status()).isEqualTo("CONFIRMADA");
+        assertThat(confirm(receipt).status()).isEqualTo("CONFIRMADA");
         assertThat(appointments.availability(service.getId(),day,SessionModality.ONLINE,null).slots()).hasSize(2);
         var cancelled = appointments.decide(fixture.professional().getId(),receipt.id(),BookingStatus.CANCELADA,"Cambio de agenda");
         assertThat(cancelled.cancellationReason()).isEqualTo("Cambio de agenda");
@@ -179,7 +261,7 @@ class AppointmentIntegrationTest {
         var receipt = request();
         var owner = fixture.client().getId();
         var other = BookingFixtures.create(em, "cancel" + UUID.randomUUID().toString().substring(0, 5));
-        appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        confirm(receipt);
         String path = "/api/v1/appointments/requests/" + receipt.id() + "/cancel";
 
         String cancellation = "{\"reason\":\"Cambio de planes\"}";
@@ -202,7 +284,7 @@ class AppointmentIntegrationTest {
 
     @Test void customerCanRescheduleAndProfessionalMustAcceptTheNewTime() throws Exception {
         var receipt = request();
-        appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
+        confirm(receipt);
         var newStart = start.plusSeconds(3600);
         String path = "/api/v1/appointments/requests/" + receipt.id() + "/reschedule";
         String body = "{\"modality\":\"ONLINE\",\"startsAt\":\"" + newStart
@@ -281,7 +363,7 @@ class AppointmentIntegrationTest {
     }
 
     @Test void doesNotCompleteAFutureAppointment() {
-        var receipt=request(); appointments.decide(fixture.professional().getId(),receipt.id(),BookingStatus.CONFIRMADA,null);
+        var receipt=request(); confirm(receipt);
         assertThatThrownBy(()->appointments.decide(fixture.professional().getId(),receipt.id(),BookingStatus.COMPLETADA,null)).isInstanceOf(BookingConflictException.class);
     }
     @Test void anotherProfessionalCannotManageTheRequestOrRules() {
@@ -339,7 +421,18 @@ class AppointmentIntegrationTest {
         appointments.decide(fixture.professional().getId(), receipt.id(), BookingStatus.CONFIRMADA, null);
         mvc.perform(get(path).with(customer))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("CONFIRMADA"));
+                .andExpect(jsonPath("$[0].status").value("ACEPTADA"))
+                .andExpect(jsonPath("$[0].orderCode").isNotEmpty())
+                .andExpect(jsonPath("$[0].paymentDeadline").value("2026-11-06T12:00:00Z"));
+        String orderCode = appointments.myAppointments(fixture.client().getId()).getFirst().orderCode();
+        mvc.perform(post("/api/v1/payments/checkout/orders/" + orderCode + "/pay").with(customer)
+                        .contentType("application/json")
+                        .content("{\"method\":\"YAPE\",\"yapePhoneNumber\":\"987654321\",\"yapeOtp\":\"123456\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APROBADO"));
+        mvc.perform(get(path).with(customer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("CONFIRMADA"))
+                .andExpect(jsonPath("$[0].paymentDeadline").doesNotExist());
 
         var other = BookingFixtures.create(em, "client" + UUID.randomUUID().toString().substring(0, 5));
         mvc.perform(get(path).with(user(principal(other.client().getId(), "USER"))))
